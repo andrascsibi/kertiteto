@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { buildStructure, PILLAR_HEIGHT, PURLIN_SIZE } from '../src/model/structure'
-import { ridgeHeight, rafterCount, rafterSpacing } from '../src/model/geometry'
+import { buildStructure, PILLAR_HEIGHT, PURLIN_SIZE, RIDGE_SIZE, RAFTER_WIDTH, RAFTER_DEPTH } from '../src/model/structure'
+import { ridgeHeight, BIRD_MOUTH_PLUMB_HEIGHT, MAX_RAFTER_SPACING } from '../src/model/geometry'
 import type { InputParams } from '../src/model/types'
 
 // Coordinate system:
@@ -14,6 +14,15 @@ const base: InputParams = {
   pitch: 25,
   eavesOverhang: 0.5,
   gableOverhang: 0.3,
+}
+
+const DEG = Math.PI / 180
+
+// Helper: number of rafters based on purlin span (matching structure.ts logic)
+function expectedRafterCount(params: InputParams): number {
+  const purlinLength = params.length + 2 * params.gableOverhang
+  const rafterSpanCC = purlinLength - RAFTER_WIDTH
+  return Math.ceil(rafterSpanCC / MAX_RAFTER_SPACING) + 1
 }
 
 describe('pillars', () => {
@@ -93,10 +102,10 @@ describe('ridge purlin', () => {
     expect(m.ridgePurlin.end.z).toBeCloseTo(0, 6)
   })
 
-  it('at y = pillarHeight + PURLIN_SIZE + ridgeHeight(width, pitch)', () => {
+  it('center at y = pillarHeight + PURLIN_SIZE + ridgeHeight - RIDGE_SIZE/2 (sits below rafters)', () => {
     const W = 4, pitch = 25
     const m = buildStructure({ ...base, width: W, pitch })
-    const expectedY = PILLAR_HEIGHT + PURLIN_SIZE + ridgeHeight(W, pitch)
+    const expectedY = PILLAR_HEIGHT + PURLIN_SIZE + ridgeHeight(W, pitch) - RIDGE_SIZE / 2
     expect(m.ridgePurlin.start.y).toBeCloseTo(expectedY, 6)
   })
 
@@ -106,9 +115,18 @@ describe('ridge purlin', () => {
     expect(m.ridgePurlin.end.x).toBeCloseTo(m.basePurlins[0].end.x, 6)
   })
 
-  it('is higher than base purlins', () => {
+  it('is above base purlins', () => {
     const m = buildStructure(base)
     expect(m.ridgePurlin.start.y).toBeGreaterThan(m.basePurlins[0].start.y)
+  })
+
+  it('rafters extend above ridge purlin top (Hungarian style: purlin below rafters)', () => {
+    const m = buildStructure(base)
+    const ridgePurlinTop = m.ridgePurlin.start.y + RIDGE_SIZE / 2
+    // Rafter ridge end (centerline) should be above ridge purlin top
+    for (const r of m.rafters) {
+      expect(r.ridgeEnd.y).toBeGreaterThan(ridgePurlinTop)
+    }
   })
 })
 
@@ -145,20 +163,51 @@ describe('tie beams (KOTOGERENDA)', () => {
   })
 })
 
-describe('rafters', () => {
-  it('total count = 2 * rafterCount(length), first half left slope, second half right', () => {
-    const L = 4
-    const m = buildStructure({ ...base, length: L })
-    const n = rafterCount(L)
-    expect(m.rafters.length).toBe(2 * n)
-    // Left slope: eave at z < 0
+describe('rafters — longitudinal placement', () => {
+  it('total count = 2 × (bays based on full purlin span + 1)', () => {
+    const m = buildStructure(base)
+    expect(m.rafters.length).toBe(2 * expectedRafterCount(base))
+  })
+
+  it('gable rafters are at x = ±(L/2 + G - RAFTER_WIDTH/2)', () => {
+    const L = 4, G = 0.3
+    const m = buildStructure({ ...base, length: L, gableOverhang: G })
+    const n = m.rafters.length / 2
+    const xVals = m.rafters.slice(0, n).map(r => r.eaveEnd.x).sort((a, b) => a - b)
+    expect(xVals[0]).toBeCloseTo(-(L / 2 + G - RAFTER_WIDTH / 2), 6)
+    expect(xVals[xVals.length - 1]).toBeCloseTo(+(L / 2 + G - RAFTER_WIDTH / 2), 6)
+  })
+
+  it('rafters are evenly spaced along x', () => {
+    const m = buildStructure(base)
+    const n = m.rafters.length / 2
+    const xVals = m.rafters.slice(0, n).map(r => r.eaveEnd.x).sort((a, b) => a - b)
+    const spacing = xVals[1] - xVals[0]
+    for (let i = 1; i < xVals.length; i++) {
+      expect(xVals[i] - xVals[i - 1]).toBeCloseTo(spacing, 6)
+    }
+  })
+
+  it('spacing never exceeds MAX_RAFTER_SPACING', () => {
+    const m = buildStructure(base)
+    expect(m.rafterSpacing).toBeLessThanOrEqual(MAX_RAFTER_SPACING + 1e-9)
+  })
+
+  it('left and right slope rafters share x positions', () => {
+    const m = buildStructure(base)
+    const n = m.rafters.length / 2
     for (let i = 0; i < n; i++) {
-      expect(m.rafters[i].eaveEnd.z).toBeLessThan(0)
+      expect(m.rafters[i].eaveEnd.x).toBeCloseTo(m.rafters[n + i].eaveEnd.x, 6)
     }
-    // Right slope: eave at z > 0
-    for (let i = n; i < 2 * n; i++) {
-      expect(m.rafters[i].eaveEnd.z).toBeGreaterThan(0)
-    }
+  })
+})
+
+describe('rafters — vertical placement and slope', () => {
+  it('first half is left slope (eave at z < 0), second half is right slope (eave at z > 0)', () => {
+    const m = buildStructure(base)
+    const n = m.rafters.length / 2
+    for (let i = 0; i < n; i++)       expect(m.rafters[i].eaveEnd.z).toBeLessThan(0)
+    for (let i = n; i < 2 * n; i++)   expect(m.rafters[i].eaveEnd.z).toBeGreaterThan(0)
   })
 
   it('all rafters meet at z=0 (ridge)', () => {
@@ -168,51 +217,45 @@ describe('rafters', () => {
     }
   })
 
-  it('gable rafters at x=±length/2', () => {
-    const L = 4
-    const m = buildStructure({ ...base, length: L })
-    const n = rafterCount(L)
-    const xVals = m.rafters.slice(0, n).map(r => r.eaveEnd.x).sort((a, b) => a - b)
-    expect(xVals[0]).toBeCloseTo(-L / 2, 6)
-    expect(xVals[xVals.length - 1]).toBeCloseTo(+L / 2, 6)
-  })
-
-  it('rafters are evenly spaced along x', () => {
-    const L = 4
-    const m = buildStructure({ ...base, length: L })
-    const n = rafterCount(L)
-    const spacing = rafterSpacing(L)
-    const xVals = m.rafters.slice(0, n).map(r => r.eaveEnd.x).sort((a, b) => a - b)
-    for (let i = 1; i < xVals.length; i++) {
-      expect(xVals[i] - xVals[i - 1]).toBeCloseTo(spacing, 6)
-    }
-  })
-
-  it('left and right slope rafters share x positions', () => {
-    const L = 4
-    const m = buildStructure({ ...base, length: L })
-    const n = rafterCount(L)
-    for (let i = 0; i < n; i++) {
-      expect(m.rafters[i].eaveEnd.x).toBeCloseTo(m.rafters[n + i].eaveEnd.x, 6)
-    }
-  })
-
-  it('eave ends are eavesOverhang past base purlins in z', () => {
+  it('eave ends at z = ±(width/2 + eavesOverhang)', () => {
     const E = 0.5, W = 3
     const m = buildStructure({ ...base, width: W, eavesOverhang: E })
-    const n = rafterCount(base.length)
-    // Left slope eave at z = -(W/2 + E)
+    const n = m.rafters.length / 2
     expect(m.rafters[0].eaveEnd.z).toBeCloseTo(-(W / 2 + E), 6)
-    // Right slope eave at z = +(W/2 + E)
     expect(m.rafters[n].eaveEnd.z).toBeCloseTo(+(W / 2 + E), 6)
   })
 
-  it('ridge ends are at correct height', () => {
-    const W = 3, pitch = 25
-    const m = buildStructure({ ...base, width: W, pitch })
-    const expectedY = PILLAR_HEIGHT + PURLIN_SIZE + ridgeHeight(W, pitch)
+  it('rafter centerline is above base purlin top at bearing (plumb height = 3cm)', () => {
+    // At z = ±width/2, y_centerline should equal yPurlinTop + BIRD_MOUTH_PLUMB_HEIGHT + RAFTER_DEPTH/2*cos(pitch)
+    const pitch = 25, W = 3, E = 0.5
+    const cosPitch = Math.cos(pitch * DEG)
+    const yPurlinTop = PILLAR_HEIGHT + PURLIN_SIZE
+    const expectedY = yPurlinTop + BIRD_MOUTH_PLUMB_HEIGHT + RAFTER_DEPTH / 2 * cosPitch
+    const m = buildStructure({ ...base, width: W, pitch, eavesOverhang: E })
+    // Rafter at base purlin (z = -W/2) for left slope:
+    // y_at_base = eaveEnd.y + E * tan(pitch)
+    const tanPitch = Math.tan(pitch * DEG)
+    for (const r of m.rafters.slice(0, m.rafters.length / 2)) {
+      const yAtBase = r.eaveEnd.y + E * tanPitch
+      expect(yAtBase).toBeCloseTo(expectedY, 6)
+    }
+  })
+
+  it('rafter ridge end is above ridge purlin top', () => {
+    const m = buildStructure(base)
+    const ridgePurlinTop = m.ridgePurlin.start.y + RIDGE_SIZE / 2
     for (const r of m.rafters) {
-      expect(r.ridgeEnd.y).toBeCloseTo(expectedY, 6)
+      expect(r.ridgeEnd.y).toBeGreaterThan(ridgePurlinTop)
+    }
+  })
+
+  it('rafter length matches distance between eaveEnd and ridgeEnd', () => {
+    const m = buildStructure(base)
+    for (const r of m.rafters) {
+      const dy = r.ridgeEnd.y - r.eaveEnd.y
+      const dz = r.ridgeEnd.z - r.eaveEnd.z
+      const dist = Math.sqrt(dy * dy + dz * dz)
+      expect(dist).toBeCloseTo(r.length, 6)
     }
   })
 })
@@ -234,7 +277,6 @@ describe('rafter bird mouths', () => {
 
   it('base bird mouth distanceFromEave = eavesOverhang / cos(pitch)', () => {
     const E = 0.5, pitch = 25
-    const DEG = Math.PI / 180
     const m = buildStructure({ ...base, eavesOverhang: E, pitch })
     const expected = E / Math.cos(pitch * DEG)
     for (const r of m.rafters) {

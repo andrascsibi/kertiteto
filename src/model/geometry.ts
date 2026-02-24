@@ -6,10 +6,10 @@
 const DEG = Math.PI / 180
 
 /** Fixed plumb cut height for all bird mouths: keeps 4/5 of 15 cm rafter depth */
-const BIRD_MOUTH_PLUMB_HEIGHT = 0.03
+export const BIRD_MOUTH_PLUMB_HEIGHT = 0.03
 
 /** Maximum rafter bay spacing (m) */
-const MAX_RAFTER_SPACING = 0.9
+export const MAX_RAFTER_SPACING = 0.9
 
 export interface BirdMouthGeometry {
   /** Horizontal cut width (m) - perpendicular to rafter axis, sits on purlin */

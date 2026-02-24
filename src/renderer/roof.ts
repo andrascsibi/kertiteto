@@ -5,7 +5,7 @@
 
 import * as THREE from 'three'
 import type { StructureModel, Pillar, Purlin, TieBeam, Rafter } from '../model/types'
-import { PILLAR_SIZE, PURLIN_SIZE, RIDGE_SIZE, RAFTER_WIDTH, RAFTER_DEPTH } from '../model/structure'
+import { PILLAR_SIZE, PURLIN_SIZE, RAFTER_WIDTH, RAFTER_DEPTH } from '../model/structure'
 
 // Shared materials — not disposed with meshes, only with scene teardown
 const MAT: Record<string, THREE.MeshLambertMaterial> = {
@@ -80,9 +80,6 @@ function rafterMesh(r: Rafter, pitchDeg: number): THREE.Mesh {
 
   const pitchRad = pitchDeg * (Math.PI / 180)
   const isLeftSlope = r.eaveEnd.z < 0
-
-  // Use RIDGE_SIZE just to avoid unused import warning — actual sizes from constants
-  void RIDGE_SIZE
 
   const geo = new THREE.BoxGeometry(RAFTER_WIDTH, r.length, RAFTER_DEPTH)
   const mesh = new THREE.Mesh(geo, MAT.rafter)
