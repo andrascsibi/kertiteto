@@ -1,0 +1,100 @@
+import { describe, it, expect } from 'vitest'
+import {
+  ridgeHeight,
+  rafterLength,
+  pillarCount,
+  rafterSpacing,
+  rafterCount,
+  birdMouthAtBasePurlin,
+  birdMouthAtRidgePurlin,
+} from '../src/model/geometry'
+
+const DEG = Math.PI / 180
+
+describe('ridgeHeight', () => {
+  it('half-span * tan(pitch)', () => {
+    // width=4m, pitch=25°: half-span=2m, ridge = 2 * tan(25°)
+    expect(ridgeHeight(4, 25)).toBeCloseTo(2 * Math.tan(25 * DEG), 6)
+  })
+
+  it('is zero for zero pitch', () => {
+    expect(ridgeHeight(4, 0)).toBe(0)
+  })
+})
+
+describe('rafterLength', () => {
+  it('horizontal run / cos(pitch), run = half-width + eavesOverhang', () => {
+    // width=4m, eaves=0.5m → run = 2.5m, pitch=25°
+    const expected = 2.5 / Math.cos(25 * DEG)
+    expect(rafterLength(4, 25, 0.5)).toBeCloseTo(expected, 6)
+  })
+
+  it('longer with larger eaves overhang', () => {
+    expect(rafterLength(4, 25, 0.6)).toBeGreaterThan(rafterLength(4, 25, 0.5))
+  })
+})
+
+describe('pillarCount', () => {
+  it('4 pillars for length <= 3.5m', () => {
+    expect(pillarCount(3.5)).toBe(4)
+    expect(pillarCount(2.0)).toBe(4)
+  })
+
+  it('6 pillars for length > 3.5m up to 7m', () => {
+    expect(pillarCount(3.51)).toBe(6)
+    expect(pillarCount(7.0)).toBe(6)
+  })
+})
+
+describe('rafterSpacing', () => {
+  it('divides length into equal bays, max 90cm', () => {
+    // length=4m: ceil(4/0.9)=5 bays → spacing = 4/5 = 0.8m
+    expect(rafterSpacing(4)).toBeCloseTo(0.8, 6)
+  })
+
+  it('never exceeds 0.9m', () => {
+    for (const l of [2, 3, 4, 5, 6, 7]) {
+      expect(rafterSpacing(l)).toBeLessThanOrEqual(0.9 + 1e-9)
+    }
+  })
+})
+
+describe('rafterCount', () => {
+  it('number of bays + 1 (includes both gable rafters)', () => {
+    // length=4m, spacing=0.8m → 5 bays → 6 rafters
+    expect(rafterCount(4)).toBe(6)
+  })
+
+  it('minimum 2 rafters (one at each gable)', () => {
+    expect(rafterCount(0.5)).toBeGreaterThanOrEqual(2)
+  })
+})
+
+describe('birdMouthAtBasePurlin', () => {
+  it('plumb cut is fixed at 3 cm (keeps 4/5 of 15 cm rafter depth)', () => {
+    expect(birdMouthAtBasePurlin(25).plumbHeight).toBeCloseTo(0.03, 6)
+  })
+
+  it('seat depth = plumbHeight / tan(pitch)', () => {
+    const bm = birdMouthAtBasePurlin(25)
+    expect(bm.seatDepth).toBeCloseTo(0.03 / Math.tan(25 * DEG), 6)
+  })
+
+  it('steeper pitch → smaller seat depth', () => {
+    expect(birdMouthAtBasePurlin(30).seatDepth).toBeLessThan(birdMouthAtBasePurlin(25).seatDepth)
+  })
+})
+
+describe('birdMouthAtRidgePurlin', () => {
+  it('seat depth is fixed at 5 cm (half of 10 cm ridge purlin)', () => {
+    expect(birdMouthAtRidgePurlin(25).seatDepth).toBeCloseTo(0.05, 6)
+  })
+
+  it('plumb cut is fixed at 3 cm', () => {
+    expect(birdMouthAtRidgePurlin(25).plumbHeight).toBeCloseTo(0.03, 6)
+  })
+
+  it('seat depth does not change with pitch (ridge purlin is fixed geometry)', () => {
+    expect(birdMouthAtRidgePurlin(30).seatDepth).toBeCloseTo(0.05, 6)
+  })
+})
