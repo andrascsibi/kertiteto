@@ -1,12 +1,168 @@
 <!doctype html>
-<html lang="en">
+<html lang="hu">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Kertitető kalkulátor</title>
+    <style>
+      *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+      body {
+        font-family: system-ui, -apple-system, sans-serif;
+        display: flex;
+        height: 100dvh;
+        overflow: hidden;
+        background: #dce8f0;
+      }
+
+      /* ── Sidebar ─────────────────────────────────────────────────────────── */
+      #controls {
+        width: 260px;
+        flex-shrink: 0;
+        padding: 1.5rem 1.25rem;
+        background: #fff;
+        box-shadow: 2px 0 12px rgba(0,0,0,0.12);
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+        z-index: 1;
+      }
+
+      #controls h1 {
+        font-size: 1rem;
+        font-weight: 700;
+        color: #2e1f0f;
+        line-height: 1.4;
+        margin-bottom: 0.25rem;
+      }
+
+      #controls .tagline {
+        font-size: 0.7rem;
+        color: #8a7060;
+        margin-bottom: 1.75rem;
+        font-style: italic;
+      }
+
+      .section-title {
+        font-size: 0.65rem;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: #9a8070;
+        margin: 1.25rem 0 0.75rem;
+      }
+
+      .param {
+        margin-bottom: 1rem;
+      }
+
+      .param label {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        font-size: 0.82rem;
+        color: #4a3828;
+        margin-bottom: 0.3rem;
+      }
+
+      .param .val {
+        font-weight: 600;
+        color: #2e1f0f;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .param input[type="range"] {
+        width: 100%;
+        accent-color: #7a5030;
+        cursor: pointer;
+      }
+
+      /* ── Viewport ────────────────────────────────────────────────────────── */
+      #viewport {
+        flex: 1;
+        position: relative;
+        overflow: hidden;
+      }
+
+      #viewport canvas {
+        display: block;
+        width: 100% !important;
+        height: 100% !important;
+      }
+
+      /* ── Pillar count badge ──────────────────────────────────────────────── */
+      #info {
+        position: absolute;
+        bottom: 1rem;
+        right: 1rem;
+        background: rgba(255,255,255,0.82);
+        backdrop-filter: blur(6px);
+        border-radius: 8px;
+        padding: 0.6rem 0.9rem;
+        font-size: 0.75rem;
+        color: #4a3828;
+        line-height: 1.6;
+        pointer-events: none;
+      }
+
+      #info strong { color: #2e1f0f; }
+    </style>
   </head>
   <body>
-    <div id="app"></div>
+    <aside id="controls">
+      <h1>Kertitető<br>kalkulátor</h1>
+      <p class="tagline">Kézműves minőség, sorozatgyártott áron</p>
+
+      <p class="section-title">Méretek</p>
+
+      <div class="param">
+        <label>
+          <span>Szélesség</span>
+          <span class="val" id="val-width">3.0 m</span>
+        </label>
+        <input type="range" id="inp-width" min="2.0" max="5.0" step="0.1" value="3.0">
+      </div>
+
+      <div class="param">
+        <label>
+          <span>Hosszúság</span>
+          <span class="val" id="val-length">4.0 m</span>
+        </label>
+        <input type="range" id="inp-length" min="2.0" max="7.0" step="0.1" value="4.0">
+      </div>
+
+      <p class="section-title">Tető</p>
+
+      <div class="param">
+        <label>
+          <span>Hajlásszög</span>
+          <span class="val" id="val-pitch">25°</span>
+        </label>
+        <input type="range" id="inp-pitch" min="15" max="45" step="1" value="25">
+      </div>
+
+      <div class="param">
+        <label>
+          <span>Eresznyúlás</span>
+          <span class="val" id="val-eaves">0.50 m</span>
+        </label>
+        <input type="range" id="inp-eaves" min="0.20" max="1.00" step="0.05" value="0.50">
+      </div>
+
+      <div class="param">
+        <label>
+          <span>Oromzat-nyúlás</span>
+          <span class="val" id="val-gable">0.30 m</span>
+        </label>
+        <input type="range" id="inp-gable" min="0.10" max="0.60" step="0.05" value="0.30">
+      </div>
+    </aside>
+
+    <main id="viewport">
+      <div id="info"></div>
+    </main>
+
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
