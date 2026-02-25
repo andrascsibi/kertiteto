@@ -30,7 +30,7 @@
  *     → yRidgePurlinCenter = yRidgePurlinTop - RIDGE_SIZE/2
  */
 
-import type { InputParams, StructureModel, Pillar, Purlin, TieBeam, Rafter } from './types'
+import type { InputParams, StructureModel, Pillar, Purlin, TieBeam, Rafter, RidgeTie } from './types'
 import {
   ridgeHeight,
   rafterLength,
@@ -47,6 +47,10 @@ export const PURLIN_SIZE  = 0.15   // 15×15 cm (TALP SZELEMEN)
 export const RIDGE_SIZE   = 0.10   // 10×10 cm (GERINC SZELEMEN)
 export const RAFTER_WIDTH = 0.075  // 7.5 cm
 export const RAFTER_DEPTH = 0.15   // 15 cm (the tall dimension, perpendicular to rafter axis)
+
+export const RIDGE_TIE_NOTCH = 0.05 // overlap with ridge purlin (m)
+export const RIDGE_TIE_WIDTH = 0.05 // 5 cm (along ridge direction)
+export const RIDGE_TIE_DEPTH = 0.15 // 15 cm (vertical extent)
 
 export const PILLAR_HEIGHT = 2.4   // m (fixed)
 
@@ -159,6 +163,33 @@ export function buildStructure(params: InputParams): StructureModel {
     })
   }
 
+  // ── Ridge ties (KAKASULO) ────────────────────────────────────────────────────
+  // Trapezoid pieces straddling the ridge purlin, in pairs on both sides of each rafter.
+  // Top surface horizontal; sides flush with rafter top surface (parallel to slope).
+  // Gable rafters get a single ridge tie on the inner side only.
+  const yRidgeTieTop    = yRidgePurlinTop - RIDGE_SIZE + RIDGE_TIE_NOTCH
+  const yRidgeTieBottom = yRidgeTieTop - RIDGE_TIE_DEPTH
+  const yRafterTop      = yRafterAtRidge + RAFTER_DEPTH / (2 * cosPitch)
+  const zHalfTop        = (yRafterTop - yRidgeTieTop) / tanPitch
+  const zHalfBottom     = zHalfTop + RIDGE_TIE_DEPTH / tanPitch
+  const xOffset         = RAFTER_WIDTH / 2 + RIDGE_TIE_WIDTH / 2
+
+  const ridgeTies: RidgeTie[] = []
+  for (let i = 0; i < nRafters; i++) {
+    const xRafter = xFirst + i * xSpacing
+    if (i === 0) {
+      // First gable rafter: single tie on inner side (+x)
+      ridgeTies.push({ x: xRafter + xOffset, yTop: yRidgeTieTop, yBottom: yRidgeTieBottom, zHalfTop, zHalfBottom })
+    } else if (i === nRafters - 1) {
+      // Last gable rafter: single tie on inner side (-x)
+      ridgeTies.push({ x: xRafter - xOffset, yTop: yRidgeTieTop, yBottom: yRidgeTieBottom, zHalfTop, zHalfBottom })
+    } else {
+      // Interior rafters: pair on both sides
+      ridgeTies.push({ x: xRafter - xOffset, yTop: yRidgeTieTop, yBottom: yRidgeTieBottom, zHalfTop, zHalfBottom })
+      ridgeTies.push({ x: xRafter + xOffset, yTop: yRidgeTieTop, yBottom: yRidgeTieBottom, zHalfTop, zHalfBottom })
+    }
+  }
+
   return {
     params,
     ridgeHeight: H_ridge,
@@ -167,6 +198,7 @@ export function buildStructure(params: InputParams): StructureModel {
     basePurlins,
     ridgePurlin,
     tieBeams,
+    ridgeTies,
     rafters: [...leftRafters, ...rightRafters],
     rafterSpacing: xSpacing,
   }
@@ -194,7 +226,11 @@ export function computeMetrics(model: StructureModel): StructureMetrics {
   const ridgePurVol = RIDGE_SIZE * RIDGE_SIZE * purlinLength
   const tieBeamVol  = model.tieBeams.length * PURLIN_SIZE * PURLIN_SIZE * tieBeamLength
   const rafterVol   = model.rafters.length * RAFTER_WIDTH * RAFTER_DEPTH * rafterLen
-  const timberVolume = pillarVol + basePurVol + ridgePurVol + tieBeamVol + rafterVol
+  // Ridge tie: trapezoid area × width
+  const ridgeTieVol = model.ridgeTies.length > 0
+    ? model.ridgeTies.length * (model.ridgeTies[0].zHalfTop + model.ridgeTies[0].zHalfBottom) * RIDGE_TIE_DEPTH * RIDGE_TIE_WIDTH
+    : 0
+  const timberVolume = pillarVol + basePurVol + ridgePurVol + tieBeamVol + rafterVol + ridgeTieVol
 
   // Surface (perimeter × length, ignoring ends)
   const pillarSurf   = model.pillars.length * PILLAR_HEIGHT * (4 * PILLAR_SIZE)
@@ -202,7 +238,16 @@ export function computeMetrics(model: StructureModel): StructureMetrics {
   const ridgePurSurf = purlinLength * 2 * (RIDGE_SIZE + RIDGE_SIZE)
   const tieBeamSurf  = model.tieBeams.length * tieBeamLength * 2 * (PURLIN_SIZE + PURLIN_SIZE)
   const rafterSurf   = model.rafters.length * rafterLen * (2 * RAFTER_WIDTH + 2 * RAFTER_DEPTH)
-  const timberSurface = pillarSurf + basePurSurf + ridgePurSurf + tieBeamSurf + rafterSurf
+  // Ridge tie surface: top + bottom + 2 sloped sides (ignoring ends)
+  const cosPitch = Math.cos(model.params.pitch * Math.PI / 180)
+  const ridgeTieSurf = model.ridgeTies.length > 0
+    ? model.ridgeTies.length * RIDGE_TIE_WIDTH * (
+        2 * model.ridgeTies[0].zHalfTop +
+        2 * model.ridgeTies[0].zHalfBottom +
+        2 * RIDGE_TIE_DEPTH / cosPitch
+      )
+    : 0
+  const timberSurface = pillarSurf + basePurSurf + ridgePurSurf + tieBeamSurf + rafterSurf + ridgeTieSurf
 
   // Roof surface: 2 slopes × rafter length × purlin run
   const roofSurface = 2 * rafterLen * purlinLength

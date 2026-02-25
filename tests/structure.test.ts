@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { buildStructure, PILLAR_HEIGHT, PILLAR_SIZE, PURLIN_SIZE, RIDGE_SIZE, RAFTER_WIDTH, RAFTER_DEPTH } from '../src/model/structure'
+import { buildStructure, PILLAR_HEIGHT, PILLAR_SIZE, PURLIN_SIZE, RIDGE_SIZE, RAFTER_WIDTH, RAFTER_DEPTH, RIDGE_TIE_NOTCH, RIDGE_TIE_DEPTH, RIDGE_TIE_WIDTH } from '../src/model/structure'
 import { ridgeHeight, BIRD_MOUTH_PLUMB_HEIGHT, MAX_RAFTER_SPACING } from '../src/model/geometry'
 import type { InputParams } from '../src/model/types'
 
@@ -327,6 +327,96 @@ describe('rafter bird mouths', () => {
     const m = buildStructure(base)
     for (const r of m.rafters) {
       expect(r.birdMouthRidge.distanceFromEave).toBeGreaterThan(r.birdMouthBase.distanceFromEave)
+    }
+  })
+})
+
+describe('ridge ties (KAKASULO)', () => {
+  it('count = 2 * nRafters - 2 (pairs per interior rafter, singles at gable ends)', () => {
+    const m = buildStructure(base)
+    const raftersPerSlope = m.rafters.length / 2
+    expect(m.ridgeTies.length).toBe(2 * raftersPerSlope - 2)
+  })
+
+  it('count scales with length', () => {
+    expect(buildStructure({ ...base, length: 3 }).ridgeTies.length).toBeGreaterThanOrEqual(2)
+    expect(buildStructure({ ...base, length: 10 }).ridgeTies.length).toBeGreaterThan(
+      buildStructure({ ...base, length: 3 }).ridgeTies.length
+    )
+  })
+
+  it('gable rafters get single tie on inner side, interior rafters get pairs', () => {
+    const m = buildStructure(base)
+    const raftersPerSlope = m.rafters.length / 2
+    const xOffset = RAFTER_WIDTH / 2 + RIDGE_TIE_WIDTH / 2
+    const rafterXs = m.rafters.slice(0, raftersPerSlope).map(r => r.eaveEnd.x)
+    const tieXs = m.ridgeTies.map(rt => rt.x).sort((a, b) => a - b)
+
+    // First gable rafter: single tie on +x (inner) side
+    expect(tieXs[0]).toBeCloseTo(rafterXs[0] + xOffset, 6)
+    // Last gable rafter: single tie on -x (inner) side
+    expect(tieXs[tieXs.length - 1]).toBeCloseTo(rafterXs[raftersPerSlope - 1] - xOffset, 6)
+
+    // Interior rafters: two ties each, offset ±xOffset
+    for (let i = 1; i < raftersPerSlope - 1; i++) {
+      expect(tieXs).toEqual(
+        expect.arrayContaining([
+          expect.closeTo(rafterXs[i] - xOffset, 6),
+          expect.closeTo(rafterXs[i] + xOffset, 6),
+        ])
+      )
+    }
+  })
+
+  it('yTop = yRidgePurlinTop - RIDGE_SIZE + RIDGE_TIE_NOTCH', () => {
+    const m = buildStructure(base)
+    const yRidgePurlinTop = m.ridgePurlin.start.y + RIDGE_SIZE / 2
+    const expectedYTop = yRidgePurlinTop - RIDGE_SIZE + RIDGE_TIE_NOTCH
+    for (const rt of m.ridgeTies) {
+      expect(rt.yTop).toBeCloseTo(expectedYTop, 6)
+    }
+  })
+
+  it('yBottom = yTop - RIDGE_TIE_DEPTH', () => {
+    const m = buildStructure(base)
+    for (const rt of m.ridgeTies) {
+      expect(rt.yBottom).toBeCloseTo(rt.yTop - RIDGE_TIE_DEPTH, 6)
+    }
+  })
+
+  it('zHalfBottom > zHalfTop (trapezoid widens downward)', () => {
+    const m = buildStructure(base)
+    for (const rt of m.ridgeTies) {
+      expect(rt.zHalfBottom).toBeGreaterThan(rt.zHalfTop)
+    }
+  })
+
+  it('sides are flush with rafter top face (geometric invariant)', () => {
+    // The rafter top face at the ridge: yRafterTop = yRafterAtRidge + RAFTER_DEPTH/(2*cos(pitch))
+    // At any z from ridge, rafter top y = yRafterTop - |z| * tan(pitch)
+    // Ridge tie side at yTop:  z = (yRafterTop - yTop) / tan(pitch) = zHalfTop
+    // Ridge tie side at yBottom: z = (yRafterTop - yBottom) / tan(pitch) = zHalfBottom
+    const pitch = 25
+    const m = buildStructure({ ...base, pitch })
+    const cosPitch = Math.cos(pitch * DEG)
+    const tanPitch = Math.tan(pitch * DEG)
+    const yRafterAtRidge = m.rafters[0].ridgeEnd.y
+    const yRafterTop = yRafterAtRidge + RAFTER_DEPTH / (2 * cosPitch)
+    for (const rt of m.ridgeTies) {
+      expect(rt.zHalfTop).toBeCloseTo((yRafterTop - rt.yTop) / tanPitch, 6)
+      expect(rt.zHalfBottom).toBeCloseTo((yRafterTop - rt.yBottom) / tanPitch, 6)
+    }
+  })
+
+  it('works across different pitch angles', () => {
+    for (const pitch of [15, 25, 35, 45]) {
+      const m = buildStructure({ ...base, pitch })
+      expect(m.ridgeTies.length).toBeGreaterThanOrEqual(2)
+      for (const rt of m.ridgeTies) {
+        expect(rt.zHalfTop).toBeGreaterThan(0)
+        expect(rt.zHalfBottom).toBeGreaterThan(rt.zHalfTop)
+        expect(rt.yBottom).toBeLessThan(rt.yTop)
+      }
     }
   })
 })

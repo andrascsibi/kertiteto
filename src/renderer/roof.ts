@@ -3,8 +3,8 @@
  */
 
 import * as THREE from 'three'
-import type { StructureModel, Pillar, Purlin, TieBeam, Rafter } from '../model/types'
-import { PILLAR_SIZE, PURLIN_SIZE, RAFTER_WIDTH, RAFTER_DEPTH } from '../model/structure'
+import type { StructureModel, Pillar, Purlin, TieBeam, Rafter, RidgeTie } from '../model/types'
+import { PILLAR_SIZE, PURLIN_SIZE, RAFTER_WIDTH, RAFTER_DEPTH, RIDGE_TIE_WIDTH } from '../model/structure'
 import { EAVE_PLUMB_HEIGHT } from '../model/geometry'
 
 const MAT: Record<string, THREE.MeshLambertMaterial> = {
@@ -20,6 +20,7 @@ export function buildRoofMeshes(model: StructureModel): THREE.Group {
   for (const p of model.basePurlins)  group.add(purlinMesh(p))
   for (const tb of model.tieBeams)    group.add(tieBeamMesh(tb))
   for (const r of model.rafters)      group.add(rafterMesh(r, model.params.pitch))
+  for (const rt of model.ridgeTies)   group.add(ridgeTieMesh(rt))
   group.add(purlinMesh(model.ridgePurlin))
 
   return group
@@ -157,6 +158,58 @@ function rafterMesh(r: Rafter, pitchDeg: number): THREE.Mesh {
   geo.computeVertexNormals()
 
   const mesh = new THREE.Mesh(geo, MAT.rafter)
+  mesh.castShadow = true
+  mesh.receiveShadow = true
+  return mesh
+}
+
+/**
+ * Trapezoid prism geometry for a ridge tie (KAKASULO).
+ *
+ * 8 vertices, 6 faces. Top is horizontal (narrower), bottom is wider.
+ * Sides slope at the pitch angle, flush with the rafter bottom faces.
+ *
+ * Vertex layout (looking along -X):
+ *
+ *      0,1 ─────────── 2,3         ← yTop
+ *       /                 \
+ *      /                   \
+ *    4,5 ─────────────── 6,7       ← yBottom
+ *
+ *  0,4: x - w/2    1,5: x + w/2
+ *  0,1: -zHalfTop  2,3: +zHalfTop
+ *  4,5: -zHalfBottom  6,7: +zHalfBottom
+ */
+function ridgeTieMesh(rt: RidgeTie): THREE.Mesh {
+  const w = RIDGE_TIE_WIDTH
+
+  const pos = new Float32Array([
+    rt.x - w/2, rt.yTop,    -rt.zHalfTop,      // 0 top-left-near
+    rt.x + w/2, rt.yTop,    -rt.zHalfTop,      // 1 top-right-near
+    rt.x - w/2, rt.yTop,    +rt.zHalfTop,      // 2 top-left-far
+    rt.x + w/2, rt.yTop,    +rt.zHalfTop,      // 3 top-right-far
+    rt.x - w/2, rt.yBottom, -rt.zHalfBottom,    // 4 bot-left-near
+    rt.x + w/2, rt.yBottom, -rt.zHalfBottom,    // 5 bot-right-near
+    rt.x - w/2, rt.yBottom, +rt.zHalfBottom,    // 6 bot-left-far
+    rt.x + w/2, rt.yBottom, +rt.zHalfBottom,    // 7 bot-right-far
+  ])
+
+  // CCW winding from outside
+  const tris = [
+    0, 2, 3,  0, 3, 1,   // top face (y = yTop, normal up)
+    4, 5, 7,  4, 7, 6,   // bottom face (y = yBottom, normal down)
+    0, 1, 5,  0, 5, 4,   // front face (-z side, normal -z)
+    2, 6, 7,  2, 7, 3,   // back face (+z side, normal +z)
+    0, 4, 6,  0, 6, 2,   // left face (-x end)
+    1, 3, 7,  1, 7, 5,   // right face (+x end)
+  ]
+
+  const geo = new THREE.BufferGeometry()
+  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3))
+  geo.setIndex(tris)
+  geo.computeVertexNormals()
+
+  const mesh = new THREE.Mesh(geo, MAT.purlin)
   mesh.castShadow = true
   mesh.receiveShadow = true
   return mesh

@@ -62,6 +62,19 @@ export interface Rafter {
   length: number
 }
 
+export interface RidgeTie {
+  /** KAKASULO: center x position along ridge */
+  x: number
+  /** Top y of the horizontal surface */
+  yTop: number
+  /** Bottom y (= yTop - RIDGE_TIE_DEPTH) */
+  yBottom: number
+  /** Half-width at top in z (narrower) */
+  zHalfTop: number
+  /** Half-width at bottom in z (wider, sides slope at pitch) */
+  zHalfBottom: number
+}
+
 export interface StructureModel {
   params: InputParams
   /** Ridge height above pillar top (m) */
@@ -75,6 +88,8 @@ export interface StructureModel {
   ridgePurlin: Purlin
   /** Tie beams (KOTOGERENDA) */
   tieBeams: TieBeam[]
+  /** Ridge ties (KAKASULO / KISFOGOPAR) */
+  ridgeTies: RidgeTie[]
   /** All rafters, left slope then right slope */
   rafters: Rafter[]
   /** Rafter spacing along ridge (m) */
