@@ -19,8 +19,13 @@
  *     → y_centerline_at_base = yBasePurlinTop + BIRD_MOUTH_PLUMB_HEIGHT + RAFTER_DEPTH/2 * cos(pitch)
  *
  *   Ridge purlin (GERINC SZELEMEN) sits BELOW the rafters (Hungarian style).
- *   The same derivation at the ridge gives:
- *     yRidgePurlinCenter = yBasePurlinTop + ridgeHeight - RIDGE_SIZE/2
+ *   Bird line (KARMI VONAL): the line connecting the innermost seat-cut corners
+ *   of both bird mouths runs at exactly the pitch angle.
+ *     base seat corner:  z = ±width/2,     y = yBasePurlinTop
+ *     ridge seat corner: z = ±RIDGE_SIZE/2, y = yRidgePurlinTop
+ *     horizontal run = (width - RIDGE_SIZE) / 2
+ *     → yRidgePurlinTop = yBasePurlinTop + ridgeHeight(width - RIDGE_SIZE, pitch)
+ *     → yRidgePurlinCenter = yRidgePurlinTop - RIDGE_SIZE/2
  */
 
 import type { InputParams, StructureModel, Pillar, Purlin, TieBeam, Rafter } from './types'
@@ -63,9 +68,10 @@ export function buildStructure(params: InputParams): StructureModel {
   const yPurlinCenter = PILLAR_HEIGHT + PURLIN_SIZE / 2
   const yBasePurlinTop    = PILLAR_HEIGHT + PURLIN_SIZE
 
-  // Ridge purlin center: sits below rafters (Hungarian style).
-  // Derived from bird mouth geometry; see module comment.
-  const yRidgePurlinCenter = yBasePurlinTop + H_ridge - RIDGE_SIZE / 2
+  // Ridge purlin top: bird line (KARMI VONAL) from base seat corner to ridge seat corner
+  // has exactly the pitch angle; horizontal run = (width - RIDGE_SIZE) / 2.
+  const yRidgePurlinTop    = yBasePurlinTop + ridgeHeight(width - RIDGE_SIZE, pitch)
+  const yRidgePurlinCenter = yRidgePurlinTop - RIDGE_SIZE / 2
 
   // Rafter centerline vertical offset above bearing surface.
   // The centerline at z = ±width/2 is offset up from yBasePurlinTop by this amount.

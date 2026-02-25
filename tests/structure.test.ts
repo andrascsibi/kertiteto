@@ -102,10 +102,11 @@ describe('ridge purlin', () => {
     expect(m.ridgePurlin.end.z).toBeCloseTo(0, 6)
   })
 
-  it('center at y = pillarHeight + PURLIN_SIZE + ridgeHeight - RIDGE_SIZE/2 (sits below rafters)', () => {
+  it('center at y = yBasePurlinTop + ridgeHeight(width - RIDGE_SIZE, pitch) - RIDGE_SIZE/2 (bird-line geometry)', () => {
     const W = 4, pitch = 25
     const m = buildStructure({ ...base, width: W, pitch })
-    const expectedY = PILLAR_HEIGHT + PURLIN_SIZE + ridgeHeight(W, pitch) - RIDGE_SIZE / 2
+    const yBasePurlinTop = PILLAR_HEIGHT + PURLIN_SIZE
+    const expectedY = yBasePurlinTop + ridgeHeight(W - RIDGE_SIZE, pitch) - RIDGE_SIZE / 2
     expect(m.ridgePurlin.start.y).toBeCloseTo(expectedY, 6)
   })
 
@@ -238,6 +239,35 @@ describe('rafters — vertical placement and slope', () => {
     for (const r of m.rafters.slice(0, m.rafters.length / 2)) {
       const yAtBase = r.eaveEnd.y + E * tanPitch
       expect(yAtBase).toBeCloseTo(expectedY, 6)
+    }
+  })
+
+  it('base bird mouth seat sits exactly at yBasePurlinTop (invariant)', () => {
+    // y_centerline at z=±width/2 minus rafterYOffset must equal yBasePurlinTop
+    const pitch = 25, W = 3, E = 0.5
+    const cosPitch = Math.cos(pitch * DEG)
+    const tanPitch = Math.tan(pitch * DEG)
+    const rafterYOffset = BIRD_MOUTH_PLUMB_HEIGHT + RAFTER_DEPTH / (2 * cosPitch)
+    const yBasePurlinTop = PILLAR_HEIGHT + PURLIN_SIZE
+    const m = buildStructure({ ...base, width: W, pitch, eavesOverhang: E })
+    for (const r of m.rafters.slice(0, m.rafters.length / 2)) {
+      const yAtBase = r.eaveEnd.y + E * tanPitch
+      expect(yAtBase - rafterYOffset).toBeCloseTo(yBasePurlinTop, 6)
+    }
+  })
+
+  it('ridge bird mouth seat sits exactly at yRidgePurlinTop (invariant)', () => {
+    // y_centerline at z=±RIDGE_SIZE/2 minus rafterYOffset must equal ridgePurlin.y + RIDGE_SIZE/2
+    const pitch = 25, W = 3
+    const cosPitch = Math.cos(pitch * DEG)
+    const tanPitch = Math.tan(pitch * DEG)
+    const rafterYOffset = BIRD_MOUTH_PLUMB_HEIGHT + RAFTER_DEPTH / (2 * cosPitch)
+    const m = buildStructure({ ...base, width: W, pitch })
+    const yRidgePurlinTop = m.ridgePurlin.start.y + RIDGE_SIZE / 2
+    for (const r of m.rafters) {
+      // At z = ±RIDGE_SIZE/2, the rafter centerline is ridgeEnd.y minus RIDGE_SIZE/2 * tan(pitch)
+      const yAtPlumb = r.ridgeEnd.y - (RIDGE_SIZE / 2) * tanPitch
+      expect(yAtPlumb - rafterYOffset).toBeCloseTo(yRidgePurlinTop, 6)
     }
   })
 
