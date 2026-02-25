@@ -228,12 +228,14 @@ function makeTieBeam(x: number, y: number, zHalf: number): TieBeam {
   }
 }
 
-function buildPillars(width: number, length: number, nPillars: 4 | 6): Pillar[] {
+function buildPillars(width: number, length: number, nPillars: number): Pillar[] {
   const xHalf = length / 2 - PILLAR_SIZE / 2
   const zHalf = width  / 2 - PILLAR_SIZE / 2
-  const xPositions = nPillars === 4
-    ? [-xHalf, +xHalf]
-    : [-xHalf, 0, +xHalf]
+  const rows = nPillars / 2
+  const xPositions: number[] = []
+  for (let i = 0; i < rows; i++) {
+    xPositions.push(-xHalf + i * (2 * xHalf) / (rows - 1))
+  }
 
   const pillars: Pillar[] = []
   for (const x of xPositions) {

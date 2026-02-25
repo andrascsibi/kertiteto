@@ -45,11 +45,14 @@ export function rafterLength(width: number, pitchDeg: number, eavesOverhang: num
 }
 
 /**
- * Number of pillars.
- * 4 pillars for length <= 3.5m, 6 for > 3.5m (up to 7m max).
+ * Number of pillars (always even: 2 per row).
+ * Rows are spaced so that the unsupported span between adjacent inner faces
+ * never exceeds MAX_UNSUPPORTED_SPAN. Same logic as rafterCount but for pillars.
  */
-export function pillarCount(length: number): 4 | 6 {
-  return length - 2 * PILLAR_SIZE <= MAX_UNSUPPORTED_SPAN ? 4 : 6
+export function pillarCount(length: number): number {
+  const innerSpan = length - 2 * PILLAR_SIZE
+  const bays = Math.ceil(innerSpan / MAX_UNSUPPORTED_SPAN)
+  return (bays + 1) * 2
 }
 
 /**

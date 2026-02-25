@@ -37,16 +37,37 @@ describe('rafterLength', () => {
 })
 
 describe('pillarCount', () => {
-  const threshold = MAX_UNSUPPORTED_SPAN + 2 * PILLAR_SIZE  // 3.8m
+  // innerSpan = length - 2 * PILLAR_SIZE
+  // bays = ceil(innerSpan / MAX_UNSUPPORTED_SPAN)
+  // pillarRows = bays + 1, total = pillarRows * 2
 
-  it('4 pillars when unsupported span <= MAX_UNSUPPORTED_SPAN', () => {
-    expect(pillarCount(threshold)).toBe(4)
+  it('minimum 4 pillars (2 rows) for short structures', () => {
     expect(pillarCount(2.0)).toBe(4)
+    expect(pillarCount(MAX_UNSUPPORTED_SPAN + 2 * PILLAR_SIZE)).toBe(4)
   })
 
-  it('6 pillars when unsupported span > MAX_UNSUPPORTED_SPAN', () => {
-    expect(pillarCount(threshold + 0.01)).toBe(6)
-    expect(pillarCount(7.0)).toBe(6)
+  it('6 pillars (3 rows) when one intermediate row is needed', () => {
+    expect(pillarCount(MAX_UNSUPPORTED_SPAN + 2 * PILLAR_SIZE + 0.01)).toBe(6)
+    expect(pillarCount(2 * MAX_UNSUPPORTED_SPAN + 2 * PILLAR_SIZE)).toBe(6)
+  })
+
+  it('8 pillars (4 rows) when two intermediate rows are needed', () => {
+    expect(pillarCount(2 * MAX_UNSUPPORTED_SPAN + 2 * PILLAR_SIZE + 0.01)).toBe(8)
+    expect(pillarCount(3 * MAX_UNSUPPORTED_SPAN + 2 * PILLAR_SIZE)).toBe(8)
+  })
+
+  it('scales to 20m structures', () => {
+    // innerSpan = 20 - 0.3 = 19.7, bays = ceil(19.7/3.5) = 6, rows = 7
+    expect(pillarCount(20)).toBe(14)
+  })
+
+  it('unsupported span never exceeds MAX_UNSUPPORTED_SPAN', () => {
+    for (const L of [2, 3, 4, 5, 7, 10, 15, 20]) {
+      const rows = pillarCount(L) / 2
+      const innerSpan = L - 2 * PILLAR_SIZE
+      const actualSpan = innerSpan / (rows - 1)
+      expect(actualSpan).toBeLessThanOrEqual(MAX_UNSUPPORTED_SPAN + 1e-9)
+    }
   })
 })
 
