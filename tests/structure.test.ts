@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { buildStructure, PILLAR_HEIGHT, PILLAR_SIZE, PURLIN_SIZE, RIDGE_SIZE, RAFTER_WIDTH, RAFTER_DEPTH, RIDGE_TIE_NOTCH, RIDGE_TIE_DEPTH, RIDGE_TIE_WIDTH } from '../src/model/structure'
-import { ridgeHeight, BIRD_MOUTH_PLUMB_HEIGHT, MAX_RAFTER_SPACING } from '../src/model/geometry'
+import { ridgeHeight, BIRD_MOUTH_PLUMB_HEIGHT, MAX_RAFTER_SPACING, MAX_UNSUPPORTED_SPAN } from '../src/model/geometry'
 import type { InputParams } from '../src/model/types'
 
 // Coordinate system:
@@ -26,17 +26,17 @@ function expectedRafterCount(params: InputParams): number {
 }
 
 describe('pillars', () => {
-  it('4 pillars for short structures', () => {
-    expect(buildStructure({ ...base, length: 3 }).pillars.length).toBe(4)
+  it('4 pillars for short narrow structures', () => {
+    expect(buildStructure({ ...base, length: 3, width: 3 }).pillars.length).toBe(4)
   })
 
   it('6 pillars when one intermediate row is needed', () => {
-    expect(buildStructure({ ...base, length: 5 }).pillars.length).toBe(6)
+    expect(buildStructure({ ...base, length: 5, width: 3 }).pillars.length).toBe(6)
   })
 
   it('scales for long structures', () => {
-    expect(buildStructure({ ...base, length: 10 }).pillars.length).toBe(8)
-    expect(buildStructure({ ...base, length: 20 }).pillars.length).toBe(14)
+    expect(buildStructure({ ...base, length: 10, width: 3 }).pillars.length).toBe(8)
+    expect(buildStructure({ ...base, length: 20, width: 3 }).pillars.length).toBe(14)
   })
 
   it('corner pillar centers inset by PILLAR_SIZE/2 from outer edges', () => {
@@ -57,11 +57,38 @@ describe('pillars', () => {
   })
 
   it('middle pillars at x=0 for 6-pillar structure', () => {
-    const m = buildStructure({ ...base, length: 5 })
+    const m = buildStructure({ ...base, length: 5, width: 3 })
     const mid = m.pillars.filter(p => Math.abs(p.base.x) < 1e-9)
     expect(mid.length).toBe(2)
     expect(mid.some(p => p.base.z < 0)).toBe(true)
     expect(mid.some(p => p.base.z > 0)).toBe(true)
+  })
+
+  it('no center pillars when tie beam span <= MAX_UNSUPPORTED_SPAN', () => {
+    const W = MAX_UNSUPPORTED_SPAN + 2 * PILLAR_SIZE  // inner span exactly at limit
+    const m = buildStructure({ ...base, width: W, length: 3 })
+    const centerPillars = m.pillars.filter(p => Math.abs(p.base.z) < 1e-9)
+    expect(centerPillars.length).toBe(0)
+  })
+
+  it('center pillars at z=0 for corner rows when width > MAX_UNSUPPORTED_SPAN + 2*PILLAR_SIZE', () => {
+    const W = MAX_UNSUPPORTED_SPAN + 2 * PILLAR_SIZE + 0.01
+    const m = buildStructure({ ...base, width: W, length: 3 })
+    const centerPillars = m.pillars.filter(p => Math.abs(p.base.z) < 1e-9)
+    // 2 rows (corners) × 1 center pillar each = 2
+    expect(centerPillars.length).toBe(2)
+  })
+
+  it('center pillars only at corner rows, not intermediate rows', () => {
+    const W = MAX_UNSUPPORTED_SPAN + 2 * PILLAR_SIZE + 0.01
+    const m = buildStructure({ ...base, width: W, length: 5 })  // 3 rows
+    const centerPillars = m.pillars.filter(p => Math.abs(p.base.z) < 1e-9)
+    // Only 2 corner rows get center pillars, not the middle row
+    expect(centerPillars.length).toBe(2)
+    const cornerX = 5 / 2 - PILLAR_SIZE / 2
+    for (const cp of centerPillars) {
+      expect(Math.abs(Math.abs(cp.base.x) - cornerX)).toBeLessThan(1e-9)
+    }
   })
 
   it('all pillars base at y=0 with correct height', () => {

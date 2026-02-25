@@ -38,6 +38,7 @@ import {
   birdMouthAtBasePurlin,
   birdMouthAtRidgePurlin,
   MAX_RAFTER_SPACING,
+  MAX_UNSUPPORTED_SPAN,
   BIRD_MOUTH_PLUMB_HEIGHT,
 } from './geometry'
 
@@ -284,10 +285,17 @@ function buildPillarXPositions(length: number, nPillars: number): number[] {
 
 function buildPillars(width: number, xPositions: number[]): Pillar[] {
   const zHalf = width / 2 - PILLAR_SIZE / 2
+  const innerSpan = width - 2 * PILLAR_SIZE
+  const needsCenterPillar = innerSpan > MAX_UNSUPPORTED_SPAN
   const pillars: Pillar[] = []
-  for (const x of xPositions) {
+  for (let i = 0; i < xPositions.length; i++) {
+    const x = xPositions[i]
     for (const z of [-zHalf, +zHalf]) {
       pillars.push({ base: { x, y: 0, z }, height: PILLAR_HEIGHT })
+    }
+    // Center pillar at z=0 for corner (end) rows only
+    if (needsCenterPillar && (i === 0 || i === xPositions.length - 1)) {
+      pillars.push({ base: { x, y: 0, z: 0 }, height: PILLAR_HEIGHT })
     }
   }
   return pillars
