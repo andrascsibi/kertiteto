@@ -2,11 +2,27 @@ import { buildStructure, computeMetrics, DEFAULTS } from './model/structure'
 import { pillarCount, rafterCount } from './model/geometry'
 import { createScene } from './renderer/scene'
 
+// ── Hash params ──────────────────────────────────────────────────────────────
+function parseHash(): Record<string, string> {
+  const pairs: Record<string, string> = {}
+  for (const part of window.location.hash.replace('#', '').split('&')) {
+    const [k, v] = part.split('=')
+    if (k && v) pairs[k] = v
+  }
+  return pairs
+}
+
+const hashParams = parseHash()
+function hashFloat(key: string, fallback: number): number {
+  const v = parseFloat(hashParams[key])
+  return Number.isFinite(v) ? v : fallback
+}
+
 // ── DOM refs ───────────────────────────────────────────────────────────────────
 const viewport = document.getElementById('viewport')!
 const info     = document.getElementById('info')!
 const debug    = document.getElementById('debug')!
-const devMode  = window.location.hash.includes('dev=true')
+const devMode  = hashParams['dev'] === 'true'
 if (devMode) debug.style.display = 'block'
 
 const inpWidth  = document.getElementById('inp-width')  as HTMLInputElement
@@ -68,10 +84,10 @@ for (const inp of [inpWidth, inpLength, inpPitch, inpEaves, inpGable]) {
   inp.addEventListener('input', update)
 }
 
-// ── Initial render with defaults ───────────────────────────────────────────────
-inpWidth.value  = String(DEFAULTS.width)
-inpLength.value = String(DEFAULTS.length)
-inpPitch.value  = String(DEFAULTS.pitch)
-inpEaves.value  = String(DEFAULTS.eavesOverhang)
-inpGable.value  = String(DEFAULTS.gableOverhang)
+// ── Initial values from hash params or defaults ─────────────────────────────
+inpWidth.value  = String(hashFloat('w', DEFAULTS.width))
+inpLength.value = String(hashFloat('h', DEFAULTS.length))
+inpPitch.value  = String(hashFloat('p', DEFAULTS.pitch))
+inpEaves.value  = String(hashFloat('e', DEFAULTS.eavesOverhang))
+inpGable.value  = String(hashFloat('g', DEFAULTS.gableOverhang))
 update()
