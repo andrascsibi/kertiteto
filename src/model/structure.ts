@@ -166,6 +166,44 @@ export function buildStructure(params: InputParams): StructureModel {
   }
 }
 
+// ── Derived metrics ──────────────────────────────────────────────────────────
+
+export interface StructureMetrics {
+  /** Total timber volume (m³) */
+  timberVolume: number
+  /** Total timber surface for treatment, ignoring ends (m²) */
+  timberSurface: number
+  /** Total roof surface, both slopes (m²) */
+  roofSurface: number
+}
+
+export function computeMetrics(model: StructureModel): StructureMetrics {
+  const purlinLength = Math.abs(model.basePurlins[0].end.x - model.basePurlins[0].start.x)
+  const tieBeamLength = Math.abs(model.tieBeams[0].end.z - model.tieBeams[0].start.z)
+  const rafterLen = model.rafters[0].length
+
+  // Volume
+  const pillarVol   = model.pillars.length * PILLAR_SIZE * PILLAR_SIZE * PILLAR_HEIGHT
+  const basePurVol  = 2 * PURLIN_SIZE * PURLIN_SIZE * purlinLength
+  const ridgePurVol = RIDGE_SIZE * RIDGE_SIZE * purlinLength
+  const tieBeamVol  = model.tieBeams.length * PURLIN_SIZE * PURLIN_SIZE * tieBeamLength
+  const rafterVol   = model.rafters.length * RAFTER_WIDTH * RAFTER_DEPTH * rafterLen
+  const timberVolume = pillarVol + basePurVol + ridgePurVol + tieBeamVol + rafterVol
+
+  // Surface (perimeter × length, ignoring ends)
+  const pillarSurf   = model.pillars.length * PILLAR_HEIGHT * (4 * PILLAR_SIZE)
+  const basePurSurf  = 2 * purlinLength * 2 * (PURLIN_SIZE + PURLIN_SIZE)
+  const ridgePurSurf = purlinLength * 2 * (RIDGE_SIZE + RIDGE_SIZE)
+  const tieBeamSurf  = model.tieBeams.length * tieBeamLength * 2 * (PURLIN_SIZE + PURLIN_SIZE)
+  const rafterSurf   = model.rafters.length * rafterLen * (2 * RAFTER_WIDTH + 2 * RAFTER_DEPTH)
+  const timberSurface = pillarSurf + basePurSurf + ridgePurSurf + tieBeamSurf + rafterSurf
+
+  // Roof surface: 2 slopes × rafter length × purlin run
+  const roofSurface = 2 * rafterLen * purlinLength
+
+  return { timberVolume, timberSurface, roofSurface }
+}
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function makePurlin(xMin: number, xMax: number, y: number, z: number, size: number): Purlin {

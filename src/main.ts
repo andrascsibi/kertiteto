@@ -1,10 +1,13 @@
-import { buildStructure, DEFAULTS } from './model/structure'
+import { buildStructure, computeMetrics, DEFAULTS } from './model/structure'
 import { pillarCount, rafterCount } from './model/geometry'
 import { createScene } from './renderer/scene'
 
 // ── DOM refs ───────────────────────────────────────────────────────────────────
 const viewport = document.getElementById('viewport')!
 const info     = document.getElementById('info')!
+const debug    = document.getElementById('debug')!
+const devMode  = window.location.hash.includes('dev=true')
+if (devMode) debug.style.display = 'block'
 
 const inpWidth  = document.getElementById('inp-width')  as HTMLInputElement
 const inpLength = document.getElementById('inp-length') as HTMLInputElement
@@ -48,6 +51,15 @@ function update(): void {
     `<strong>${params.width.toFixed(1)} × ${params.length.toFixed(1)} m</strong> · ${params.pitch}°<br>` +
     `${nPillars} oszlop · ${nRafters * 2} szarufa<br>` +
     `gerincmagasság: ${model.ridgeHeight.toFixed(2)} m`
+
+  // Debug panel
+  if (devMode) {
+    const m = computeMetrics(model)
+    debug.innerHTML =
+      `faanyag: ${m.timberVolume.toFixed(2)} m³<br>` +
+      `felület: ${m.timberSurface.toFixed(1)} m²<br>` +
+      `tető: ${m.roofSurface.toFixed(1)} m²`
+  }
 }
 
 // ── Wire up sliders ────────────────────────────────────────────────────────────
