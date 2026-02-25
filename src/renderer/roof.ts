@@ -7,10 +7,15 @@ import type { StructureModel, Pillar, Purlin, TieBeam, Rafter, RidgeTie } from '
 import { PILLAR_SIZE, PURLIN_SIZE, RAFTER_WIDTH, RAFTER_DEPTH, RIDGE_TIE_WIDTH } from '../model/structure'
 import { EAVE_PLUMB_HEIGHT } from '../model/geometry'
 
+const COLOR = '#0c83fa' 
+
 const MAT: Record<string, THREE.MeshLambertMaterial> = {
-  pillar:  new THREE.MeshLambertMaterial({ color: 0x5a3a1a }),
-  purlin:  new THREE.MeshLambertMaterial({ color: 0x7a5030 }),
-  rafter:  new THREE.MeshLambertMaterial({ color: 0x9b6840 }),
+// pillar:  new THREE.MeshLambertMaterial({ color: 0x5a3a1a }),
+// purlin:  new THREE.MeshLambertMaterial({ color: 0x7a5030 }),
+// rafter:  new THREE.MeshLambertMaterial({ color: 0x9b6840 }),
+  pillar:  new THREE.MeshLambertMaterial({ color: COLOR }),
+  purlin:  new THREE.MeshLambertMaterial({ color: COLOR }),
+  rafter:  new THREE.MeshLambertMaterial({ color: COLOR }),
 }
 
 export function buildRoofMeshes(model: StructureModel): THREE.Group {
