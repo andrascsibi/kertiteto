@@ -79,13 +79,13 @@ function tieBeamMesh(tb: TieBeam): THREE.Mesh {
  * "top" = outward face (facing sky), "bot" = inward face (facing ground/interior)
  * "left/right" = along the longitudinal (X) axis of the structure.
  *
- * n_out (outward perpendicular to rafter surface in YZ plane):
- *   left slope:  (0,  cos P, -sin P)
- *   right slope: (0,  cos P, +sin P)
+ * Both ends use a vertical (plumb) cut. Intersecting the inclined top/bottom
+ * rafter edges with any vertical plane z = z₀ gives:
+ *   top y at z₀    = centerlineY + RAFTER_DEPTH / (2·cos P)
+ *   bottom y at z₀ = centerlineY - RAFTER_DEPTH / (2·cos P)
  *
- * Ridge vertical cut: intersect top/bottom rafter edges with plane z = 0.
- *   top y at z=0    = ridgeEnd.y + RAFTER_DEPTH / (2·cos P)
- *   bottom y at z=0 = ridgeEnd.y - RAFTER_DEPTH / (2·cos P)
+ * Eave vertical cut at z = eaveEnd.z,  centerlineY = eaveEnd.y
+ * Ridge vertical cut at z = 0,         centerlineY = ridgeEnd.y
  *
  * Winding: CCW from outside for the left slope.
  * Right slope is a z-mirror of left slope → flip all triangle windings.
@@ -93,36 +93,29 @@ function tieBeamMesh(tb: TieBeam): THREE.Mesh {
 function rafterMesh(r: Rafter, pitchDeg: number): THREE.Mesh {
   const DEG = Math.PI / 180
   const cosP = Math.cos(pitchDeg * DEG)
-  const sinP = Math.sin(pitchDeg * DEG)
   const isLeft = r.eaveEnd.z < 0
 
   const rw = RAFTER_WIDTH  // 0.075 m
   const rd = RAFTER_DEPTH  // 0.15  m
   const x  = r.eaveEnd.x  // same for both ends
 
-  // n_out z-component: away from ridge centre
-  const nz = isLeft ? -sinP : sinP
-
-  // ── Eave end (perpendicular cut) ──────────────────────────────────────────
+  // ── Eave end (vertical / plumb cut at z = eaveEnd.z) ─────────────────────
   const ze  = r.eaveEnd.z
   const ye  = r.eaveEnd.y
-  const ety = ye + rd / 2 * cosP   // eave top y
-  const etz = ze + rd / 2 * nz     // eave top z
-  const eby = ye - rd / 2 * cosP   // eave bot y
-  const ebz = ze - rd / 2 * nz     // eave bot z
+  const ety = ye + rd / (2 * cosP) // eave top y
+  const eby = ye - rd / (2 * cosP) // eave bot y
 
-  // ── Ridge end (vertical / plumb cut at z = 0) ─────────────────────────────
-  // Derived by intersecting the top and bottom rafter edges with the plane z=0.
+  // ── Ridge end (vertical / plumb cut at z = 0) ────────────────────────────
   const yr  = r.ridgeEnd.y
   const rty = yr + rd / (2 * cosP) // ridge top y
   const rby = yr - rd / (2 * cosP) // ridge bot y
 
   // ── Vertices ──────────────────────────────────────────────────────────────
   const pos = new Float32Array([
-    x - rw/2, ety, etz,  // 0  eave  top  left
-    x + rw/2, ety, etz,  // 1  eave  top  right
-    x - rw/2, eby, ebz,  // 2  eave  bot  left
-    x + rw/2, eby, ebz,  // 3  eave  bot  right
+    x - rw/2, ety, ze,   // 0  eave  top  left
+    x + rw/2, ety, ze,   // 1  eave  top  right
+    x - rw/2, eby, ze,   // 2  eave  bot  left
+    x + rw/2, eby, ze,   // 3  eave  bot  right
     x - rw/2, rty, 0,    // 4  ridge top  left
     x + rw/2, rty, 0,    // 5  ridge top  right
     x - rw/2, rby, 0,    // 6  ridge bot  left
