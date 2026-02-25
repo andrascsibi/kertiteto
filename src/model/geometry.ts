@@ -9,7 +9,7 @@ const DEG = Math.PI / 180
 export const BIRD_MOUTH_PLUMB_HEIGHT = 0.03
 
 /** Height of the vertical (plumb) face at the eave end of each rafter (m) */
-export const EAVE_PLUMB_HEIGHT = 0.075
+export const EAVE_PLUMB_HEIGHT = 0.06
 
 /** Maximum rafter bay spacing (m) */
 export const MAX_RAFTER_SPACING = 0.9
