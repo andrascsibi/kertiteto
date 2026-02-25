@@ -56,6 +56,7 @@ function update(): void {
   if (devMode) {
     const m = computeMetrics(model)
     debug.innerHTML =
+      `szaruhossz: ${model.rafters[0].length.toFixed(2)} m<br>` +
       `faanyag: ${m.timberVolume.toFixed(2)} m³<br>` +
       `felület: ${m.timberSurface.toFixed(1)} m²<br>` +
       `tető: ${m.roofSurface.toFixed(1)} m²`

@@ -52,10 +52,10 @@ export const PILLAR_HEIGHT = 2.4   // m (fixed)
 
 export const DEFAULTS: InputParams = {
   width: 3.0,
-  length: 4.0,
+  length: 3.3,
   pitch: 25,
-  eavesOverhang: 0.5,
-  gableOverhang: 0.3,
+  eavesOverhang: 0.35,
+  gableOverhang: 0.35,
 }
 
 export function buildStructure(params: InputParams): StructureModel {
