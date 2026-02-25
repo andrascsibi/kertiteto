@@ -1,12 +1,12 @@
 import { describe, it, expect } from 'vitest'
-import { buildStructure, PILLAR_HEIGHT, PURLIN_SIZE, RIDGE_SIZE, RAFTER_WIDTH, RAFTER_DEPTH } from '../src/model/structure'
+import { buildStructure, PILLAR_HEIGHT, PILLAR_SIZE, PURLIN_SIZE, RIDGE_SIZE, RAFTER_WIDTH, RAFTER_DEPTH } from '../src/model/structure'
 import { ridgeHeight, BIRD_MOUTH_PLUMB_HEIGHT, MAX_RAFTER_SPACING } from '../src/model/geometry'
 import type { InputParams } from '../src/model/types'
 
 // Coordinate system:
 //   X: longitudinal (along ridge), Y: vertical (up), Z: cross-sectional (across span)
 //   Origin: center of footprint at ground level
-//   Width and length are center-to-center pillar distances.
+//   Width and length are outer-edge-to-outer-edge pillar distances.
 
 const base: InputParams = {
   width: 3,
@@ -36,11 +36,14 @@ describe('pillars', () => {
     expect(buildStructure({ ...base, length: 7 }).pillars.length).toBe(6)
   })
 
-  it('corner pillars at x=±length/2, z=±width/2', () => {
-    const m = buildStructure({ ...base, length: 3, width: 3 })
+  it('corner pillar centers inset by PILLAR_SIZE/2 from outer edges', () => {
+    const W = 3, L = 3
+    const m = buildStructure({ ...base, length: L, width: W })
+    const xH = L / 2 - PILLAR_SIZE / 2
+    const zH = W / 2 - PILLAR_SIZE / 2
     const corners = [
-      { x: -1.5, z: -1.5 }, { x: -1.5, z: 1.5 },
-      { x: 1.5, z: -1.5 },  { x: 1.5, z: 1.5 },
+      { x: -xH, z: -zH }, { x: -xH, z: zH },
+      { x: xH, z: -zH },  { x: xH, z: zH },
     ]
     for (const c of corners) {
       expect(m.pillars.some(p =>
@@ -68,11 +71,12 @@ describe('pillars', () => {
 })
 
 describe('base purlins', () => {
-  it('two purlins at z=±width/2', () => {
+  it('purlin centers at z=±(width/2 - PURLIN_SIZE/2), outer face flush at ±width/2', () => {
     const W = 3
     const m = buildStructure({ ...base, width: W })
-    expect(m.basePurlins[0].start.z).toBeCloseTo(-W / 2, 6)
-    expect(m.basePurlins[1].start.z).toBeCloseTo(+W / 2, 6)
+    const zPurlin = W / 2 - PURLIN_SIZE / 2
+    expect(m.basePurlins[0].start.z).toBeCloseTo(-zPurlin, 6)
+    expect(m.basePurlins[1].start.z).toBeCloseTo(+zPurlin, 6)
   })
 
   it('extend from -(L/2+gableOverhang) to +(L/2+gableOverhang)', () => {
@@ -137,21 +141,23 @@ describe('tie beams (KOTOGERENDA)', () => {
     expect(buildStructure({ ...base, length: 5 }).tieBeams.length).toBe(2)
   })
 
-  it('positioned at x=±length/2 (corner pillar positions)', () => {
+  it('positioned at x=±(length/2 - PILLAR_SIZE/2) (corner pillar centers)', () => {
     const L = 4
     const m = buildStructure({ ...base, length: L })
     const xVals = m.tieBeams.map(tb => tb.start.x).sort((a, b) => a - b)
-    expect(xVals[0]).toBeCloseTo(-L / 2, 6)
-    expect(xVals[1]).toBeCloseTo(+L / 2, 6)
+    const xPillar = L / 2 - PILLAR_SIZE / 2
+    expect(xVals[0]).toBeCloseTo(-xPillar, 6)
+    expect(xVals[1]).toBeCloseTo(+xPillar, 6)
   })
 
-  it('connect z=-width/2 to z=+width/2', () => {
+  it('connect purlin centers at z=±(width/2 - PURLIN_SIZE/2)', () => {
     const W = 3
     const m = buildStructure({ ...base, width: W })
+    const zPurlin = W / 2 - PURLIN_SIZE / 2
     for (const tb of m.tieBeams) {
       const zVals = [tb.start.z, tb.end.z].sort((a, b) => a - b)
-      expect(zVals[0]).toBeCloseTo(-W / 2, 6)
-      expect(zVals[1]).toBeCloseTo(+W / 2, 6)
+      expect(zVals[0]).toBeCloseTo(-zPurlin, 6)
+      expect(zVals[1]).toBeCloseTo(+zPurlin, 6)
     }
   })
 

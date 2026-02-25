@@ -7,8 +7,10 @@
  *   Z: cross-sectional (across span, width direction)
  *   Origin: center of footprint at ground level
  *
- * InputParams width/length are center-to-center pillar distances.
- * Outer footprint = (width + PILLAR_SIZE) × (length + PILLAR_SIZE).
+ * InputParams width/length are outer-edge-to-outer-edge pillar distances.
+ * Pillar centers at ±(width/2 - PILLAR_SIZE/2), ±(length/2 - PILLAR_SIZE/2).
+ * Purlin centers coincide with pillar centers (PURLIN_SIZE == PILLAR_SIZE),
+ * so the purlin outer face is flush with the pillar outer edge at ±width/2.
  *
  * Rafter centerline derivation:
  *   At the base purlin, the seat cut sits at y = yBasePurlinTop.
@@ -90,9 +92,11 @@ export function buildStructure(params: InputParams): StructureModel {
   const xMax = +(length / 2 + gableOverhang)
 
   // ── Base purlins (TALP SZELEMEN) ─────────────────────────────────────────────
+  // Purlin center is inset by PURLIN_SIZE/2 from the outer edge; outer face flush at ±width/2
+  const zPurlin = width / 2 - PURLIN_SIZE / 2
   const basePurlins: [Purlin, Purlin] = [
-    makePurlin(xMin, xMax, yPurlinCenter, -width / 2, PURLIN_SIZE),
-    makePurlin(xMin, xMax, yPurlinCenter, +width / 2, PURLIN_SIZE),
+    makePurlin(xMin, xMax, yPurlinCenter, -zPurlin, PURLIN_SIZE),
+    makePurlin(xMin, xMax, yPurlinCenter, +zPurlin, PURLIN_SIZE),
   ]
 
   // ── Ridge purlin (GERINC SZELEMEN) ───────────────────────────────────────────
@@ -100,9 +104,11 @@ export function buildStructure(params: InputParams): StructureModel {
 
   // ── Tie beams (KOTOGERENDA) ──────────────────────────────────────────────────
   // Always at corner pillar x-positions only (never at middle pillars).
+  // Connect the two base purlin centers.
+  const xPillar = length / 2 - PILLAR_SIZE / 2
   const tieBeams: TieBeam[] = [
-    makeTieBeam(-length / 2, yPurlinCenter, width),
-    makeTieBeam(+length / 2, yPurlinCenter, width),
+    makeTieBeam(-xPillar, yPurlinCenter, zPurlin),
+    makeTieBeam(+xPillar, yPurlinCenter, zPurlin),
   ]
 
   // ── Pillars ──────────────────────────────────────────────────────────────────
@@ -215,21 +221,23 @@ function makePurlin(xMin: number, xMax: number, y: number, z: number, size: numb
   }
 }
 
-function makeTieBeam(x: number, y: number, width: number): TieBeam {
+function makeTieBeam(x: number, y: number, zHalf: number): TieBeam {
   return {
-    start: { x, y, z: -width / 2 },
-    end:   { x, y, z: +width / 2 },
+    start: { x, y, z: -zHalf },
+    end:   { x, y, z: +zHalf },
   }
 }
 
 function buildPillars(width: number, length: number, nPillars: 4 | 6): Pillar[] {
+  const xHalf = length / 2 - PILLAR_SIZE / 2
+  const zHalf = width  / 2 - PILLAR_SIZE / 2
   const xPositions = nPillars === 4
-    ? [-length / 2, +length / 2]
-    : [-length / 2, 0, +length / 2]
+    ? [-xHalf, +xHalf]
+    : [-xHalf, 0, +xHalf]
 
   const pillars: Pillar[] = []
   for (const x of xPositions) {
-    for (const z of [-width / 2, +width / 2]) {
+    for (const z of [-zHalf, +zHalf]) {
       pillars.push({ base: { x, y: 0, z }, height: PILLAR_HEIGHT })
     }
   }
