@@ -8,6 +8,9 @@ const DEG = Math.PI / 180
 /** Fixed plumb cut height for all bird mouths: keeps 4/5 of 15 cm rafter depth */
 export const BIRD_MOUTH_PLUMB_HEIGHT = 0.03
 
+/** Height of the vertical (plumb) face at the eave end of each rafter (m) */
+export const EAVE_PLUMB_HEIGHT = 0.075
+
 /** Maximum rafter bay spacing (m) */
 export const MAX_RAFTER_SPACING = 0.9
 

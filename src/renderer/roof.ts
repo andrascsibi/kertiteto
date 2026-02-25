@@ -5,6 +5,7 @@
 import * as THREE from 'three'
 import type { StructureModel, Pillar, Purlin, TieBeam, Rafter } from '../model/types'
 import { PILLAR_SIZE, PURLIN_SIZE, RAFTER_WIDTH, RAFTER_DEPTH } from '../model/structure'
+import { EAVE_PLUMB_HEIGHT } from '../model/geometry'
 
 const MAT: Record<string, THREE.MeshLambertMaterial> = {
   pillar:  new THREE.MeshLambertMaterial({ color: 0x5a3a1a }),
@@ -66,44 +67,50 @@ function tieBeamMesh(tb: TieBeam): THREE.Mesh {
 }
 
 /**
- * Custom prism geometry for a rafter:
- *   - Eave end:  perpendicular cut (face ⊥ to rafter axis)
- *   - Ridge end: vertical (plumb) cut — all four vertices at z = 0
+ * Custom prism geometry for a rafter with plumb cuts at both ends and a
+ * compound eave cut (plumb face + horizontal soffit).
  *
- * Vertex layout (8 vertices, indices 0-7):
- *   0 eave-top-left    4 ridge-top-left
- *   1 eave-top-right   5 ridge-top-right
- *   2 eave-bot-left    6 ridge-bot-left
- *   3 eave-bot-right   7 ridge-bot-right
+ * Vertex layout (10 vertices, indices 0-9):
+ *   0 eave-top-left      6 ridge-top-left
+ *   1 eave-top-right     7 ridge-top-right
+ *   2 soffit-eave-left   8 ridge-bot-left
+ *   3 soffit-eave-right  9 ridge-bot-right
+ *   4 soffit-inner-left
+ *   5 soffit-inner-right
  *
- * "top" = outward face (facing sky), "bot" = inward face (facing ground/interior)
- * "left/right" = along the longitudinal (X) axis of the structure.
+ * "top/bot" = outward (sky) / inward (ground) face of rafter
+ * "left/right" = along X (longitudinal axis)
+ * "eave/inner" = soffit vertices at z=eaveEnd.z vs. where soffit meets rafter bottom face
  *
- * Both ends use a vertical (plumb) cut. Intersecting the inclined top/bottom
- * rafter edges with any vertical plane z = z₀ gives:
- *   top y at z₀    = centerlineY + RAFTER_DEPTH / (2·cos P)
- *   bottom y at z₀ = centerlineY - RAFTER_DEPTH / (2·cos P)
+ * Plumb cut formula (both ends): top/bot y = centerY ± RAFTER_DEPTH/(2·cosP)
+ * Eave plumb face height: EAVE_PLUMB_HEIGHT (from top of rafter downward)
+ *   → y_soffit = eaveEnd.y + RAFTER_DEPTH/(2·cosP) - EAVE_PLUMB_HEIGHT
+ * Soffit width: (RAFTER_DEPTH/cosP - EAVE_PLUMB_HEIGHT) / tanP
+ *   → z_soffit_inner = eaveEnd.z ± soffit_width  (+ for left, − for right slope)
  *
- * Eave vertical cut at z = eaveEnd.z,  centerlineY = eaveEnd.y
- * Ridge vertical cut at z = 0,         centerlineY = ridgeEnd.y
+ * Faces (7): top, bottom, left (pentagon), right (pentagon),
+ *            plumb/eave, soffit, ridge
  *
  * Winding: CCW from outside for the left slope.
  * Right slope is a z-mirror of left slope → flip all triangle windings.
  */
 function rafterMesh(r: Rafter, pitchDeg: number): THREE.Mesh {
-  const DEG = Math.PI / 180
+  const DEG  = Math.PI / 180
   const cosP = Math.cos(pitchDeg * DEG)
+  const tanP = Math.tan(pitchDeg * DEG)
   const isLeft = r.eaveEnd.z < 0
 
   const rw = RAFTER_WIDTH  // 0.075 m
   const rd = RAFTER_DEPTH  // 0.15  m
   const x  = r.eaveEnd.x  // same for both ends
 
-  // ── Eave end (vertical / plumb cut at z = eaveEnd.z) ─────────────────────
+  // ── Eave end ──────────────────────────────────────────────────────────────
   const ze  = r.eaveEnd.z
   const ye  = r.eaveEnd.y
-  const ety = ye + rd / (2 * cosP) // eave top y
-  const eby = ye - rd / (2 * cosP) // eave bot y
+  const ety = ye + rd / (2 * cosP)                         // eave top y (plumb cut)
+  const esy = ety - EAVE_PLUMB_HEIGHT                      // soffit y (= top - plumb height)
+  const swd = (rd / cosP - EAVE_PLUMB_HEIGHT) / tanP       // soffit horizontal width
+  const zsi = ze + (isLeft ? swd : -swd)                   // soffit inner z
 
   // ── Ridge end (vertical / plumb cut at z = 0) ────────────────────────────
   const yr  = r.ridgeEnd.y
@@ -112,24 +119,27 @@ function rafterMesh(r: Rafter, pitchDeg: number): THREE.Mesh {
 
   // ── Vertices ──────────────────────────────────────────────────────────────
   const pos = new Float32Array([
-    x - rw/2, ety, ze,   // 0  eave  top  left
-    x + rw/2, ety, ze,   // 1  eave  top  right
-    x - rw/2, eby, ze,   // 2  eave  bot  left
-    x + rw/2, eby, ze,   // 3  eave  bot  right
-    x - rw/2, rty, 0,    // 4  ridge top  left
-    x + rw/2, rty, 0,    // 5  ridge top  right
-    x - rw/2, rby, 0,    // 6  ridge bot  left
-    x + rw/2, rby, 0,    // 7  ridge bot  right
+    x - rw/2, ety, ze,   // 0  eave-top-left
+    x + rw/2, ety, ze,   // 1  eave-top-right
+    x - rw/2, esy, ze,   // 2  soffit-eave-left
+    x + rw/2, esy, ze,   // 3  soffit-eave-right
+    x - rw/2, esy, zsi,  // 4  soffit-inner-left
+    x + rw/2, esy, zsi,  // 5  soffit-inner-right
+    x - rw/2, rty, 0,    // 6  ridge-top-left
+    x + rw/2, rty, 0,    // 7  ridge-top-right
+    x - rw/2, rby, 0,    // 8  ridge-bot-left
+    x + rw/2, rby, 0,    // 9  ridge-bot-right
   ])
 
   // ── Triangles (CCW from outside, left-slope winding) ─────────────────────
   const tris = [
-    0, 4, 5,  0, 5, 1,   // top face    (outward)
-    2, 3, 7,  2, 7, 6,   // bottom face (inward)
-    0, 2, 6,  0, 6, 4,   // left face   (−x)
-    1, 5, 7,  1, 7, 3,   // right face  (+x)
-    0, 1, 3,  0, 3, 2,   // eave face   (toward eave)
-    4, 6, 7,  4, 7, 5,   // ridge face  (vertical, z=0)
+    0, 6, 7,  0, 7, 1,         // top face    (outward)
+    4, 5, 9,  4, 9, 8,         // bottom face (inward, soffit-inner → ridge)
+    0, 2, 4,  0, 4, 8,  0, 8, 6,  // left face   (−x, pentagon)
+    1, 7, 9,  1, 9, 5,  1, 5, 3,  // right face  (+x, pentagon)
+    0, 1, 3,  0, 3, 2,         // plumb face  (eave end, vertical)
+    2, 3, 5,  2, 5, 4,         // soffit face (horizontal, downward)
+    6, 8, 9,  6, 9, 7,         // ridge face  (vertical, z=0)
   ]
 
   // Right slope is z-mirrored → reverse each triangle's winding
