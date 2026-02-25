@@ -7,7 +7,9 @@ import {
   rafterCount,
   birdMouthAtBasePurlin,
   birdMouthAtRidgePurlin,
+  MAX_UNSUPPORTED_SPAN,
 } from '../src/model/geometry'
+import { PILLAR_SIZE } from '../src/model/structure'
 
 const DEG = Math.PI / 180
 
@@ -35,13 +37,15 @@ describe('rafterLength', () => {
 })
 
 describe('pillarCount', () => {
-  it('4 pillars for length <= 3.5m', () => {
-    expect(pillarCount(3.5)).toBe(4)
+  const threshold = MAX_UNSUPPORTED_SPAN + 2 * PILLAR_SIZE  // 3.8m
+
+  it('4 pillars when unsupported span <= MAX_UNSUPPORTED_SPAN', () => {
+    expect(pillarCount(threshold)).toBe(4)
     expect(pillarCount(2.0)).toBe(4)
   })
 
-  it('6 pillars for length > 3.5m up to 7m', () => {
-    expect(pillarCount(3.51)).toBe(6)
+  it('6 pillars when unsupported span > MAX_UNSUPPORTED_SPAN', () => {
+    expect(pillarCount(threshold + 0.01)).toBe(6)
     expect(pillarCount(7.0)).toBe(6)
   })
 })

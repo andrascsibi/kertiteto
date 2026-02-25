@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { buildStructure, PILLAR_HEIGHT, PILLAR_SIZE, PURLIN_SIZE, RIDGE_SIZE, RAFTER_WIDTH, RAFTER_DEPTH } from '../src/model/structure'
-import { ridgeHeight, BIRD_MOUTH_PLUMB_HEIGHT, MAX_RAFTER_SPACING } from '../src/model/geometry'
+import { ridgeHeight, BIRD_MOUTH_PLUMB_HEIGHT, MAX_RAFTER_SPACING, MAX_UNSUPPORTED_SPAN } from '../src/model/geometry'
 import type { InputParams } from '../src/model/types'
 
 // Coordinate system:
@@ -26,13 +26,15 @@ function expectedRafterCount(params: InputParams): number {
 }
 
 describe('pillars', () => {
-  it('4 pillars for length <= 3.5m', () => {
+  it('4 pillars when unsupported span <= MAX_UNSUPPORTED_SPAN', () => {
+    const threshold = MAX_UNSUPPORTED_SPAN + 2 * PILLAR_SIZE
     expect(buildStructure({ ...base, length: 3 }).pillars.length).toBe(4)
-    expect(buildStructure({ ...base, length: 3.5 }).pillars.length).toBe(4)
+    expect(buildStructure({ ...base, length: threshold }).pillars.length).toBe(4)
   })
 
-  it('6 pillars for length > 3.5m', () => {
-    expect(buildStructure({ ...base, length: 3.51 }).pillars.length).toBe(6)
+  it('6 pillars when unsupported span > MAX_UNSUPPORTED_SPAN', () => {
+    const threshold = MAX_UNSUPPORTED_SPAN + 2 * PILLAR_SIZE
+    expect(buildStructure({ ...base, length: threshold + 0.01 }).pillars.length).toBe(6)
     expect(buildStructure({ ...base, length: 7 }).pillars.length).toBe(6)
   })
 

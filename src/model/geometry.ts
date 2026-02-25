@@ -3,6 +3,8 @@
  * All dimensions in meters. Angles in degrees at the API boundary, radians internally.
  */
 
+import { PILLAR_SIZE } from "./structure"
+
 const DEG = Math.PI / 180
 
 /** Fixed plumb cut height for all bird mouths: keeps 4/5 of 15 cm rafter depth */
@@ -13,6 +15,9 @@ export const EAVE_PLUMB_HEIGHT = 0.06
 
 /** Maximum rafter bay spacing (m) */
 export const MAX_RAFTER_SPACING = 0.9
+
+/** Maximum unsupported span between pillar inner faces before adding middle pillars (m) */
+export const MAX_UNSUPPORTED_SPAN = 3.5
 
 export interface BirdMouthGeometry {
   /** Horizontal cut width (m) - perpendicular to rafter axis, sits on purlin */
@@ -44,7 +49,7 @@ export function rafterLength(width: number, pitchDeg: number, eavesOverhang: num
  * 4 pillars for length <= 3.5m, 6 for > 3.5m (up to 7m max).
  */
 export function pillarCount(length: number): 4 | 6 {
-  return length <= 3.5 ? 4 : 6
+  return length - 2 * PILLAR_SIZE <= MAX_UNSUPPORTED_SPAN ? 4 : 6
 }
 
 /**
