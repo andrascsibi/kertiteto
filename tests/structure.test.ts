@@ -226,11 +226,11 @@ describe('rafters — vertical placement and slope', () => {
   })
 
   it('rafter centerline is above base purlin top at bearing (plumb height = 3cm)', () => {
-    // At z = ±width/2, y_centerline should equal yPurlinTop + BIRD_MOUTH_PLUMB_HEIGHT + RAFTER_DEPTH/2*cos(pitch)
+    // At z = ±width/2, y_centerline should equal yBasePurlinTop + BIRD_MOUTH_PLUMB_HEIGHT + RAFTER_DEPTH/2*cos(pitch)
     const pitch = 25, W = 3, E = 0.5
     const cosPitch = Math.cos(pitch * DEG)
-    const yPurlinTop = PILLAR_HEIGHT + PURLIN_SIZE
-    const expectedY = yPurlinTop + BIRD_MOUTH_PLUMB_HEIGHT + RAFTER_DEPTH / 2 * cosPitch
+    const yBasePurlinTop = PILLAR_HEIGHT + PURLIN_SIZE
+    const expectedY = yBasePurlinTop + BIRD_MOUTH_PLUMB_HEIGHT + RAFTER_DEPTH / (2 * cosPitch)
     const m = buildStructure({ ...base, width: W, pitch, eavesOverhang: E })
     // Rafter at base purlin (z = -W/2) for left slope:
     // y_at_base = eaveEnd.y + E * tan(pitch)

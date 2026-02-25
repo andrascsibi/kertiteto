@@ -11,16 +11,16 @@
  * Outer footprint = (width + PILLAR_SIZE) × (length + PILLAR_SIZE).
  *
  * Rafter centerline derivation:
- *   At the base purlin, the seat cut sits at y = yPurlinTop.
+ *   At the base purlin, the seat cut sits at y = yBasePurlinTop.
  *   The rafter's inclined bottom face at the plumb-cut z-position is:
  *     y_bottom = y_centerline - RAFTER_DEPTH/2 * cos(pitch)
  *   We want the plumb height (vertical notch depth) = BIRD_MOUTH_PLUMB_HEIGHT:
- *     BIRD_MOUTH_PLUMB_HEIGHT = y_bottom - yPurlinTop
- *     → y_centerline_at_base = yPurlinTop + BIRD_MOUTH_PLUMB_HEIGHT + RAFTER_DEPTH/2 * cos(pitch)
+ *     BIRD_MOUTH_PLUMB_HEIGHT = y_bottom - yBasePurlinTop
+ *     → y_centerline_at_base = yBasePurlinTop + BIRD_MOUTH_PLUMB_HEIGHT + RAFTER_DEPTH/2 * cos(pitch)
  *
  *   Ridge purlin (GERINC SZELEMEN) sits BELOW the rafters (Hungarian style).
  *   The same derivation at the ridge gives:
- *     yRidgePurlinCenter = yPurlinTop + ridgeHeight - RIDGE_SIZE/2
+ *     yRidgePurlinCenter = yBasePurlinTop + ridgeHeight - RIDGE_SIZE/2
  */
 
 import type { InputParams, StructureModel, Pillar, Purlin, TieBeam, Rafter } from './types'
@@ -61,18 +61,18 @@ export function buildStructure(params: InputParams): StructureModel {
 
   // ── Vertical levels ──────────────────────────────────────────────────────────
   const yPurlinCenter = PILLAR_HEIGHT + PURLIN_SIZE / 2
-  const yPurlinTop    = PILLAR_HEIGHT + PURLIN_SIZE
+  const yBasePurlinTop    = PILLAR_HEIGHT + PURLIN_SIZE
 
   // Ridge purlin center: sits below rafters (Hungarian style).
   // Derived from bird mouth geometry; see module comment.
-  const yRidgePurlinCenter = yPurlinTop + H_ridge - RIDGE_SIZE / 2
+  const yRidgePurlinCenter = yBasePurlinTop + H_ridge - RIDGE_SIZE / 2
 
   // Rafter centerline vertical offset above bearing surface.
-  // The centerline at z = ±width/2 is offset up from yPurlinTop by this amount.
-  const rafterYOffset = BIRD_MOUTH_PLUMB_HEIGHT + RAFTER_DEPTH / 2 * cosPitch
+  // The centerline at z = ±width/2 is offset up from yBasePurlinTop by this amount.
+  const rafterYOffset = BIRD_MOUTH_PLUMB_HEIGHT + RAFTER_DEPTH / (2 * cosPitch)
 
   // Rafter y at base purlin and at ridge
-  const yRafterAtBase  = yPurlinTop + rafterYOffset
+  const yRafterAtBase  = yBasePurlinTop + rafterYOffset
   const yRafterAtRidge = yRafterAtBase + H_ridge
 
   // Eave end y: project back from base purlin down the slope by eavesOverhang
