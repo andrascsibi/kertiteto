@@ -139,18 +139,32 @@ describe('ridge purlin', () => {
 })
 
 describe('tie beams (KOTOGERENDA)', () => {
-  it('always 2 tie beams regardless of pillar count', () => {
+  it('one tie beam per pillar row', () => {
+    // 4 pillars = 2 rows → 2 tie beams
     expect(buildStructure({ ...base, length: 3 }).tieBeams.length).toBe(2)
-    expect(buildStructure({ ...base, length: 5 }).tieBeams.length).toBe(2)
+    // 6 pillars = 3 rows → 3 tie beams
+    expect(buildStructure({ ...base, length: 5 }).tieBeams.length).toBe(3)
+    // 8 pillars = 4 rows → 4 tie beams
+    expect(buildStructure({ ...base, length: 10 }).tieBeams.length).toBe(4)
   })
 
-  it('positioned at x=±(length/2 - PILLAR_SIZE/2) (corner pillar centers)', () => {
+  it('x-positions match pillar row x-positions', () => {
+    const m = buildStructure({ ...base, length: 5 })
+    const pillarXs = [...new Set(m.pillars.map(p => p.base.x))].sort((a, b) => a - b)
+    const tieBeamXs = m.tieBeams.map(tb => tb.start.x).sort((a, b) => a - b)
+    expect(tieBeamXs.length).toBe(pillarXs.length)
+    for (let i = 0; i < pillarXs.length; i++) {
+      expect(tieBeamXs[i]).toBeCloseTo(pillarXs[i], 6)
+    }
+  })
+
+  it('corner tie beams at x=±(length/2 - PILLAR_SIZE/2)', () => {
     const L = 4
     const m = buildStructure({ ...base, length: L })
     const xVals = m.tieBeams.map(tb => tb.start.x).sort((a, b) => a - b)
     const xPillar = L / 2 - PILLAR_SIZE / 2
     expect(xVals[0]).toBeCloseTo(-xPillar, 6)
-    expect(xVals[1]).toBeCloseTo(+xPillar, 6)
+    expect(xVals[xVals.length - 1]).toBeCloseTo(+xPillar, 6)
   })
 
   it('connect purlin centers at z=±(width/2 - PURLIN_SIZE/2)', () => {

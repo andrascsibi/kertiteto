@@ -106,17 +106,16 @@ export function buildStructure(params: InputParams): StructureModel {
   // ── Ridge purlin (GERINC SZELEMEN) ───────────────────────────────────────────
   const ridgePurlin: Purlin = makePurlin(xMin, xMax, yRidgePurlinCenter, 0, RIDGE_SIZE)
 
-  // ── Tie beams (KOTOGERENDA) ──────────────────────────────────────────────────
-  // Always at corner pillar x-positions only (never at middle pillars).
-  // Connect the two base purlin centers.
-  const xPillar = length / 2 - PILLAR_SIZE / 2
-  const tieBeams: TieBeam[] = [
-    makeTieBeam(-xPillar, yPurlinCenter, zPurlin),
-    makeTieBeam(+xPillar, yPurlinCenter, zPurlin),
-  ]
-
   // ── Pillars ──────────────────────────────────────────────────────────────────
-  const pillars = buildPillars(width, length, pillarCount(length))
+  const nPillars = pillarCount(length)
+  const pillarXPositions = buildPillarXPositions(length, nPillars)
+  const pillars = buildPillars(width, pillarXPositions)
+
+  // ── Tie beams (KOTOGERENDA) ──────────────────────────────────────────────────
+  // One tie beam above every pillar row, connecting the two base purlin centers.
+  const tieBeams: TieBeam[] = pillarXPositions.map(x =>
+    makeTieBeam(x, yPurlinCenter, zPurlin)
+  )
 
   // ── Rafter layout ────────────────────────────────────────────────────────────
   // Rafters span the full purlin length (including gable overhang).
@@ -273,15 +272,18 @@ function makeTieBeam(x: number, y: number, zHalf: number): TieBeam {
   }
 }
 
-function buildPillars(width: number, length: number, nPillars: number): Pillar[] {
+function buildPillarXPositions(length: number, nPillars: number): number[] {
   const xHalf = length / 2 - PILLAR_SIZE / 2
-  const zHalf = width  / 2 - PILLAR_SIZE / 2
   const rows = nPillars / 2
-  const xPositions: number[] = []
+  const positions: number[] = []
   for (let i = 0; i < rows; i++) {
-    xPositions.push(-xHalf + i * (2 * xHalf) / (rows - 1))
+    positions.push(-xHalf + i * (2 * xHalf) / (rows - 1))
   }
+  return positions
+}
 
+function buildPillars(width: number, xPositions: number[]): Pillar[] {
+  const zHalf = width / 2 - PILLAR_SIZE / 2
   const pillars: Pillar[] = []
   for (const x of xPositions) {
     for (const z of [-zHalf, +zHalf]) {
