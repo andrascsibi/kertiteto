@@ -15,8 +15,8 @@
  *   The rafter's inclined bottom face at the plumb-cut z-position is:
  *     y_bottom = y_centerline - RAFTER_DEPTH/2 * cos(pitch)
  *   We want the plumb height (vertical notch depth) = BIRD_MOUTH_PLUMB_HEIGHT:
- *     BIRD_MOUTH_PLUMB_HEIGHT = y_bottom - yBasePurlinTop
- *     → y_centerline_at_base = yBasePurlinTop + BIRD_MOUTH_PLUMB_HEIGHT + RAFTER_DEPTH/2 * cos(pitch)
+ *     BIRD_MOUTH_PLUMB_HEIGHT = yBasePurlinTop - y_bottom
+ *     → y_centerline_at_base = yBasePurlinTop + RAFTER_DEPTH / (2 * cos(pitch)) - BIRD_MOUTH_PLUMB_HEIGHT
  *
  *   Ridge purlin (GERINC SZELEMEN) sits BELOW the rafters (Hungarian style).
  *   Bird line (KARMI VONAL): the line connecting the innermost seat-cut corners
@@ -66,7 +66,7 @@ export function buildStructure(params: InputParams): StructureModel {
 
   // ── Vertical levels ──────────────────────────────────────────────────────────
   const yPurlinCenter = PILLAR_HEIGHT + PURLIN_SIZE / 2
-  const yBasePurlinTop    = PILLAR_HEIGHT + PURLIN_SIZE
+  const yBasePurlinTop = PILLAR_HEIGHT + PURLIN_SIZE
 
   // Ridge purlin top: bird line (KARMI VONAL) from base seat corner to ridge seat corner
   // has exactly the pitch angle; horizontal run = (width - RIDGE_SIZE) / 2.
@@ -75,7 +75,7 @@ export function buildStructure(params: InputParams): StructureModel {
 
   // Rafter centerline vertical offset above bearing surface.
   // The centerline at z = ±width/2 is offset up from yBasePurlinTop by this amount.
-  const rafterYOffset = BIRD_MOUTH_PLUMB_HEIGHT + RAFTER_DEPTH / (2 * cosPitch)
+  const rafterYOffset = - BIRD_MOUTH_PLUMB_HEIGHT + RAFTER_DEPTH / cosPitch / 2
 
   // Rafter y at base purlin and at ridge
   const yRafterAtBase  = yBasePurlinTop + rafterYOffset
