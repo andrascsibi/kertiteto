@@ -7,7 +7,7 @@ import type { StructureModel, Pillar, Purlin, TieBeam, Rafter, RidgeTie, KneeBra
 import { PILLAR_SIZE, PURLIN_SIZE, RAFTER_WIDTH, RAFTER_DEPTH, RIDGE_TIE_WIDTH, KNEE_BRACE_SIZE, KNEE_BRACE_LENGTH } from '../model/structure'
 import { EAVE_PLUMB_HEIGHT } from '../model/geometry'
 
-const COLOR = '#0c83fa' 
+//const COLOR = '#0c83fa' 
 
 const MAT: Record<string, THREE.MeshLambertMaterial> = {
 pillar:  new THREE.MeshLambertMaterial({ color: 0x5a3a1a }),

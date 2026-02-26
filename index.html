@@ -108,6 +108,33 @@
 
       #info strong { color: #2e1f0f; }
 
+      /* ── Pricing panel ────────────────────────────────────────────────── */
+      #pricing {
+        margin-top: auto;
+        padding-top: 1.25rem;
+        border-top: 1px solid #e8e0d8;
+      }
+
+      #pricing .price-total {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #2e1f0f;
+        font-variant-numeric: tabular-nums;
+        line-height: 1.2;
+      }
+
+      #pricing .price-unit {
+        font-size: 0.75rem;
+        color: #8a7060;
+        margin-top: 0.2rem;
+      }
+
+      #pricing .price-loading {
+        font-size: 0.75rem;
+        color: #9a8070;
+        font-style: italic;
+      }
+
       /* ── Debug panel (top-right, hidden by default) ────────────────────── */
       #debug {
         display: none;
@@ -175,6 +202,8 @@
         </label>
         <input type="range" id="inp-gable" min="0.10" max="0.60" step="0.05">
       </div>
+
+      <div id="pricing"></div>
     </aside>
 
     <main id="viewport">

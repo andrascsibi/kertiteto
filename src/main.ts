@@ -1,5 +1,6 @@
 import { buildStructure, computeMetrics, DEFAULTS } from './model/structure'
 import { pillarCount, rafterCount } from './model/geometry'
+import { fetchPrices, type PriceTable } from './model/prices'
 import { createScene } from './renderer/scene'
 
 // ── Hash params ──────────────────────────────────────────────────────────────
@@ -22,6 +23,7 @@ function hashFloat(key: string, fallback: number): number {
 const viewport = document.getElementById('viewport')!
 const info     = document.getElementById('info')!
 const debug    = document.getElementById('debug')!
+const pricing  = document.getElementById('pricing')!
 const devMode  = hashParams['dev'] === 'true'
 if (devMode) debug.style.display = 'block'
 
@@ -39,6 +41,26 @@ const valGable  = document.getElementById('val-gable')!
 
 // ── Scene ──────────────────────────────────────────────────────────────────────
 const scene = createScene(viewport)
+
+// ── Pricing ────────────────────────────────────────────────────────────────────
+let prices: PriceTable | null = null
+pricing.innerHTML = '<p class="price-loading">Árak betöltése…</p>'
+fetchPrices()
+  .then(p => { prices = p; update() })
+  .catch(() => { pricing.innerHTML = '<p class="price-loading">Árak nem elérhetők</p>' })
+
+function formatHUF(amount: number): string {
+  return Math.round(amount).toLocaleString('hu-HU') + ' Ft'
+}
+
+function computePrice(prices: PriceTable, timberVolume: number, roofSurface: number): number {
+  const materialPerM3 =
+    (prices['fureszaru']?.price ?? 0) +
+    (prices['gyalulas']?.price ?? 0) +
+    (prices['gyartas']?.price ?? 0)
+  const installPerM2 = prices['szereles']?.price ?? 0
+  return materialPerM3 * timberVolume + installPerM2 * roofSurface
+}
 
 // ── State + update ─────────────────────────────────────────────────────────────
 function update(): void {
@@ -60,6 +82,8 @@ function update(): void {
   const model = buildStructure(params)
   scene.updateModel(model)
 
+  const m = computeMetrics(model)
+
   // Info badge
   const nPillars = pillarCount(params.length)
   const nRafters = rafterCount(params.length)
@@ -68,9 +92,18 @@ function update(): void {
     `${nPillars} oszlop · ${nRafters * 2} szarufa<br>` +
     `gerincmagasság: ${model.ridgeHeight.toFixed(2)} m`
 
+  // Pricing panel
+  if (prices) {
+    const total = computePrice(prices, m.timberVolume, m.roofSurface)
+    const unitPrice = total / m.roofSurface
+    pricing.innerHTML =
+      `<p class="section-title">Becsült ár</p>` +
+      `<p class="price-total">${formatHUF(total)}</p>` +
+      `<p class="price-unit">${formatHUF(unitPrice)} / m²</p>`
+  }
+
   // Debug panel
   if (devMode) {
-    const m = computeMetrics(model)
     debug.innerHTML =
       `szaruhossz: ${model.rafters[0].length.toFixed(2)} m<br>` +
       `faanyag: ${m.timberVolume.toFixed(2)} m³<br>` +
