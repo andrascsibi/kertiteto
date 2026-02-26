@@ -197,8 +197,8 @@ export function buildStructure(params: InputParams): StructureModel {
     }
   }
 
-  // ── Corner knee braces (KONYOKFA) ────────────────────────────────────────────
-  const kneeBraces = buildCornerKneeBraces(pillarXPositions, width)
+  // ── Knee braces (KONYOKFA) ───────────────────────────────────────────────────
+  const kneeBraces = buildKneeBraces(pillarXPositions, width, needsCenterPurlin)
 
   return {
     params,
@@ -286,37 +286,65 @@ function makeTieBeam(x: number, y: number, zHalf: number): TieBeam {
   }
 }
 
-function buildCornerKneeBraces(pillarXPositions: number[], width: number): KneeBrace[] {
+function buildKneeBraces(pillarXPositions: number[], width: number, needsCenterPurlin: boolean): KneeBrace[] {
   const leg = KNEE_BRACE_LENGTH * Math.cos(Math.PI / 4)  // 1/√2 ≈ 0.707
   const zHalf = width / 2 - PILLAR_SIZE / 2  // pillar center z offset
-  const yJunction = PILLAR_HEIGHT + PURLIN_SIZE / 2  // purlin/tie beam center level
+  const yJ = PILLAR_HEIGHT + PURLIN_SIZE / 2  // purlin/tie beam center level
   const braces: KneeBrace[] = []
 
-  // Only corner rows (first and last)
-  const cornerXs = [pillarXPositions[0], pillarXPositions[pillarXPositions.length - 1]]
+  const cornerXSet = new Set([pillarXPositions[0], pillarXPositions[pillarXPositions.length - 1]])
 
-  for (const xP of cornerXs) {
+  for (const xP of pillarXPositions) {
+    const isCornerRow = cornerXSet.has(xP)
     const sx = Math.sign(-xP) || 1  // toward center along x
+
+    // ── Side pillar braces (at ±zHalf) ──────────────────────────────────────
     for (const zP of [-zHalf, +zHalf]) {
       const sz = Math.sign(-zP) || 1  // toward center along z
 
-      // Brace 1: Pillar ↔ Tie beam (YZ plane, x = const)
-      braces.push({
-        start: { x: xP, y: yJunction - leg, z: zP },
-        end:   { x: xP, y: yJunction, z: zP + sz * leg },
-      })
+      if (isCornerRow) {
+        // Corner: 3 braces — one direction along each axis
+        braces.push(
+          { start: { x: xP, y: yJ - leg, z: zP }, end: { x: xP, y: yJ, z: zP + sz * leg } },             // Pillar ↔ Tie beam (YZ)
+          { start: { x: xP, y: yJ - leg, z: zP }, end: { x: xP + sx * leg, y: yJ, z: zP } },             // Pillar ↔ Purlin (XY)
+          { start: { x: xP + sx * leg, y: yJ, z: zP }, end: { x: xP, y: yJ, z: zP + sz * leg } },        // Purlin ↔ Tie beam (XZ)
+        )
+      } else {
+        // Interior row side pillar: 5 braces — purlin extends both ways along X
+        braces.push(
+          { start: { x: xP, y: yJ - leg, z: zP }, end: { x: xP, y: yJ, z: zP + sz * leg } },             // Pillar ↔ Tie beam (YZ)
+        )
+        for (const dx of [-1, +1]) {
+          braces.push(
+            { start: { x: xP, y: yJ - leg, z: zP }, end: { x: xP + dx * leg, y: yJ, z: zP } },           // Pillar ↔ Purlin (XY)
+            { start: { x: xP + dx * leg, y: yJ, z: zP }, end: { x: xP, y: yJ, z: zP + sz * leg } },      // Purlin ↔ Tie beam (XZ)
+          )
+        }
+      }
+    }
 
-      // Brace 2: Pillar ↔ Purlin (XY plane, z = const)
-      braces.push({
-        start: { x: xP, y: yJunction - leg, z: zP },
-        end:   { x: xP + sx * leg, y: yJunction, z: zP },
-      })
+    // ── Ridge pillar braces (z=0, corner rows only when wide) ───────────────
+    if (needsCenterPurlin && isCornerRow) {
+      braces.push(
+        { start: { x: xP, y: yJ - leg, z: 0 }, end: { x: xP + sx * leg, y: yJ, z: 0 } },                // Pillar ↔ Mid purlin (XY)
+      )
+      for (const dz of [-1, +1]) {
+        braces.push(
+          { start: { x: xP, y: yJ - leg, z: 0 }, end: { x: xP, y: yJ, z: dz * leg } },                   // Pillar ↔ Tie beam (YZ)
+          { start: { x: xP + sx * leg, y: yJ, z: 0 }, end: { x: xP, y: yJ, z: dz * leg } },              // Mid purlin ↔ Tie beam (XZ)
+        )
+      }
+    }
 
-      // Brace 3: Purlin ↔ Tie beam (XZ plane, horizontal)
-      braces.push({
-        start: { x: xP + sx * leg, y: yJunction, z: zP },
-        end:   { x: xP, y: yJunction, z: zP + sz * leg },
-      })
+    // ── Mid purlin ↔ Tie beam crossing (interior rows, no pillar) ───────────
+    if (needsCenterPurlin && !isCornerRow) {
+      for (const dx of [-1, +1]) {
+        for (const dz of [-1, +1]) {
+          braces.push(
+            { start: { x: xP + dx * leg, y: yJ, z: 0 }, end: { x: xP, y: yJ, z: dz * leg } },            // Mid purlin ↔ Tie beam (XZ)
+          )
+        }
+      }
     }
   }
 

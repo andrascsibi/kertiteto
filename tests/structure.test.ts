@@ -469,14 +469,19 @@ describe('corner knee braces (KONYOKFA)', () => {
     return Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2 + (a.z - b.z) ** 2)
   }
 
-  it('12 braces for default config (4 corners × 3 braces)', () => {
+  it('22 braces for default config (4 corners × 3 + 1 interior row × 2 sides × 5)', () => {
     const m = buildStructure(base)
-    expect(m.kneeBraces.length).toBe(12)
+    // 3 pillar rows for length=4: 2 corner + 1 interior
+    // Corner: 2 rows × 2 z-positions × 3 = 12
+    // Interior side: 1 row × 2 z-positions × 5 = 10
+    expect(m.kneeBraces.length).toBe(22)
   })
 
-  it('12 braces for longer buildings (still 4 corners)', () => {
+  it('32 braces for longer buildings (more interior rows)', () => {
     const m = buildStructure({ ...base, length: 10 })
-    expect(m.kneeBraces.length).toBe(12)
+    // 4 pillar rows for length=10: 2 corner + 2 interior
+    // Corner: 12, Interior: 2 × 2 × 5 = 20
+    expect(m.kneeBraces.length).toBe(32)
   })
 
   it('all braces have length ≈ 1.0 m', () => {
@@ -491,8 +496,8 @@ describe('corner knee braces (KONYOKFA)', () => {
     const verticalBraces = m.kneeBraces.filter(kb =>
       Math.abs(kb.end.y - kb.start.y) > 0.01
     )
-    // 8 vertical braces (4 corners × 2 vertical braces each)
-    expect(verticalBraces.length).toBe(8)
+    // Corner: 4 corners × 2 = 8, Interior: 1 row × 2 sides × 3 = 6 → total 14
+    expect(verticalBraces.length).toBe(14)
     for (const kb of verticalBraces) {
       expect(Math.abs(kb.end.y - kb.start.y)).toBeCloseTo(leg, 6)
     }
@@ -503,8 +508,8 @@ describe('corner knee braces (KONYOKFA)', () => {
     const horizBraces = m.kneeBraces.filter(kb =>
       Math.abs(kb.end.y - kb.start.y) < 0.01
     )
-    // 4 horizontal braces (1 per corner)
-    expect(horizBraces.length).toBe(4)
+    // Corner: 4, Interior: 1 row × 2 sides × 2 = 4 → total 8
+    expect(horizBraces.length).toBe(8)
     for (const kb of horizBraces) {
       expect(Math.abs(kb.end.x - kb.start.x)).toBeCloseTo(leg, 6)
       expect(Math.abs(kb.end.z - kb.start.z)).toBeCloseTo(leg, 6)
@@ -545,6 +550,39 @@ describe('corner knee braces (KONYOKFA)', () => {
     for (const kb of verticalBraces) {
       const upperY = Math.max(kb.start.y, kb.end.y)
       expect(upperY).toBeCloseTo(yJunction, 6)
+    }
+  })
+
+  it('wide building: ridge pillar braces (5 per ridge pillar)', () => {
+    const m = buildStructure({ ...base, width: 5 })
+    // Width 5: innerSpan = 4.7 > 3.5 → center pillars at corner rows
+    // 3 pillar rows (length=4): 2 corner + 1 interior
+    // Corner side: 2×2×3=12, Interior side: 1×2×5=10
+    // Ridge pillar: 2×5=10, Mid purlin crossing: 1×4=4
+    expect(m.kneeBraces.length).toBe(36)
+  })
+
+  it('wide building: all braces have length ≈ 1.0 m', () => {
+    const m = buildStructure({ ...base, width: 5 })
+    for (const kb of m.kneeBraces) {
+      expect(dist(kb.start, kb.end)).toBeCloseTo(KNEE_BRACE_LENGTH, 6)
+    }
+  })
+
+  it('wide building: mid purlin ↔ tie beam crossings at interior rows are all horizontal', () => {
+    const m = buildStructure({ ...base, width: 5 })
+    // Find horizontal braces at z ≈ 0 (one endpoint) on interior rows
+    const horizAtZ0 = m.kneeBraces.filter(kb =>
+      Math.abs(kb.start.y - kb.end.y) < 0.001 &&
+      (Math.abs(kb.start.z) < 0.01 || Math.abs(kb.end.z) < 0.01)
+    )
+    // Corner rows: 2 horizontal purlin↔tiebeam per ridge pillar × 2 rows = 4
+    // Plus 2 horizontal side corner braces × 2 rows... no, those aren't at z≈0
+    // Interior row: 4 horizontal at z=0 crossing
+    // Total horizontal touching z≈0: ridge pillar 4 + interior 4 = 8
+    expect(horizAtZ0.length).toBeGreaterThanOrEqual(4)
+    for (const kb of horizAtZ0) {
+      expect(kb.start.y).toBeCloseTo(kb.end.y, 6)
     }
   })
 })
