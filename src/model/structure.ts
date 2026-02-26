@@ -107,7 +107,7 @@ export function buildStructure(params: InputParams): StructureModel {
   const basePurlins: Purlin[] = [
     makePurlin(xMin, xMax, yPurlinCenter, -zPurlin, PURLIN_SIZE),
     makePurlin(xMin, xMax, yPurlinCenter, +zPurlin, PURLIN_SIZE),
-    ...(needsCenterPurlin ? [makePurlin(xMin, xMax, yPurlinCenter, 0, PURLIN_SIZE)] : []),
+    ...(needsCenterPurlin ? [makePurlin(-length / 2 + PURLIN_SIZE / 2, length / 2 - PURLIN_SIZE / 2, yPurlinCenter, 0, PURLIN_SIZE)] : []),
   ]
 
   // ── Ridge purlin (GERINC SZELEMEN) ───────────────────────────────────────────
