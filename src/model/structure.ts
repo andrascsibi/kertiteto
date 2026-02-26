@@ -102,9 +102,12 @@ export function buildStructure(params: InputParams): StructureModel {
   // ── Base purlins (TALP SZELEMEN) ─────────────────────────────────────────────
   // Purlin center is inset by PURLIN_SIZE/2 from the outer edge; outer face flush at ±width/2
   const zPurlin = width / 2 - PURLIN_SIZE / 2
-  const basePurlins: [Purlin, Purlin] = [
+  const innerSpan = width - 2 * PILLAR_SIZE
+  const needsCenterPurlin = innerSpan > MAX_UNSUPPORTED_SPAN
+  const basePurlins: Purlin[] = [
     makePurlin(xMin, xMax, yPurlinCenter, -zPurlin, PURLIN_SIZE),
     makePurlin(xMin, xMax, yPurlinCenter, +zPurlin, PURLIN_SIZE),
+    ...(needsCenterPurlin ? [makePurlin(xMin, xMax, yPurlinCenter, 0, PURLIN_SIZE)] : []),
   ]
 
   // ── Ridge purlin (GERINC SZELEMEN) ───────────────────────────────────────────
@@ -230,7 +233,7 @@ export function computeMetrics(model: StructureModel): StructureMetrics {
 
   // Volume (pillar heights vary: ridge pillars are taller)
   const pillarVol   = model.pillars.reduce((sum, p) => sum + PILLAR_SIZE * PILLAR_SIZE * p.height, 0)
-  const basePurVol  = 2 * PURLIN_SIZE * PURLIN_SIZE * purlinLength
+  const basePurVol  = model.basePurlins.length * PURLIN_SIZE * PURLIN_SIZE * purlinLength
   const ridgePurVol = RIDGE_SIZE * RIDGE_SIZE * purlinLength
   const tieBeamVol  = model.tieBeams.length * PURLIN_SIZE * PURLIN_SIZE * tieBeamLength
   const rafterVol   = model.rafters.length * RAFTER_WIDTH * RAFTER_DEPTH * rafterLen
@@ -243,7 +246,7 @@ export function computeMetrics(model: StructureModel): StructureMetrics {
 
   // Surface (perimeter × length, ignoring ends)
   const pillarSurf   = model.pillars.reduce((sum, p) => sum + p.height * (4 * PILLAR_SIZE), 0)
-  const basePurSurf  = 2 * purlinLength * 2 * (PURLIN_SIZE + PURLIN_SIZE)
+  const basePurSurf  = model.basePurlins.length * purlinLength * 2 * (PURLIN_SIZE + PURLIN_SIZE)
   const ridgePurSurf = purlinLength * 2 * (RIDGE_SIZE + RIDGE_SIZE)
   const tieBeamSurf  = model.tieBeams.length * tieBeamLength * 2 * (PURLIN_SIZE + PURLIN_SIZE)
   const rafterSurf   = model.rafters.length * rafterLen * (2 * RAFTER_WIDTH + 2 * RAFTER_DEPTH)

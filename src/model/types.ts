@@ -88,8 +88,8 @@ export interface StructureModel {
   /** Pillar height from ground to top (m). Fixed: 2.4 m */
   pillarHeight: number
   pillars: Pillar[]
-  /** Two base purlins: left and right (TALP SZELEMEN) */
-  basePurlins: [Purlin, Purlin]
+  /** Base purlins: left and right, plus center if ridge pillars present (TALP SZELEMEN) */
+  basePurlins: Purlin[]
   /** Ridge purlin (GERINC SZELEMEN) */
   ridgePurlin: Purlin
   /** Tie beams (KOTOGERENDA) */
