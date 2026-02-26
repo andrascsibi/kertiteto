@@ -3,19 +3,19 @@
  */
 
 import * as THREE from 'three'
-import type { StructureModel, Pillar, Purlin, TieBeam, Rafter, RidgeTie } from '../model/types'
-import { PILLAR_SIZE, PURLIN_SIZE, RAFTER_WIDTH, RAFTER_DEPTH, RIDGE_TIE_WIDTH } from '../model/structure'
+import type { StructureModel, Pillar, Purlin, TieBeam, Rafter, RidgeTie, KneeBrace } from '../model/types'
+import { PILLAR_SIZE, PURLIN_SIZE, RAFTER_WIDTH, RAFTER_DEPTH, RIDGE_TIE_WIDTH, KNEE_BRACE_SIZE, KNEE_BRACE_LENGTH } from '../model/structure'
 import { EAVE_PLUMB_HEIGHT } from '../model/geometry'
 
 const COLOR = '#0c83fa' 
 
 const MAT: Record<string, THREE.MeshLambertMaterial> = {
-// pillar:  new THREE.MeshLambertMaterial({ color: 0x5a3a1a }),
-// purlin:  new THREE.MeshLambertMaterial({ color: 0x7a5030 }),
-// rafter:  new THREE.MeshLambertMaterial({ color: 0x9b6840 }),
-  pillar:  new THREE.MeshLambertMaterial({ color: COLOR }),
-  purlin:  new THREE.MeshLambertMaterial({ color: COLOR }),
-  rafter:  new THREE.MeshLambertMaterial({ color: COLOR }),
+pillar:  new THREE.MeshLambertMaterial({ color: 0x5a3a1a }),
+purlin:  new THREE.MeshLambertMaterial({ color: 0x7a5030 }),
+rafter:  new THREE.MeshLambertMaterial({ color: 0x9b6840 }),
+  // pillar:  new THREE.MeshLambertMaterial({ color: COLOR }),
+  // purlin:  new THREE.MeshLambertMaterial({ color: COLOR }),
+  // rafter:  new THREE.MeshLambertMaterial({ color: COLOR }),
 }
 
 export function buildRoofMeshes(model: StructureModel): THREE.Group {
@@ -26,6 +26,7 @@ export function buildRoofMeshes(model: StructureModel): THREE.Group {
   for (const tb of model.tieBeams)    group.add(tieBeamMesh(tb))
   for (const r of model.rafters)      group.add(rafterMesh(r, model.params.pitch))
   for (const rt of model.ridgeTies)   group.add(ridgeTieMesh(rt))
+  for (const kb of model.kneeBraces)  group.add(kneeBraceMesh(kb))
   group.add(purlinMesh(model.ridgePurlin))
 
   return group
@@ -214,7 +215,37 @@ function ridgeTieMesh(rt: RidgeTie): THREE.Mesh {
   geo.setIndex(tris)
   geo.computeVertexNormals()
 
-  const mesh = new THREE.Mesh(geo, MAT.purlin)
+  const mesh = new THREE.Mesh(geo, MAT.rafter)
+  mesh.castShadow = true
+  mesh.receiveShadow = true
+  return mesh
+}
+
+function kneeBraceMesh(kb: KneeBrace): THREE.Mesh {
+  const geo = new THREE.BoxGeometry(KNEE_BRACE_SIZE, KNEE_BRACE_SIZE, KNEE_BRACE_LENGTH)
+  const mesh = new THREE.Mesh(geo, MAT.pillar)
+
+  // Position at midpoint
+  mesh.position.set(
+    (kb.start.x + kb.end.x) / 2,
+    (kb.start.y + kb.end.y) / 2,
+    (kb.start.z + kb.end.z) / 2,
+  )
+
+  // Build orthonormal basis: local Z = beam direction, local Y = closest to global Y
+  const d = new THREE.Vector3(
+    kb.end.x - kb.start.x,
+    kb.end.y - kb.start.y,
+    kb.end.z - kb.start.z,
+  ).normalize()
+  const up = Math.abs(d.y) > 0.99
+    ? new THREE.Vector3(1, 0, 0)
+    : new THREE.Vector3(0, 1, 0)
+  const right = new THREE.Vector3().crossVectors(up, d).normalize()
+  const correctedUp = new THREE.Vector3().crossVectors(d, right)
+  const basis = new THREE.Matrix4().makeBasis(right, correctedUp, d)
+  mesh.quaternion.setFromRotationMatrix(basis)
+
   mesh.castShadow = true
   mesh.receiveShadow = true
   return mesh

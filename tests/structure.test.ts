@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { buildStructure, PILLAR_HEIGHT, PILLAR_SIZE, PURLIN_SIZE, RIDGE_SIZE, RAFTER_WIDTH, RAFTER_DEPTH, RIDGE_TIE_NOTCH, RIDGE_TIE_DEPTH, RIDGE_TIE_WIDTH } from '../src/model/structure'
+import { buildStructure, PILLAR_HEIGHT, PILLAR_SIZE, PURLIN_SIZE, RIDGE_SIZE, RAFTER_WIDTH, RAFTER_DEPTH, RIDGE_TIE_NOTCH, RIDGE_TIE_DEPTH, RIDGE_TIE_WIDTH, KNEE_BRACE_LENGTH } from '../src/model/structure'
 import { ridgeHeight, BIRD_MOUTH_PLUMB_HEIGHT, MAX_RAFTER_SPACING, MAX_UNSUPPORTED_SPAN } from '../src/model/geometry'
 import type { InputParams } from '../src/model/types'
 
@@ -458,6 +458,93 @@ describe('ridge ties (KAKASULO)', () => {
         expect(rt.zHalfBottom).toBeGreaterThan(rt.zHalfTop)
         expect(rt.yBottom).toBeLessThan(rt.yTop)
       }
+    }
+  })
+})
+
+describe('corner knee braces (KONYOKFA)', () => {
+  const leg = KNEE_BRACE_LENGTH * Math.cos(Math.PI / 4)
+
+  function dist(a: { x: number; y: number; z: number }, b: { x: number; y: number; z: number }): number {
+    return Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2 + (a.z - b.z) ** 2)
+  }
+
+  it('12 braces for default config (4 corners × 3 braces)', () => {
+    const m = buildStructure(base)
+    expect(m.kneeBraces.length).toBe(12)
+  })
+
+  it('12 braces for longer buildings (still 4 corners)', () => {
+    const m = buildStructure({ ...base, length: 10 })
+    expect(m.kneeBraces.length).toBe(12)
+  })
+
+  it('all braces have length ≈ 1.0 m', () => {
+    const m = buildStructure(base)
+    for (const kb of m.kneeBraces) {
+      expect(dist(kb.start, kb.end)).toBeCloseTo(KNEE_BRACE_LENGTH, 6)
+    }
+  })
+
+  it('vertical braces are at 45° (|deltaY| ≈ leg)', () => {
+    const m = buildStructure(base)
+    const verticalBraces = m.kneeBraces.filter(kb =>
+      Math.abs(kb.end.y - kb.start.y) > 0.01
+    )
+    // 8 vertical braces (4 corners × 2 vertical braces each)
+    expect(verticalBraces.length).toBe(8)
+    for (const kb of verticalBraces) {
+      expect(Math.abs(kb.end.y - kb.start.y)).toBeCloseTo(leg, 6)
+    }
+  })
+
+  it('horizontal braces are at 45° in XZ plane (|deltaX| ≈ |deltaZ| ≈ leg)', () => {
+    const m = buildStructure(base)
+    const horizBraces = m.kneeBraces.filter(kb =>
+      Math.abs(kb.end.y - kb.start.y) < 0.01
+    )
+    // 4 horizontal braces (1 per corner)
+    expect(horizBraces.length).toBe(4)
+    for (const kb of horizBraces) {
+      expect(Math.abs(kb.end.x - kb.start.x)).toBeCloseTo(leg, 6)
+      expect(Math.abs(kb.end.z - kb.start.z)).toBeCloseTo(leg, 6)
+    }
+  })
+
+  it('all braces point inward (toward building center)', () => {
+    const m = buildStructure(base)
+    for (const kb of m.kneeBraces) {
+      const midX = (kb.start.x + kb.end.x) / 2
+      const midZ = (kb.start.z + kb.end.z) / 2
+      // Midpoint should be closer to center than the outermost endpoint
+      const startDistSq = kb.start.x ** 2 + kb.start.z ** 2
+      const endDistSq = kb.end.x ** 2 + kb.end.z ** 2
+      const midDistSq = midX ** 2 + midZ ** 2
+      expect(midDistSq).toBeLessThan(Math.max(startDistSq, endDistSq) + 1e-9)
+    }
+  })
+
+  it('vertical brace lower ends are at y = yJunction - leg', () => {
+    const yJunction = PILLAR_HEIGHT + PURLIN_SIZE / 2
+    const m = buildStructure(base)
+    const verticalBraces = m.kneeBraces.filter(kb =>
+      Math.abs(kb.end.y - kb.start.y) > 0.01
+    )
+    for (const kb of verticalBraces) {
+      const lowerY = Math.min(kb.start.y, kb.end.y)
+      expect(lowerY).toBeCloseTo(yJunction - leg, 6)
+    }
+  })
+
+  it('upper ends of vertical braces are at y = yJunction (purlin center level)', () => {
+    const yJunction = PILLAR_HEIGHT + PURLIN_SIZE / 2
+    const m = buildStructure(base)
+    const verticalBraces = m.kneeBraces.filter(kb =>
+      Math.abs(kb.end.y - kb.start.y) > 0.01
+    )
+    for (const kb of verticalBraces) {
+      const upperY = Math.max(kb.start.y, kb.end.y)
+      expect(upperY).toBeCloseTo(yJunction, 6)
     }
   })
 })

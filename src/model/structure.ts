@@ -30,7 +30,7 @@
  *     → yRidgePurlinCenter = yRidgePurlinTop - RIDGE_SIZE/2
  */
 
-import type { InputParams, StructureModel, Pillar, Purlin, TieBeam, Rafter, RidgeTie } from './types'
+import type { InputParams, StructureModel, Pillar, Purlin, TieBeam, Rafter, RidgeTie, KneeBrace } from './types'
 import {
   ridgeHeight,
   rafterLength,
@@ -52,6 +52,9 @@ export const RAFTER_DEPTH = 0.15   // 15 cm (the tall dimension, perpendicular t
 export const RIDGE_TIE_NOTCH = 0.05 // overlap with ridge purlin (m)
 export const RIDGE_TIE_WIDTH = 0.05 // 5 cm (along ridge direction)
 export const RIDGE_TIE_DEPTH = 0.15 // 15 cm (vertical extent)
+
+export const KNEE_BRACE_SIZE   = 0.1  // 10×10 cm cross-section
+export const KNEE_BRACE_LENGTH = 1.0   // 1 m along diagonal
 
 export const PILLAR_HEIGHT = 2.4   // m (fixed)
 
@@ -190,6 +193,9 @@ export function buildStructure(params: InputParams): StructureModel {
     }
   }
 
+  // ── Corner knee braces (KONYOKFA) ────────────────────────────────────────────
+  const kneeBraces = buildCornerKneeBraces(pillarXPositions, width)
+
   return {
     params,
     ridgeHeight: H_ridge,
@@ -201,6 +207,7 @@ export function buildStructure(params: InputParams): StructureModel {
     ridgeTies,
     rafters: [...leftRafters, ...rightRafters],
     rafterSpacing: xSpacing,
+    kneeBraces,
   }
 }
 
@@ -230,7 +237,8 @@ export function computeMetrics(model: StructureModel): StructureMetrics {
   const ridgeTieVol = model.ridgeTies.length > 0
     ? model.ridgeTies.length * (model.ridgeTies[0].zHalfTop + model.ridgeTies[0].zHalfBottom) * RIDGE_TIE_DEPTH * RIDGE_TIE_WIDTH
     : 0
-  const timberVolume = pillarVol + basePurVol + ridgePurVol + tieBeamVol + rafterVol + ridgeTieVol
+  const kneeBraceVol = model.kneeBraces.length * KNEE_BRACE_SIZE * KNEE_BRACE_SIZE * KNEE_BRACE_LENGTH
+  const timberVolume = pillarVol + basePurVol + ridgePurVol + tieBeamVol + rafterVol + ridgeTieVol + kneeBraceVol
 
   // Surface (perimeter × length, ignoring ends)
   const pillarSurf   = model.pillars.length * PILLAR_HEIGHT * (4 * PILLAR_SIZE)
@@ -247,7 +255,8 @@ export function computeMetrics(model: StructureModel): StructureMetrics {
         2 * RIDGE_TIE_DEPTH / cosPitch
       )
     : 0
-  const timberSurface = pillarSurf + basePurSurf + ridgePurSurf + tieBeamSurf + rafterSurf + ridgeTieSurf
+  const kneeBraceSurf = model.kneeBraces.length * KNEE_BRACE_LENGTH * (4 * KNEE_BRACE_SIZE)
+  const timberSurface = pillarSurf + basePurSurf + ridgePurSurf + tieBeamSurf + rafterSurf + ridgeTieSurf + kneeBraceSurf
 
   // Roof surface: 2 slopes × rafter length × purlin run
   const roofSurface = 2 * rafterLen * purlinLength
@@ -271,6 +280,43 @@ function makeTieBeam(x: number, y: number, zHalf: number): TieBeam {
     start: { x, y, z: -zHalf },
     end:   { x, y, z: +zHalf },
   }
+}
+
+function buildCornerKneeBraces(pillarXPositions: number[], width: number): KneeBrace[] {
+  const leg = KNEE_BRACE_LENGTH * Math.cos(Math.PI / 4)  // 1/√2 ≈ 0.707
+  const zHalf = width / 2 - PILLAR_SIZE / 2  // pillar center z offset
+  const yJunction = PILLAR_HEIGHT + PURLIN_SIZE / 2  // purlin/tie beam center level
+  const braces: KneeBrace[] = []
+
+  // Only corner rows (first and last)
+  const cornerXs = [pillarXPositions[0], pillarXPositions[pillarXPositions.length - 1]]
+
+  for (const xP of cornerXs) {
+    const sx = Math.sign(-xP) || 1  // toward center along x
+    for (const zP of [-zHalf, +zHalf]) {
+      const sz = Math.sign(-zP) || 1  // toward center along z
+
+      // Brace 1: Pillar ↔ Tie beam (YZ plane, x = const)
+      braces.push({
+        start: { x: xP, y: yJunction - leg, z: zP },
+        end:   { x: xP, y: yJunction, z: zP + sz * leg },
+      })
+
+      // Brace 2: Pillar ↔ Purlin (XY plane, z = const)
+      braces.push({
+        start: { x: xP, y: yJunction - leg, z: zP },
+        end:   { x: xP + sx * leg, y: yJunction, z: zP },
+      })
+
+      // Brace 3: Purlin ↔ Tie beam (XZ plane, horizontal)
+      braces.push({
+        start: { x: xP + sx * leg, y: yJunction, z: zP },
+        end:   { x: xP, y: yJunction, z: zP + sz * leg },
+      })
+    }
+  }
+
+  return braces
 }
 
 function buildPillarXPositions(length: number, nPillars: number): number[] {

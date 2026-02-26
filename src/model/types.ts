@@ -75,6 +75,12 @@ export interface RidgeTie {
   zHalfBottom: number
 }
 
+export interface KneeBrace {
+  /** KONYOKFA / KARPANT: diagonal brace connecting two structural members at a corner */
+  start: Point3D
+  end: Point3D
+}
+
 export interface StructureModel {
   params: InputParams
   /** Ridge height above pillar top (m) */
@@ -94,4 +100,6 @@ export interface StructureModel {
   rafters: Rafter[]
   /** Rafter spacing along ridge (m) */
   rafterSpacing: number
+  /** Corner knee braces (KONYOKFA) */
+  kneeBraces: KneeBrace[]
 }
