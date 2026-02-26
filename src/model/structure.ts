@@ -113,7 +113,8 @@ export function buildStructure(params: InputParams): StructureModel {
   // ── Pillars ──────────────────────────────────────────────────────────────────
   const nPillars = pillarCount(length)
   const pillarXPositions = buildPillarXPositions(length, nPillars)
-  const pillars = buildPillars(width, pillarXPositions)
+  const yRidgePurlinBottom = yRidgePurlinCenter - RIDGE_SIZE / 2
+  const pillars = buildPillars(width, pillarXPositions, yRidgePurlinBottom)
 
   // ── Tie beams (KOTOGERENDA) ──────────────────────────────────────────────────
   // One tie beam above every pillar row, connecting the two base purlin centers.
@@ -227,8 +228,8 @@ export function computeMetrics(model: StructureModel): StructureMetrics {
   const tieBeamLength = Math.abs(model.tieBeams[0].end.z - model.tieBeams[0].start.z)
   const rafterLen = model.rafters[0].length
 
-  // Volume
-  const pillarVol   = model.pillars.length * PILLAR_SIZE * PILLAR_SIZE * PILLAR_HEIGHT
+  // Volume (pillar heights vary: ridge pillars are taller)
+  const pillarVol   = model.pillars.reduce((sum, p) => sum + PILLAR_SIZE * PILLAR_SIZE * p.height, 0)
   const basePurVol  = 2 * PURLIN_SIZE * PURLIN_SIZE * purlinLength
   const ridgePurVol = RIDGE_SIZE * RIDGE_SIZE * purlinLength
   const tieBeamVol  = model.tieBeams.length * PURLIN_SIZE * PURLIN_SIZE * tieBeamLength
@@ -241,7 +242,7 @@ export function computeMetrics(model: StructureModel): StructureMetrics {
   const timberVolume = pillarVol + basePurVol + ridgePurVol + tieBeamVol + rafterVol + ridgeTieVol + kneeBraceVol
 
   // Surface (perimeter × length, ignoring ends)
-  const pillarSurf   = model.pillars.length * PILLAR_HEIGHT * (4 * PILLAR_SIZE)
+  const pillarSurf   = model.pillars.reduce((sum, p) => sum + p.height * (4 * PILLAR_SIZE), 0)
   const basePurSurf  = 2 * purlinLength * 2 * (PURLIN_SIZE + PURLIN_SIZE)
   const ridgePurSurf = purlinLength * 2 * (RIDGE_SIZE + RIDGE_SIZE)
   const tieBeamSurf  = model.tieBeams.length * tieBeamLength * 2 * (PURLIN_SIZE + PURLIN_SIZE)
@@ -329,7 +330,7 @@ function buildPillarXPositions(length: number, nPillars: number): number[] {
   return positions
 }
 
-function buildPillars(width: number, xPositions: number[]): Pillar[] {
+function buildPillars(width: number, xPositions: number[], ridgePillarHeight: number): Pillar[] {
   const zHalf = width / 2 - PILLAR_SIZE / 2
   const innerSpan = width - 2 * PILLAR_SIZE
   const needsCenterPillar = innerSpan > MAX_UNSUPPORTED_SPAN
@@ -339,9 +340,9 @@ function buildPillars(width: number, xPositions: number[]): Pillar[] {
     for (const z of [-zHalf, +zHalf]) {
       pillars.push({ base: { x, y: 0, z }, height: PILLAR_HEIGHT })
     }
-    // Center pillar at z=0 for corner (end) rows only
+    // Ridge pillar at z=0 for corner (end) rows only, extends to ridge purlin bottom
     if (needsCenterPillar && (i === 0 || i === xPositions.length - 1)) {
-      pillars.push({ base: { x, y: 0, z: 0 }, height: PILLAR_HEIGHT })
+      pillars.push({ base: { x, y: 0, z: 0 }, height: ridgePillarHeight })
     }
   }
   return pillars

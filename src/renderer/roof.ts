@@ -61,7 +61,7 @@ function purlinMesh(p: Purlin): THREE.Mesh {
 
 function tieBeamMesh(tb: TieBeam): THREE.Mesh {
   const len = Math.abs(tb.end.z - tb.start.z)
-  const geo = new THREE.BoxGeometry(PURLIN_SIZE, PURLIN_SIZE, len)
+  const geo = new THREE.BoxGeometry(PURLIN_SIZE - 0.002, PURLIN_SIZE - 0.002, len)
   const mesh = new THREE.Mesh(geo, MAT.purlin)
   mesh.position.set(
     tb.start.x,
