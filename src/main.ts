@@ -177,7 +177,12 @@ function update(): void {
         `fa felület: ${m.timberSurface.toFixed(1)} m²<br>` +
         `héj felület: ${m.roofSurface.toFixed(1)} m²<br>` +
         `alapterület: ${m.totalFootprint.toFixed(1)} m²<br>` +
-        `<br>${lines}<br>összesen: ${formatHUF(total)}`
+        `<br>${lines}<br>` +
+        Object.entries(CATEGORY_EMOJI).map(([cat, emoji]) => {
+          const sum = allItems.filter(i => i.category === cat).reduce((s, i) => s + i.subtotal, 0)
+          return `${emoji} ${cat}: ${formatHUF(sum)}`
+        }).join('<br>') +
+        `<br>összesen: ${formatHUF(total)}`
     }
   } else if (devMode) {
     debug.innerHTML =
