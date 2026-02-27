@@ -1,6 +1,7 @@
 import { buildStructure, computeMetrics, DEFAULTS, type StructureMetrics } from './model/structure'
 import { pillarCount, rafterCount } from './model/geometry'
 import { fetchPrices, type PriceTable } from './model/prices'
+import { buildRoofing, counterBattenTotalLength } from './model/roofing'
 import { createScene } from './renderer/scene'
 
 // ── Hash params ──────────────────────────────────────────────────────────────
@@ -118,6 +119,8 @@ function update(): void {
   scene.updateModel(model)
 
   const m = computeMetrics(model)
+  const roofing = buildRoofing(model, { membrane: chkMembrane.checked })
+  const cbTotalLen = counterBattenTotalLength(roofing)
 
   // Info badge
   const nPillars = pillarCount(params.length)
@@ -129,24 +132,35 @@ function update(): void {
 
   // Roofing options — always show cost, only add to total when checked
   const ROOFING_OPTIONS = [
-    { chk: chkLamberia, costEl: costLamberia, priceKeys: ['lamberia', 'lamberiazas'] },
-    { chk: chkMembrane, costEl: costMembrane, priceKeys: ['folia', 'foliazas'] },
-    { chk: chkRoofing,  costEl: costRoofing,  priceKeys: ['lemez', 'lecezes', 'lemezeles'] },
-  ] as const
+    { chk: chkLamberia, costEl: costLamberia, items: [
+      { key: 'lamberia', qty: m.roofSurface },
+      { key: 'lamberiazas', qty: m.roofSurface },
+    ]},
+    { chk: chkMembrane, costEl: costMembrane, items: [
+      { key: 'folia', qty: m.roofSurface },
+      { key: 'foliazas', qty: m.roofSurface },
+      { key: 'ellenlec', qty: cbTotalLen },
+    ]},
+    { chk: chkRoofing,  costEl: costRoofing, items: [
+      { key: 'lemez', qty: m.roofSurface },
+      { key: 'lecezes', qty: m.roofSurface },
+      { key: 'lemezeles', qty: m.roofSurface },
+    ]},
+  ]
 
   let optionsTotal = 0
   const optionItems: PriceLineItem[] = []
-  for (const { chk, costEl, priceKeys } of ROOFING_OPTIONS) {
+  for (const { chk, costEl, items } of ROOFING_OPTIONS) {
     let cost = 0
     let hasAny = false
-    for (const key of priceKeys) {
+    for (const { key, qty } of items) {
       const entry = prices?.[key]
       if (!entry) continue
       hasAny = true
-      const subtotal = entry.price * m.roofSurface
+      const subtotal = entry.price * qty
       cost += subtotal
       if (chk.checked) {
-        optionItems.push({ label: key, unitPrice: entry.price, unit: entry.unit, quantity: m.roofSurface, subtotal, category: entry.category })
+        optionItems.push({ label: key, unitPrice: entry.price, unit: entry.unit, quantity: qty, subtotal, category: entry.category })
       }
     }
     if (!hasAny) { costEl.textContent = ''; continue }
