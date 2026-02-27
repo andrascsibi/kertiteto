@@ -1,4 +1,4 @@
-import { buildStructure, computeMetrics, DEFAULTS } from './model/structure'
+import { buildStructure, computeMetrics, DEFAULTS, type StructureMetrics } from './model/structure'
 import { pillarCount, rafterCount } from './model/geometry'
 import { fetchPrices, type PriceTable } from './model/prices'
 import { createScene } from './renderer/scene'
@@ -53,13 +53,34 @@ function formatHUF(amount: number): string {
   return Math.round(amount).toLocaleString('hu-HU') + ' Ft'
 }
 
-function computePrice(prices: PriceTable, timberVolume: number, roofSurface: number): number {
-  const materialPerM3 =
-    (prices['fureszaru']?.price ?? 0) +
-    (prices['gyalulas']?.price ?? 0) +
-    (prices['gyartas']?.price ?? 0)
-  const installPerM2 = prices['szereles']?.price ?? 0
-  return materialPerM3 * timberVolume + installPerM2 * roofSurface
+interface PriceLineItem {
+  label: string
+  unitPrice: number
+  unit: string
+  quantity: number
+  subtotal: number
+}
+
+/** Which price entries to include and how to compute quantity */
+const PRICE_ITEMS: { id: string, qty: (m: StructureMetrics) => number }[] = [
+  { id: 'fureszaru',  qty: m => m.timberVolume },
+  { id: 'gyalulas',   qty: m => m.timberVolume },
+  { id: 'gyartas',    qty: m => m.timberVolume },
+  { id: 'szereles',   qty: m => m.timberVolume  },
+]
+
+function computePriceBreakdown(prices: PriceTable, metrics: StructureMetrics): { items: PriceLineItem[], total: number } {
+  const items: PriceLineItem[] = []
+  let total = 0
+  for (const { id, qty } of PRICE_ITEMS) {
+    const entry = prices[id]
+    if (!entry) continue
+    const quantity = qty(metrics)
+    const subtotal = entry.price * quantity
+    items.push({ label: id, unitPrice: entry.price, unit: entry.unit, quantity, subtotal })
+    total += subtotal
+  }
+  return { items, total }
 }
 
 // ── State + update ─────────────────────────────────────────────────────────────
@@ -94,16 +115,27 @@ function update(): void {
 
   // Pricing panel
   if (prices) {
-    const total = computePrice(prices, m.timberVolume, m.roofSurface)
+    const { items, total } = computePriceBreakdown(prices, m)
     const unitPrice = total / m.totalFootprint
     pricing.innerHTML =
       `<p class="section-title">Becsült ár (bruttó)</p>` +
       `<p class="price-total">${formatHUF(total)}</p>` +
       `<p class="price-unit">${formatHUF(unitPrice)} / m²</p>`
-  }
 
-  // Debug panel
-  if (devMode) {
+    // Debug: line item breakdown
+    if (devMode) {
+      const lines = items.map(i =>
+        `${i.label}: ${i.quantity.toFixed(2)} ${i.unit} × ${formatHUF(i.unitPrice)} = ${formatHUF(i.subtotal)}`
+      ).join('<br>')
+      debug.innerHTML =
+        `szaruhossz: ${model.rafters[0].length.toFixed(2)} m<br>` +
+        `faanyag: ${m.timberVolume.toFixed(2)} m³<br>` +
+        `felület: ${m.timberSurface.toFixed(1)} m²<br>` +
+        `tető: ${m.roofSurface.toFixed(1)} m²<br>` +
+        `alapterület: ${m.totalFootprint.toFixed(1)} m²<br>` +
+        `<br>${lines}<br>összesen: ${formatHUF(total)}`
+    }
+  } else if (devMode) {
     debug.innerHTML =
       `szaruhossz: ${model.rafters[0].length.toFixed(2)} m<br>` +
       `faanyag: ${m.timberVolume.toFixed(2)} m³<br>` +
