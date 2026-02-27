@@ -66,6 +66,13 @@ interface PriceLineItem {
   unit: string
   quantity: number
   subtotal: number
+  category: string
+}
+
+const CATEGORY_EMOJI: Record<string, string> = {
+  anyag: '🪵',
+  muhely: '🪚',
+  helyszin: '🔨',
 }
 
 /** Which price entries to include and how to compute quantity */
@@ -84,7 +91,7 @@ function computePriceBreakdown(prices: PriceTable, metrics: StructureMetrics): {
     if (!entry) continue
     const quantity = qty(metrics)
     const subtotal = entry.price * quantity
-    items.push({ label: id, unitPrice: entry.price, unit: entry.unit, quantity, subtotal })
+    items.push({ label: id, unitPrice: entry.price, unit: entry.unit, quantity, subtotal, category: entry.category })
     total += subtotal
   }
   return { items, total }
@@ -139,7 +146,7 @@ function update(): void {
       const subtotal = entry.price * m.roofSurface
       cost += subtotal
       if (chk.checked) {
-        optionItems.push({ label: key, unitPrice: entry.price, unit: entry.unit, quantity: m.roofSurface, subtotal })
+        optionItems.push({ label: key, unitPrice: entry.price, unit: entry.unit, quantity: m.roofSurface, subtotal, category: entry.category })
       }
     }
     if (!hasAny) { costEl.textContent = ''; continue }
@@ -160,9 +167,10 @@ function update(): void {
     // Debug: line item breakdown
     if (devMode) {
       const allItems = [...items, ...optionItems]
-      const lines = allItems.map(i =>
-        `${i.label}: ${i.quantity.toFixed(2)} ${i.unit} × ${formatHUF(i.unitPrice)} = ${formatHUF(i.subtotal)}`
-      ).join('<br>')
+      const lines = allItems.map(i => {
+        const emoji = CATEGORY_EMOJI[i.category] ?? '❓'
+        return `${emoji} ${i.label}: ${i.quantity.toFixed(2)} ${i.unit} × ${formatHUF(i.unitPrice)} = ${formatHUF(i.subtotal)}`
+      }).join('<br>')
       debug.innerHTML =
         `szaruhossz: ${model.rafters[0].length.toFixed(2)} m<br>` +
         `faanyag: ${m.timberVolume.toFixed(2)} m³<br>` +
