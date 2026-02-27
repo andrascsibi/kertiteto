@@ -78,6 +78,32 @@
         cursor: pointer;
       }
 
+      /* ── Options (checkboxes) ────────────────────────────────────────────── */
+      .option {
+        margin-bottom: 0.6rem;
+      }
+
+      .option label {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        font-size: 0.82rem;
+        color: #4a3828;
+        cursor: pointer;
+      }
+
+      .option input[type="checkbox"] {
+        accent-color: #7a5030;
+        cursor: pointer;
+      }
+
+      .option-cost {
+        display: block;
+        font-size: 0.7rem;
+        color: #9a8070;
+        margin-left: 1.4rem;
+      }
+
       /* ── Viewport ────────────────────────────────────────────────────────── */
       #viewport {
         flex: 1;
@@ -201,6 +227,23 @@
           <span class="val" id="val-gable"></span>
         </label>
         <input type="range" id="inp-gable" min="0.10" max="0.60" step="0.05">
+      </div>
+
+      <p class="section-title">Héjazat</p>
+
+      <div class="option">
+        <label><input type="checkbox" id="chk-lamberia"> Lambéria</label>
+        <span class="option-cost" id="cost-lamberia"></span>
+      </div>
+
+      <div class="option">
+        <label><input type="checkbox" id="chk-membrane"> Alátét héjazat</label>
+        <span class="option-cost" id="cost-membrane"></span>
+      </div>
+
+      <div class="option">
+        <label><input type="checkbox" id="chk-roofing"> Lemez fedés</label>
+        <span class="option-cost" id="cost-roofing"></span>
       </div>
 
       <div id="pricing"></div>

@@ -39,6 +39,13 @@ const valPitch  = document.getElementById('val-pitch')!
 const valEaves  = document.getElementById('val-eaves')!
 const valGable  = document.getElementById('val-gable')!
 
+const chkLamberia = document.getElementById('chk-lamberia') as HTMLInputElement
+const chkMembrane = document.getElementById('chk-membrane') as HTMLInputElement
+const chkRoofing  = document.getElementById('chk-roofing')  as HTMLInputElement
+const costLamberia = document.getElementById('cost-lamberia')!
+const costMembrane = document.getElementById('cost-membrane')!
+const costRoofing  = document.getElementById('cost-roofing')!
+
 // ── Scene ──────────────────────────────────────────────────────────────────────
 const scene = createScene(viewport)
 
@@ -113,9 +120,26 @@ function update(): void {
     `${nPillars} oszlop · ${nRafters * 2} szarufa<br>` +
     `gerincmagasság: ${model.ridgeHeight.toFixed(2)} m`
 
+  // Roofing options — always show cost, only add to total when checked
+  const ROOFING_OPTIONS = [
+    { chk: chkLamberia, costEl: costLamberia, priceKey: 'lamberia' },
+    { chk: chkMembrane, costEl: costMembrane, priceKey: 'folia' },
+    { chk: chkRoofing,  costEl: costRoofing,  priceKey: 'lemez' },
+  ] as const
+
+  let optionsTotal = 0
+  for (const { chk, costEl, priceKey } of ROOFING_OPTIONS) {
+    const entry = prices?.[priceKey]
+    if (!entry) { costEl.textContent = ''; continue }
+    const cost = entry.price * m.roofSurface
+    costEl.textContent = `+ ${formatHUF(cost)}`
+    if (chk.checked) optionsTotal += cost
+  }
+
   // Pricing panel
   if (prices) {
-    const { items, total } = computePriceBreakdown(prices, m)
+    const { items, total: baseTotal } = computePriceBreakdown(prices, m)
+    const total = baseTotal + optionsTotal
     const unitPrice = total / m.totalFootprint
     pricing.innerHTML =
       `<p class="section-title">Becsült ár (bruttó)</p>` +
@@ -130,8 +154,8 @@ function update(): void {
       debug.innerHTML =
         `szaruhossz: ${model.rafters[0].length.toFixed(2)} m<br>` +
         `faanyag: ${m.timberVolume.toFixed(2)} m³<br>` +
-        `felület: ${m.timberSurface.toFixed(1)} m²<br>` +
-        `tető: ${m.roofSurface.toFixed(1)} m²<br>` +
+        `fa felület: ${m.timberSurface.toFixed(1)} m²<br>` +
+        `héj felület: ${m.roofSurface.toFixed(1)} m²<br>` +
         `alapterület: ${m.totalFootprint.toFixed(1)} m²<br>` +
         `<br>${lines}<br>összesen: ${formatHUF(total)}`
     }
@@ -148,6 +172,9 @@ function update(): void {
 // ── Wire up sliders ────────────────────────────────────────────────────────────
 for (const inp of [inpWidth, inpLength, inpPitch, inpEaves, inpGable]) {
   inp.addEventListener('input', update)
+}
+for (const chk of [chkLamberia, chkMembrane, chkRoofing]) {
+  chk.addEventListener('change', update)
 }
 
 // ── Initial values from hash params or defaults ─────────────────────────────
