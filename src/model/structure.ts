@@ -232,19 +232,22 @@ export function computeMetrics(model: StructureModel): StructureMetrics {
   const purlinLength = Math.abs(model.basePurlins[0].end.x - model.basePurlins[0].start.x)
   const tieBeamLength = Math.abs(model.tieBeams[0].end.z - model.tieBeams[0].start.z)
   const rafterLen = model.rafters[0].length
+  const tanPitch = Math.tan(model.params.pitch * Math.PI / 180)
 
   // Volume (pillar heights vary: ridge pillars are taller)
   const pillarVol   = model.pillars.reduce((sum, p) => sum + PILLAR_SIZE * PILLAR_SIZE * p.height, 0)
   const basePurVol  = model.basePurlins.length * PURLIN_SIZE * PURLIN_SIZE * purlinLength
   const ridgePurVol = RIDGE_SIZE * RIDGE_SIZE * purlinLength
   const tieBeamVol  = model.tieBeams.length * PURLIN_SIZE * PURLIN_SIZE * tieBeamLength
-  const rafterVol   = model.rafters.length * RAFTER_WIDTH * RAFTER_DEPTH * rafterLen
-  // Ridge tie: trapezoid area × width
+  const rafterVol   = model.rafters.length * RAFTER_WIDTH * RAFTER_DEPTH * Math.ceil(rafterLen + RAFTER_DEPTH * tanPitch)
+  // Ridge tie: trapezoid area × width but assume box geometry because of waste during cutting
   const ridgeTieVol = model.ridgeTies.length > 0
-    ? model.ridgeTies.length * (model.ridgeTies[0].zHalfTop + model.ridgeTies[0].zHalfBottom) * RIDGE_TIE_DEPTH * RIDGE_TIE_WIDTH
+    ? model.ridgeTies.length * 2 * model.ridgeTies[0].zHalfBottom * RIDGE_TIE_DEPTH * RIDGE_TIE_WIDTH
     : 0
   const kneeBraceVol = model.kneeBraces.length * KNEE_BRACE_SIZE * KNEE_BRACE_SIZE * KNEE_BRACE_LENGTH
   const timberVolume = pillarVol + basePurVol + ridgePurVol + tieBeamVol + rafterVol + ridgeTieVol + kneeBraceVol
+  console.log('timber volume breakdown (m³):',
+    { pillarVol, basePurVol, ridgePurVol, tieBeamVol, rafterVol, ridgeTieVol, kneeBraceVol, timberVolume })
 
   // Surface (perimeter × length, ignoring ends)
   const pillarSurf   = model.pillars.reduce((sum, p) => sum + p.height * (4 * PILLAR_SIZE), 0)
