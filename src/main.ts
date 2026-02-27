@@ -122,16 +122,22 @@ function update(): void {
 
   // Roofing options — always show cost, only add to total when checked
   const ROOFING_OPTIONS = [
-    { chk: chkLamberia, costEl: costLamberia, priceKey: 'lamberia' },
-    { chk: chkMembrane, costEl: costMembrane, priceKey: 'folia' },
-    { chk: chkRoofing,  costEl: costRoofing,  priceKey: 'lemez' },
+    { chk: chkLamberia, costEl: costLamberia, priceKeys: ['lamberia', 'lamberiazas'] },
+    { chk: chkMembrane, costEl: costMembrane, priceKeys: ['folia', 'foliazas'] },
+    { chk: chkRoofing,  costEl: costRoofing,  priceKeys: ['lemez', 'lecezes', 'lemezeles'] },
   ] as const
 
   let optionsTotal = 0
-  for (const { chk, costEl, priceKey } of ROOFING_OPTIONS) {
-    const entry = prices?.[priceKey]
-    if (!entry) { costEl.textContent = ''; continue }
-    const cost = entry.price * m.roofSurface
+  for (const { chk, costEl, priceKeys } of ROOFING_OPTIONS) {
+    let cost = 0
+    let hasAny = false
+    for (const key of priceKeys) {
+      const entry = prices?.[key]
+      if (!entry) continue
+      hasAny = true
+      cost += entry.price * m.roofSurface
+    }
+    if (!hasAny) { costEl.textContent = ''; continue }
     costEl.textContent = `+ ${formatHUF(cost)}`
     if (chk.checked) optionsTotal += cost
   }
