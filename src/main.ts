@@ -78,10 +78,12 @@ const CATEGORY_EMOJI: Record<string, string> = {
 
 /** Which price entries to include and how to compute quantity */
 const PRICE_ITEMS: { id: string, qty: (m: StructureMetrics) => number }[] = [
-  { id: 'fureszaru',  qty: m => m.timberVolume },
-  { id: 'gyalulas',   qty: m => m.timberVolume },
-  { id: 'gyartas',    qty: m => m.timberVolume },
-  { id: 'szereles',   qty: m => m.timberVolume  },
+  { id: 'fureszaru',      qty: m => m.timberVolume },
+  { id: 'gyalulas',       qty: m => m.timberVolume },
+  { id: 'gyartas',        qty: m => m.timberVolume },
+  { id: 'lazur',           qty: m => m.timberSurface },
+  { id: 'feluletkezeles',  qty: m => m.timberSurface },
+  { id: 'szereles',       qty: m => m.timberVolume  },
 ]
 
 function computePriceBreakdown(prices: PriceTable, metrics: StructureMetrics): { items: PriceLineItem[], total: number } {
