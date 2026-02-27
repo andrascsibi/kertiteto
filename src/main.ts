@@ -97,7 +97,7 @@ function update(): void {
     const total = computePrice(prices, m.timberVolume, m.roofSurface)
     const unitPrice = total / m.roofSurface
     pricing.innerHTML =
-      `<p class="section-title">Becsült ár</p>` +
+      `<p class="section-title">Becsült ár (bruttó)</p>` +
       `<p class="price-total">${formatHUF(total)}</p>` +
       `<p class="price-unit">${formatHUF(unitPrice)} / m²</p>`
   }
