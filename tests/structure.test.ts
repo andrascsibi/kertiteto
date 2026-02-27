@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { buildStructure, PILLAR_HEIGHT, PILLAR_SIZE, PURLIN_SIZE, RIDGE_SIZE, RAFTER_WIDTH, RAFTER_DEPTH, RIDGE_TIE_NOTCH, RIDGE_TIE_DEPTH, RIDGE_TIE_WIDTH, KNEE_BRACE_LENGTH } from '../src/model/structure'
+import { buildStructure, computeMetrics, PILLAR_HEIGHT, PILLAR_SIZE, PURLIN_SIZE, RIDGE_SIZE, RAFTER_WIDTH, RAFTER_DEPTH, RIDGE_TIE_NOTCH, RIDGE_TIE_DEPTH, RIDGE_TIE_WIDTH, KNEE_BRACE_LENGTH } from '../src/model/structure'
 import { ridgeHeight, BIRD_MOUTH_PLUMB_HEIGHT, MAX_RAFTER_SPACING, MAX_UNSUPPORTED_SPAN } from '../src/model/geometry'
 import type { InputParams } from '../src/model/types'
 
@@ -584,5 +584,34 @@ describe('corner knee braces (KONYOKFA)', () => {
     for (const kb of horizAtZ0) {
       expect(kb.start.y).toBeCloseTo(kb.end.y, 6)
     }
+  })
+})
+
+// ── Derived metrics ──────────────────────────────────────────────────────────
+
+describe('computeMetrics', () => {
+  it('totalFootprint = (width + 2*eaves) × (length + 2*gable)', () => {
+    const m = buildStructure(base)
+    const metrics = computeMetrics(m)
+    const expected = (base.width + 2 * base.eavesOverhang) * (base.length + 2 * base.gableOverhang)
+    expect(metrics.totalFootprint).toBeCloseTo(expected, 6)
+  })
+
+  it('totalFootprint changes with overhangs', () => {
+    const m1 = buildStructure(base)
+    const m2 = buildStructure({ ...base, eavesOverhang: 0.8, gableOverhang: 0.5 })
+    const met1 = computeMetrics(m1)
+    const met2 = computeMetrics(m2)
+    expect(met2.totalFootprint).toBeGreaterThan(met1.totalFootprint)
+  })
+
+  it('roofSurface is positive', () => {
+    const metrics = computeMetrics(buildStructure(base))
+    expect(metrics.roofSurface).toBeGreaterThan(0)
+  })
+
+  it('timberVolume is positive', () => {
+    const metrics = computeMetrics(buildStructure(base))
+    expect(metrics.timberVolume).toBeGreaterThan(0)
   })
 })

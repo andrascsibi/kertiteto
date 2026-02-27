@@ -95,7 +95,7 @@ function update(): void {
   // Pricing panel
   if (prices) {
     const total = computePrice(prices, m.timberVolume, m.roofSurface)
-    const unitPrice = total / m.roofSurface
+    const unitPrice = total / m.totalFootprint
     pricing.innerHTML =
       `<p class="section-title">Becsült ár (bruttó)</p>` +
       `<p class="price-total">${formatHUF(total)}</p>` +
@@ -108,7 +108,8 @@ function update(): void {
       `szaruhossz: ${model.rafters[0].length.toFixed(2)} m<br>` +
       `faanyag: ${m.timberVolume.toFixed(2)} m³<br>` +
       `felület: ${m.timberSurface.toFixed(1)} m²<br>` +
-      `tető: ${m.roofSurface.toFixed(1)} m²`
+      `tető: ${m.roofSurface.toFixed(1)} m²<br>` +
+      `alapterület: ${m.totalFootprint.toFixed(1)} m²`
   }
 }
 

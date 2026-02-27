@@ -224,6 +224,8 @@ export interface StructureMetrics {
   timberSurface: number
   /** Total roof surface, both slopes (m²) */
   roofSurface: number
+  /** Total footprint including overhangs (m²) */
+  totalFootprint: number
 }
 
 export function computeMetrics(model: StructureModel): StructureMetrics {
@@ -265,7 +267,11 @@ export function computeMetrics(model: StructureModel): StructureMetrics {
   // Roof surface: 2 slopes × rafter length × purlin run
   const roofSurface = 2 * rafterLen * purlinLength
 
-  return { timberVolume, timberSurface, roofSurface }
+  // Total footprint including overhangs
+  const { width, length, eavesOverhang, gableOverhang } = model.params
+  const totalFootprint = (width + 2 * eavesOverhang) * (length + 2 * gableOverhang)
+
+  return { timberVolume, timberSurface, roofSurface, totalFootprint }
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
