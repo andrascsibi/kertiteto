@@ -1,7 +1,7 @@
 import { buildStructure, computeMetrics, DEFAULTS, type StructureMetrics } from './model/structure'
 import { pillarCount, rafterCount } from './model/geometry'
 import { fetchPrices, type PriceTable } from './model/prices'
-import { buildRoofing, counterBattenTotalLength } from './model/roofing'
+import { buildRoofing, counterBattenTotalLength, roofBattenTotalLength } from './model/roofing'
 import { createScene } from './renderer/scene'
 
 // ── Hash params ──────────────────────────────────────────────────────────────
@@ -119,8 +119,9 @@ function update(): void {
   scene.updateModel(model)
 
   const m = computeMetrics(model)
-  const roofing = buildRoofing(model, { membrane: chkMembrane.checked })
+  const roofing = buildRoofing(model, { membrane: chkMembrane.checked, roofing: chkRoofing.checked })
   const cbTotalLen = counterBattenTotalLength(roofing)
+  const rbTotalLen = roofBattenTotalLength(roofing)
 
   // Info badge
   const nPillars = pillarCount(params.length)
@@ -143,6 +144,7 @@ function update(): void {
     ]},
     { chk: chkRoofing,  costEl: costRoofing, items: [
       { key: 'lemez', qty: m.roofSurface },
+      { key: 'tetolec', qty: rbTotalLen },
       { key: 'lecezes', qty: m.roofSurface },
       { key: 'lemezeles', qty: m.roofSurface },
     ]},
