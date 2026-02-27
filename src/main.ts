@@ -128,6 +128,7 @@ function update(): void {
   ] as const
 
   let optionsTotal = 0
+  const optionItems: PriceLineItem[] = []
   for (const { chk, costEl, priceKeys } of ROOFING_OPTIONS) {
     let cost = 0
     let hasAny = false
@@ -135,7 +136,11 @@ function update(): void {
       const entry = prices?.[key]
       if (!entry) continue
       hasAny = true
-      cost += entry.price * m.roofSurface
+      const subtotal = entry.price * m.roofSurface
+      cost += subtotal
+      if (chk.checked) {
+        optionItems.push({ label: key, unitPrice: entry.price, unit: entry.unit, quantity: m.roofSurface, subtotal })
+      }
     }
     if (!hasAny) { costEl.textContent = ''; continue }
     costEl.textContent = `+ ${formatHUF(cost)}`
@@ -154,7 +159,8 @@ function update(): void {
 
     // Debug: line item breakdown
     if (devMode) {
-      const lines = items.map(i =>
+      const allItems = [...items, ...optionItems]
+      const lines = allItems.map(i =>
         `${i.label}: ${i.quantity.toFixed(2)} ${i.unit} × ${formatHUF(i.unitPrice)} = ${formatHUF(i.subtotal)}`
       ).join('<br>')
       debug.innerHTML =
