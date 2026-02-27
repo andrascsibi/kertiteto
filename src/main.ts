@@ -121,7 +121,8 @@ function update(): void {
   scene.updateModel(model)
 
   const m = computeMetrics(model)
-  const roofing = buildRoofing(model, { membrane: chkMembrane.checked, roofing: chkRoofing.checked })
+  // Always build with all options enabled so cost previews include everything
+  const roofing = buildRoofing(model, { membrane: true, roofing: true })
   const cbTotalLen = counterBattenTotalLength(roofing)
   const rbTotalLen = roofBattenTotalLength(roofing)
 
