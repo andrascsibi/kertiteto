@@ -117,7 +117,7 @@ function update(): void {
   valGable.textContent  = `${params.gableOverhang.toFixed(2)} m`
 
   const model = buildStructure(params)
-  scene.updateModel(model, { lamberia: chkLamberia.checked })
+  scene.updateModel(model, { lamberia: chkLamberia.checked, membrane: chkMembrane.checked })
 
   const m = computeMetrics(model)
   // Always build with all options enabled so cost previews include everything

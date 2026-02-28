@@ -14,7 +14,8 @@ const MAT: Record<string, THREE.MeshLambertMaterial> = {
   pillar:   new THREE.MeshLambertMaterial({ color: 0x5a3a1a }),
   purlin:   new THREE.MeshLambertMaterial({ color: 0x7a5030 }),
   rafter:   new THREE.MeshLambertMaterial({ color: 0x9b6840 }),
-  lamberia: new THREE.MeshLambertMaterial({ color: 0x7a5030 }),
+  lamberia:  new THREE.MeshLambertMaterial({ color: 0x7a5030 }),
+  membrane:  new THREE.MeshLambertMaterial({ color: 0xcccccc }),
   // pillar:  new THREE.MeshLambertMaterial({ color: COLOR }),
   // purlin:  new THREE.MeshLambertMaterial({ color: COLOR }),
   // rafter:  new THREE.MeshLambertMaterial({ color: COLOR }),
@@ -22,6 +23,7 @@ const MAT: Record<string, THREE.MeshLambertMaterial> = {
 
 export interface RoofRenderOptions {
   lamberia?: boolean
+  membrane?: boolean
 }
 
 export function buildRoofMeshes(model: StructureModel, options?: RoofRenderOptions): THREE.Group {
@@ -38,6 +40,11 @@ export function buildRoofMeshes(model: StructureModel, options?: RoofRenderOptio
   if (options?.lamberia) {
     const lamberiaMeshes = buildLamberiaMeshes(model)
     for (const m of lamberiaMeshes) group.add(m)
+  }
+
+  if (options?.membrane) {
+    const membraneMeshes = buildMembraneMeshes(model, !!options.lamberia)
+    for (const m of membraneMeshes) group.add(m)
   }
 
   return group
@@ -374,6 +381,116 @@ function buildLamberiaMeshes(model: StructureModel): THREE.Mesh[] {
       mesh.receiveShadow = true
       meshes.push(mesh)
     }
+  }
+
+  return meshes
+}
+
+// ── Membrane ──────────────────────────────────────────────────────────────────
+
+const MEMBRANE_THICKNESS = 0.001 // 1mm
+
+/**
+ * Builds membrane meshes for both slopes.
+ *
+ * A thin slab covering the entire slope surface. Sits on top of lamberia
+ * if present, otherwise directly on the rafter top surface. The slope-length
+ * is extended by height * tan(pitch) to account for the offset widening.
+ *
+ * @param hasLamberia Whether lamberia is present underneath
+ */
+function buildMembraneMeshes(model: StructureModel, hasLamberia: boolean): THREE.Mesh[] {
+  const DEG = Math.PI / 180
+  const pitch = model.params.pitch * DEG
+  const cosP = Math.cos(pitch)
+  const sinP = Math.sin(pitch)
+  const tanP = Math.tan(pitch)
+
+  const refLeft = model.rafters[0]
+  const rafterLen = refLeft.length
+  const halfLen = model.totalLength / 2
+
+  // Height offset above rafter top surface (along slope normal)
+  const baseOffset = hasLamberia ? LAMBERIA_HEIGHT : 0
+  const totalOffset = baseOffset + MEMBRANE_THICKNESS
+
+  // Slope extension from height offset: top of membrane is wider than rafter surface
+  const slopeExtension = totalOffset * tanP
+
+  const meshes: THREE.Mesh[] = []
+
+  for (let side = 0; side < 2; side++) {
+    const isLeft = side === 0
+    const sign = isLeft ? 1 : -1
+
+    const refRafter = isLeft ? refLeft : model.rafters.find(r => r.eaveEnd.z > 0)!
+    const eaveZ = refRafter.eaveEnd.z
+    const eaveY = refRafter.eaveEnd.y + RAFTER_DEPTH / (2 * cosP)
+
+    // Bottom surface of membrane (= top of lamberia or rafter surface + baseOffset)
+    const bnY = cosP * baseOffset  // normal offset Y component
+    const bnZ = sinP * baseOffset  // normal offset Z magnitude
+
+    // Top surface of membrane (baseOffset + MEMBRANE_THICKNESS)
+    const tnY = cosP * totalOffset
+    const tnZ = sinP * totalOffset
+
+    // Eave end: start of slope (extended outward by slopeExtension)
+    const slopeStart = -slopeExtension
+    // Ridge end: end of slope (extended inward by slopeExtension)
+    const slopeEnd = rafterLen + slopeExtension
+
+    // Bottom-eave corner
+    const bEaveZ = eaveZ + sign * slopeStart * cosP - sign * bnZ
+    const bEaveY = eaveY + slopeStart * sinP + bnY
+    // Bottom-ridge corner
+    const bRidgeZ = eaveZ + sign * slopeEnd * cosP - sign * bnZ
+    const bRidgeY = eaveY + slopeEnd * sinP + bnY
+
+    // Top-eave corner
+    const tEaveZ = eaveZ + sign * slopeStart * cosP - sign * tnZ
+    const tEaveY = eaveY + slopeStart * sinP + tnY
+    // Top-ridge corner
+    const tRidgeZ = eaveZ + sign * slopeEnd * cosP - sign * tnZ
+    const tRidgeY = eaveY + slopeEnd * sinP + tnY
+
+    const pos = new Float32Array([
+      -halfLen, bEaveY,  bEaveZ,   // 0 bot-eave-left
+      -halfLen, bRidgeY, bRidgeZ,  // 1 bot-ridge-left
+      -halfLen, tEaveY,  tEaveZ,   // 2 top-eave-left
+      -halfLen, tRidgeY, tRidgeZ,  // 3 top-ridge-left
+      +halfLen, bEaveY,  bEaveZ,   // 4 bot-eave-right
+      +halfLen, bRidgeY, bRidgeZ,  // 5 bot-ridge-right
+      +halfLen, tEaveY,  tEaveZ,   // 6 top-eave-right
+      +halfLen, tRidgeY, tRidgeZ,  // 7 top-ridge-right
+    ])
+
+    // 6 faces, CCW from outside
+    const tris = isLeft ? [
+      2, 3, 7,  2, 7, 6,   // top (sky)
+      0, 5, 1,  0, 4, 5,   // bottom
+      0, 1, 3,  0, 3, 2,   // left end (-x)
+      4, 6, 7,  4, 7, 5,   // right end (+x)
+      0, 2, 6,  0, 6, 4,   // eave edge
+      1, 5, 7,  1, 7, 3,   // ridge edge
+    ] : [
+      2, 7, 3,  2, 6, 7,   // top (sky)
+      0, 1, 5,  0, 5, 4,   // bottom
+      0, 3, 1,  0, 2, 3,   // left end (-x)
+      4, 7, 6,  4, 5, 7,   // right end (+x)
+      0, 6, 2,  0, 4, 6,   // eave edge
+      1, 7, 5,  1, 3, 7,   // ridge edge
+    ]
+
+    const geo = new THREE.BufferGeometry()
+    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3))
+    geo.setIndex(tris)
+    geo.computeVertexNormals()
+
+    const mesh = new THREE.Mesh(geo, MAT.membrane)
+    mesh.castShadow = true
+    mesh.receiveShadow = true
+    meshes.push(mesh)
   }
 
   return meshes
