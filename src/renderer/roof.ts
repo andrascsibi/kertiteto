@@ -6,7 +6,7 @@ import * as THREE from 'three'
 import type { StructureModel, Pillar, Purlin, TieBeam, Rafter, RidgeTie, KneeBrace } from '../model/types'
 import { PILLAR_SIZE, PURLIN_SIZE, RAFTER_WIDTH, RAFTER_DEPTH, RIDGE_TIE_WIDTH, KNEE_BRACE_SIZE, KNEE_BRACE_LENGTH } from '../model/structure'
 import { EAVE_PLUMB_HEIGHT } from '../model/geometry'
-import { LAMBERIA_HEIGHT, LAMBERIA_WIDTH } from '../model/roofing'
+import { LAMBERIA_HEIGHT, LAMBERIA_WIDTH, ROOF_BATTEN_DISTANCE } from '../model/roofing'
 
 // const COLOR = '#0c83fa' 
 
@@ -25,6 +25,7 @@ const MAT: Record<string, THREE.MeshLambertMaterial> = {
 export interface RoofRenderOptions {
   lamberia?: boolean
   membrane?: boolean
+  roofing?: boolean
 }
 
 export function buildRoofMeshes(model: StructureModel, options?: RoofRenderOptions): THREE.Group {
@@ -48,6 +49,11 @@ export function buildRoofMeshes(model: StructureModel, options?: RoofRenderOptio
     for (const m of membraneMeshes) group.add(m)
     const cbMeshes = buildCounterBattenMeshes(model, !!options.lamberia)
     for (const m of cbMeshes) group.add(m)
+  }
+
+  if (options?.roofing) {
+    const rbMeshes = buildRoofBattenMeshes(model, !!options.lamberia, !!options.membrane)
+    for (const m of rbMeshes) group.add(m)
   }
 
   return group
@@ -560,6 +566,81 @@ function buildCounterBattenMeshes(model: StructureModel, hasLamberia: boolean): 
     mesh.castShadow = true
     mesh.receiveShadow = true
     meshes.push(mesh)
+  }
+
+  return meshes
+}
+
+// ── Roof Battens ─────────────────────────────────────────────────────────────
+
+const ROOF_BATTEN_HEIGHT = 0.03 // 3cm perpendicular to slope
+const ROOF_BATTEN_WIDTH = 0.05  // 5cm along slope direction
+
+/**
+ * Builds roof batten meshes — horizontal rows running along X (totalLength),
+ * evenly spaced along the slope on both sides.
+ *
+ * Spacing is derived like rafter spacing: bays = ceil(span / maxSpacing),
+ * then actual spacing = span / bays. First batten's lower edge at eave,
+ * last batten's upper edge at ridge.
+ *
+ * @param hasLamberia Whether lamberia is present underneath
+ */
+function buildRoofBattenMeshes(model: StructureModel, hasLamberia: boolean, hasMembrane: boolean): THREE.Mesh[] {
+  const DEG = Math.PI / 180
+  const pitch = model.params.pitch * DEG
+  const cosP = Math.cos(pitch)
+  const sinP = Math.sin(pitch)
+  const tanP = Math.tan(pitch)
+
+  const rafterLen = model.rafters[0].length
+  const layerOffset = (hasLamberia ? LAMBERIA_HEIGHT : 0) + (hasMembrane ? MEMBRANE_THICKNESS + COUNTER_BATTEN_SIZE : 0)
+  const slopeSpan = rafterLen + layerOffset * tanP
+
+  // Even spacing like rafterSpacing(): first lower edge at eave, last upper edge at ridge
+  const innerSpan = slopeSpan - ROOF_BATTEN_WIDTH
+  const bays = Math.ceil(innerSpan / ROOF_BATTEN_DISTANCE)
+  const spacing = innerSpan / bays
+  const numBattens = bays + 1
+
+  // Normal distance from rafter top to batten center
+  const normalDist = layerOffset + ROOF_BATTEN_HEIGHT / 2
+
+  const totalLength = model.totalLength
+  const meshes: THREE.Mesh[] = []
+
+  for (let side = 0; side < 2; side++) {
+    const isLeft = side === 0
+    const sign = isLeft ? 1 : -1
+
+    const refRafter = isLeft ? model.rafters[0] : model.rafters.find(r => r.eaveEnd.z > 0)!
+    const eaveTopY = refRafter.eaveEnd.y + RAFTER_DEPTH / (2 * cosP)
+    const eaveZ = refRafter.eaveEnd.z
+
+    // Compute orientation once per slope (same basis as counter battens)
+    const zDir = new THREE.Vector3(0, sinP, sign * cosP)
+    const xDir = new THREE.Vector3(1, 0, 0)
+    const yDir = new THREE.Vector3().crossVectors(zDir, xDir)
+    if (yDir.y < 0) { yDir.negate(); zDir.negate() }
+    const basis = new THREE.Matrix4().makeBasis(xDir, yDir, zDir)
+    const quat = new THREE.Quaternion().setFromRotationMatrix(basis)
+
+    for (let i = 0; i < numBattens; i++) {
+      // Center of batten i along slope, measured from eave
+      const slopePos = ROOF_BATTEN_WIDTH / 2 + i * spacing
+
+      const cy = eaveTopY + slopePos * sinP + normalDist * cosP
+      const cz = eaveZ + sign * slopePos * cosP - sign * normalDist * sinP
+
+      const geo = new THREE.BoxGeometry(totalLength, ROOF_BATTEN_HEIGHT, ROOF_BATTEN_WIDTH)
+      const mesh = new THREE.Mesh(geo, MAT.counterBatten) // same turquoise
+      mesh.position.set(0, cy, cz)
+      mesh.quaternion.copy(quat)
+
+      mesh.castShadow = true
+      mesh.receiveShadow = true
+      meshes.push(mesh)
+    }
   }
 
   return meshes
