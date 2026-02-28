@@ -6,19 +6,25 @@ import * as THREE from 'three'
 import type { StructureModel, Pillar, Purlin, TieBeam, Rafter, RidgeTie, KneeBrace } from '../model/types'
 import { PILLAR_SIZE, PURLIN_SIZE, RAFTER_WIDTH, RAFTER_DEPTH, RIDGE_TIE_WIDTH, KNEE_BRACE_SIZE, KNEE_BRACE_LENGTH } from '../model/structure'
 import { EAVE_PLUMB_HEIGHT } from '../model/geometry'
+import { LAMBERIA_HEIGHT, LAMBERIA_WIDTH } from '../model/roofing'
 
-const COLOR = '#0c83fa' 
+// const COLOR = '#0c83fa' 
 
 const MAT: Record<string, THREE.MeshLambertMaterial> = {
-// pillar:  new THREE.MeshLambertMaterial({ color: 0x5a3a1a }),
-// purlin:  new THREE.MeshLambertMaterial({ color: 0x7a5030 }),
-// rafter:  new THREE.MeshLambertMaterial({ color: 0x9b6840 }),
-  pillar:  new THREE.MeshLambertMaterial({ color: COLOR }),
-  purlin:  new THREE.MeshLambertMaterial({ color: COLOR }),
-  rafter:  new THREE.MeshLambertMaterial({ color: COLOR }),
+  pillar:   new THREE.MeshLambertMaterial({ color: 0x5a3a1a }),
+  purlin:   new THREE.MeshLambertMaterial({ color: 0x7a5030 }),
+  rafter:   new THREE.MeshLambertMaterial({ color: 0x9b6840 }),
+  lamberia: new THREE.MeshLambertMaterial({ color: 0xc8a870 }),
+  // pillar:  new THREE.MeshLambertMaterial({ color: COLOR }),
+  // purlin:  new THREE.MeshLambertMaterial({ color: COLOR }),
+  // rafter:  new THREE.MeshLambertMaterial({ color: COLOR }),
 }
 
-export function buildRoofMeshes(model: StructureModel): THREE.Group {
+export interface RoofRenderOptions {
+  lamberia?: boolean
+}
+
+export function buildRoofMeshes(model: StructureModel, options?: RoofRenderOptions): THREE.Group {
   const group = new THREE.Group()
 
   for (const p of model.pillars)      group.add(pillarMesh(p))
@@ -28,6 +34,11 @@ export function buildRoofMeshes(model: StructureModel): THREE.Group {
   for (const rt of model.ridgeTies)   group.add(ridgeTieMesh(rt))
   for (const kb of model.kneeBraces)  group.add(kneeBraceMesh(kb))
   group.add(purlinMesh(model.ridgePurlin))
+
+  if (options?.lamberia) {
+    const lamberiaMeshes = buildLamberiaMeshes(model)
+    for (const m of lamberiaMeshes) group.add(m)
+  }
 
   return group
 }
@@ -249,4 +260,112 @@ function kneeBraceMesh(kb: KneeBrace): THREE.Mesh {
   mesh.castShadow = true
   mesh.receiveShadow = true
   return mesh
+}
+
+// ── Lamberia ──────────────────────────────────────────────────────────────────
+
+/**
+ * Builds lamberia plank meshes for both slopes.
+ *
+ * Each plank is a trapezoid prism running along X for totalLength.
+ * Cross-section (perpendicular to slope): wider on top (sky), narrower on
+ * bottom (rafter-facing) so gaps are visible between planks.
+ *
+ * Top width across slope:    LAMBERIA_WIDTH - 0.002 (0.110 m)
+ * Bottom width across slope: LAMBERIA_WIDTH - 0.012 (0.100 m)
+ * Height (perpendicular to slope): LAMBERIA_HEIGHT (0.016 m)
+ */
+function buildLamberiaMeshes(model: StructureModel): THREE.Mesh[] {
+  const DEG = Math.PI / 180
+  const pitch = model.params.pitch * DEG
+  const cosP = Math.cos(pitch)
+  const sinP = Math.sin(pitch)
+
+  const refLeft = model.rafters[0]
+  const rafterLen = refLeft.length
+  const planksPerSlope = Math.ceil(rafterLen / LAMBERIA_WIDTH)
+  const halfLen = model.totalLength / 2
+
+  const topHalf = (LAMBERIA_WIDTH - 0.002) / 2   // half-width of top (sky) edge
+  const botHalf = (LAMBERIA_WIDTH - 0.012) / 2   // half-width of bottom (rafter) edge
+
+  // Normal to slope surface (outward), scaled by LAMBERIA_HEIGHT
+  // Left slope outward normal points toward -z and +y
+  const nhY = cosP * LAMBERIA_HEIGHT
+  const nhZ = sinP * LAMBERIA_HEIGHT  // magnitude; sign applied per side
+
+  const meshes: THREE.Mesh[] = []
+
+  for (let side = 0; side < 2; side++) {
+    const isLeft = side === 0
+    // Left slope: eave is at -z, ridge at z=0, "toward ridge" = +z
+    // Right slope: eave is at +z, ridge at z=0, "toward ridge" = -z
+    const sign = isLeft ? 1 : -1
+
+    const refRafter = isLeft ? refLeft : model.rafters.find(r => r.eaveEnd.z > 0)!
+    const eaveZ = refRafter.eaveEnd.z
+    const eaveY = refRafter.eaveEnd.y + RAFTER_DEPTH / (2 * cosP)
+
+    for (let i = 0; i < planksPerSlope; i++) {
+      // Plank center along slope, measured from eave
+      const slopeCenter = (i + 0.5) * LAMBERIA_WIDTH
+
+      // Center of plank on rafter surface
+      const cz = eaveZ + sign * slopeCenter * cosP
+      const cy = eaveY + slopeCenter * sinP
+
+      // Bottom (rafter-facing) edge positions: ±botHalf along slope from center
+      const bEaveZ = cz - sign * botHalf * cosP
+      const bEaveY = cy - botHalf * sinP
+      const bRidgeZ = cz + sign * botHalf * cosP
+      const bRidgeY = cy + botHalf * sinP
+
+      // Top (sky-facing) edge positions: ±topHalf along slope + normal offset
+      const nz = -sign * nhZ  // outward normal z: left slope = -z, right = +z
+      const tEaveZ = cz - sign * topHalf * cosP + nz
+      const tEaveY = cy - topHalf * sinP + nhY
+      const tRidgeZ = cz + sign * topHalf * cosP + nz
+      const tRidgeY = cy + topHalf * sinP + nhY
+
+      const pos = new Float32Array([
+        -halfLen, bEaveY,  bEaveZ,   // 0 bot-eave-left
+        -halfLen, bRidgeY, bRidgeZ,  // 1 bot-ridge-left
+        -halfLen, tEaveY,  tEaveZ,   // 2 top-eave-left
+        -halfLen, tRidgeY, tRidgeZ,  // 3 top-ridge-left
+        +halfLen, bEaveY,  bEaveZ,   // 4 bot-eave-right
+        +halfLen, bRidgeY, bRidgeZ,  // 5 bot-ridge-right
+        +halfLen, tEaveY,  tEaveZ,   // 6 top-eave-right
+        +halfLen, tRidgeY, tRidgeZ,  // 7 top-ridge-right
+      ])
+
+      // 6 faces, CCW from outside
+      const tris = isLeft ? [
+        2, 3, 7,  2, 7, 6,   // top (sky)
+        0, 5, 1,  0, 4, 5,   // bottom (rafter)
+        0, 1, 3,  0, 3, 2,   // left end (-x)
+        4, 6, 7,  4, 7, 5,   // right end (+x)
+        0, 2, 6,  0, 6, 4,   // eave edge
+        1, 5, 7,  1, 7, 3,   // ridge edge
+      ] : [
+        2, 7, 3,  2, 6, 7,   // top (sky)
+        0, 1, 5,  0, 5, 4,   // bottom (rafter)
+        0, 3, 1,  0, 2, 3,   // left end (-x)
+        4, 7, 6,  4, 5, 7,   // right end (+x)
+        0, 6, 2,  0, 4, 6,   // eave edge
+        1, 7, 5,  1, 3, 7,   // ridge edge
+      ]
+
+      const geo = new THREE.BufferGeometry()
+      geo.setAttribute('position', new THREE.BufferAttribute(pos, 3))
+      geo.setIndex(tris)
+      geo.computeVertexNormals()
+
+      const mesh = new THREE.Mesh(geo, MAT.lamberia)
+      mesh.castShadow = true
+      mesh.receiveShadow = true
+      meshes.push(mesh)
+    }
+  }
+
+  return meshes
 }

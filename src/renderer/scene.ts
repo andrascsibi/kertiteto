@@ -1,10 +1,10 @@
 import * as THREE from 'three'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import type { StructureModel } from '../model/types'
-import { buildRoofMeshes } from './roof'
+import { buildRoofMeshes, type RoofRenderOptions } from './roof'
 
 export interface SceneHandle {
-  updateModel(model: StructureModel): void
+  updateModel(model: StructureModel, roofingOptions?: RoofRenderOptions): void
   dispose(): void
 }
 
@@ -93,10 +93,10 @@ export function createScene(container: HTMLElement): SceneHandle {
 
   // ── Public API ───────────────────────────────────────────────────────────────
   return {
-    updateModel(model: StructureModel): void {
+    updateModel(model: StructureModel, roofingOptions?: RoofRenderOptions): void {
       disposeGroup(modelGroup)
       scene.remove(modelGroup)
-      modelGroup = buildRoofMeshes(model)
+      modelGroup = buildRoofMeshes(model, roofingOptions)
       scene.add(modelGroup)
       // Keep camera target at mid-pillar height
       controls.target.set(0, model.pillarHeight / 2, 0)

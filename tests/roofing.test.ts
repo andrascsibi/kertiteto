@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { buildRoofing, counterBattenTotalLength, roofBattenTotalLength, flashingTotalSurface, ROOF_BATTEN_DISTANCE, FLASHING_LENGTH, FLASHING_OVERLAP, FLASHING_DEVELOPED_WIDTH } from '../src/model/roofing'
+import { buildRoofing, counterBattenTotalLength, roofBattenTotalLength, flashingTotalSurface, ROOF_BATTEN_DISTANCE, FLASHING_LENGTH, FLASHING_OVERLAP, FLASHING_DEVELOPED_WIDTH, LAMBERIA_WIDTH } from '../src/model/roofing'
 import { buildStructure } from '../src/model/structure'
 import type { InputParams } from '../src/model/types'
 
@@ -11,7 +11,7 @@ const base: InputParams = {
   gableOverhang: 0.3,
 }
 
-const opts = { membrane: false, roofing: false }
+const opts = { lamberia: false, membrane: false, roofing: false }
 
 describe('counter battens', () => {
   const structure = buildStructure(base)
@@ -124,5 +124,25 @@ describe('flashings', () => {
     const expected = f.dripEdge.surface + f.eavesFlashing.surface + f.ridgeFlashing.surface + f.gableFlashing.surface
     expect(f.totalSurface).toBeCloseTo(expected, 6)
     expect(flashingTotalSurface(roofing)).toBeCloseTo(expected, 6)
+  })
+})
+
+describe('lamberia', () => {
+  const structure = buildStructure(base)
+  const rafterLen = structure.rafters[0].length
+
+  it('no lamberia when disabled', () => {
+    const roofing = buildRoofing(structure, { ...opts, lamberia: false })
+    expect(roofing.lamberia).toBeNull()
+  })
+
+  it('correct planks per slope', () => {
+    const roofing = buildRoofing(structure, { ...opts, lamberia: true })
+    expect(roofing.lamberia!.planksPerSlope).toBe(Math.ceil(rafterLen / LAMBERIA_WIDTH))
+  })
+
+  it('plank length equals totalLength', () => {
+    const roofing = buildRoofing(structure, { ...opts, lamberia: true })
+    expect(roofing.lamberia!.plankLength).toBe(structure.totalLength)
   })
 })

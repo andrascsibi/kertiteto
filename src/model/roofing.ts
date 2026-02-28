@@ -1,6 +1,8 @@
 import type { StructureModel } from './types'
 
 export const ROOF_BATTEN_DISTANCE = 0.2 // meters between roof battens
+export const LAMBERIA_HEIGHT = 0.016    // 16mm thick
+export const LAMBERIA_WIDTH  = 0.112    // 112mm wide across slope
 
 // Developed width — flat-laid width of each flashing profile (m)
 export const FLASHING_DEVELOPED_WIDTH = {
@@ -35,13 +37,20 @@ export interface Flashings {
   totalSurface: number
 }
 
+export interface LamberiaPlanks {
+  planksPerSlope: number
+  plankLength: number
+}
+
 export interface RoofingModel {
   counterBattens: CounterBatten[]
   roofBattens: RoofBatten[]
   flashings: Flashings | null
+  lamberia: LamberiaPlanks | null
 }
 
 export interface RoofingOptions {
+  lamberia: boolean
   membrane: boolean
   roofing: boolean
 }
@@ -99,7 +108,16 @@ export function buildRoofing(structure: StructureModel, options: RoofingOptions)
     }
   }
 
-  return { counterBattens, roofBattens, flashings }
+  let lamberia: LamberiaPlanks | null = null
+  if (options.lamberia) {
+    const rafterLen = structure.rafters[0].length
+    lamberia = {
+      planksPerSlope: Math.ceil(rafterLen / LAMBERIA_WIDTH),
+      plankLength: structure.totalLength,
+    }
+  }
+
+  return { counterBattens, roofBattens, flashings, lamberia }
 }
 
 export function counterBattenTotalLength(roofing: RoofingModel): number {
