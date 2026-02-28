@@ -280,15 +280,16 @@ function buildLamberiaMeshes(model: StructureModel): THREE.Mesh[] {
   const pitch = model.params.pitch * DEG
   const cosP = Math.cos(pitch)
   const sinP = Math.sin(pitch)
+  const tanP = Math.sin(pitch)
 
   const refLeft = model.rafters[0]
   const rafterLen = refLeft.length
   const planksPerSlope = Math.ceil(rafterLen / LAMBERIA_WIDTH)
-  const lastPlankWidth = rafterLen - (planksPerSlope - 1) * LAMBERIA_WIDTH + 0.01
+  const lastPlankWidth = rafterLen - (planksPerSlope - 1) * LAMBERIA_WIDTH + LAMBERIA_HEIGHT * tanP
   const halfLen = model.totalLength / 2
 
   // Taper insets (fixed gap size, independent of plank width)
-  const TOP_INSET = 0.001
+  const TOP_INSET = 0.00
   const BOT_INSET = 0.022
 
   // Normal to slope surface (outward), scaled by LAMBERIA_HEIGHT
