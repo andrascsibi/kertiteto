@@ -1,6 +1,6 @@
 import { buildStructure, computeMetrics, DEFAULTS, type StructureMetrics } from './model/structure'
 import { fetchPrices, type PriceTable } from './model/prices'
-import { buildRoofing, counterBattenTotalLength, roofBattenTotalLength } from './model/roofing'
+import { buildRoofing, counterBattenTotalLength, roofBattenTotalLength, flashingTotalSurface } from './model/roofing'
 import { createScene } from './renderer/scene'
 
 // ── Hash params ──────────────────────────────────────────────────────────────
@@ -124,6 +124,7 @@ function update(): void {
   const roofing = buildRoofing(model, { membrane: true, roofing: true })
   const cbTotalLen = counterBattenTotalLength(roofing)
   const rbTotalLen = roofBattenTotalLength(roofing)
+  const flashingSurface = flashingTotalSurface(roofing)
 
   // Info badge
   info.innerHTML =
@@ -147,6 +148,8 @@ function update(): void {
       { key: 'tetolec', qty: rbTotalLen },
       { key: 'lecezes', qty: m.roofSurface },
       { key: 'lemezeles', qty: m.roofSurface },
+      { key: 'badog', qty: flashingSurface },
+      { key: 'badogozas', qty: flashingSurface },
     ]},
   ]
 

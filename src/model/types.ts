@@ -98,6 +98,8 @@ export interface StructureModel {
   ridgeTies: RidgeTie[]
   /** All rafters, left slope then right slope */
   rafters: Rafter[]
+  /** Overall length including gable overhangs (m) */
+  totalLength: number
   /** Rafter spacing along ridge (m) */
   rafterSpacing: number
   /** Corner knee braces (KONYOKFA) */

@@ -210,6 +210,7 @@ export function buildStructure(params: InputParams): StructureModel {
     tieBeams,
     ridgeTies,
     rafters: [...leftRafters, ...rightRafters],
+    totalLength: purlinLength,
     rafterSpacing: xSpacing,
     kneeBraces,
   }
@@ -229,7 +230,7 @@ export interface StructureMetrics {
 }
 
 export function computeMetrics(model: StructureModel): StructureMetrics {
-  const purlinLength = Math.abs(model.basePurlins[0].end.x - model.basePurlins[0].start.x)
+  const purlinLength = model.totalLength
   const tieBeamLength = Math.abs(model.tieBeams[0].end.z - model.tieBeams[0].start.z)
   const rafterLen = model.rafters[0].length
   const tanPitch = Math.tan(model.params.pitch * Math.PI / 180)

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { buildRoofing, counterBattenTotalLength, roofBattenTotalLength, ROOF_BATTEN_DISTANCE } from '../src/model/roofing'
+import { buildRoofing, counterBattenTotalLength, roofBattenTotalLength, flashingTotalSurface, ROOF_BATTEN_DISTANCE, FLASHING_LENGTH, FLASHING_OVERLAP, FLASHING_DEVELOPED_WIDTH } from '../src/model/roofing'
 import { buildStructure } from '../src/model/structure'
 import type { InputParams } from '../src/model/types'
 
@@ -73,5 +73,56 @@ describe('roof battens', () => {
     const rowsPerSlope = Math.ceil(rafterLen / ROOF_BATTEN_DISTANCE) + 1 + 1
     const expected = rowsPerSlope * 2 * battenLength
     expect(roofBattenTotalLength(roofing)).toBeCloseTo(expected, 6)
+  })
+})
+
+describe('flashings', () => {
+  const structure = buildStructure(base)
+  const totalLength = base.length + 2 * base.gableOverhang  // 4.6
+  const effectiveLen = FLASHING_LENGTH - FLASHING_OVERLAP    // 1.9
+  const rafterLen = structure.rafters[0].length
+
+  it('no flashings when roofing disabled', () => {
+    const roofing = buildRoofing(structure, { ...opts, roofing: false })
+    expect(roofing.flashings).toBeNull()
+    expect(flashingTotalSurface(roofing)).toBe(0)
+  })
+
+  it('correct drip edge and eaves flashing piece count', () => {
+    const roofing = buildRoofing(structure, { ...opts, roofing: true })
+    const eavesRun = totalLength * 2
+    const expected = Math.ceil(eavesRun / effectiveLen)
+    expect(roofing.flashings!.dripEdge.count).toBe(expected)
+    expect(roofing.flashings!.eavesFlashing.count).toBe(expected)
+  })
+
+  it('correct ridge flashing piece count', () => {
+    const roofing = buildRoofing(structure, { ...opts, roofing: true })
+    const expected = Math.ceil(totalLength / effectiveLen)
+    expect(roofing.flashings!.ridgeFlashing.count).toBe(expected)
+  })
+
+  it('correct gable flashing piece count', () => {
+    const roofing = buildRoofing(structure, { ...opts, roofing: true })
+    const gableRun = rafterLen * 4
+    const expected = Math.ceil(gableRun / effectiveLen)
+    expect(roofing.flashings!.gableFlashing.count).toBe(expected)
+  })
+
+  it('surface computed from count × length × developed width', () => {
+    const roofing = buildRoofing(structure, { ...opts, roofing: true })
+    const f = roofing.flashings!
+    expect(f.dripEdge.surface).toBeCloseTo(f.dripEdge.count * FLASHING_LENGTH * FLASHING_DEVELOPED_WIDTH.dripEdge, 6)
+    expect(f.eavesFlashing.surface).toBeCloseTo(f.eavesFlashing.count * FLASHING_LENGTH * FLASHING_DEVELOPED_WIDTH.eavesFlashing, 6)
+    expect(f.ridgeFlashing.surface).toBeCloseTo(f.ridgeFlashing.count * FLASHING_LENGTH * FLASHING_DEVELOPED_WIDTH.ridgeFlashing, 6)
+    expect(f.gableFlashing.surface).toBeCloseTo(f.gableFlashing.count * FLASHING_LENGTH * FLASHING_DEVELOPED_WIDTH.gableFlashing, 6)
+  })
+
+  it('totalSurface sums all groups', () => {
+    const roofing = buildRoofing(structure, { ...opts, roofing: true })
+    const f = roofing.flashings!
+    const expected = f.dripEdge.surface + f.eavesFlashing.surface + f.ridgeFlashing.surface + f.gableFlashing.surface
+    expect(f.totalSurface).toBeCloseTo(expected, 6)
+    expect(flashingTotalSurface(roofing)).toBeCloseTo(expected, 6)
   })
 })
