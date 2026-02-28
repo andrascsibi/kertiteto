@@ -40,6 +40,8 @@ export interface Flashings {
 export interface LamberiaPlanks {
   planksPerSlope: number
   plankLength: number
+  /** Width of last plank (trimmed to fit ridge), may be < LAMBERIA_WIDTH */
+  lastPlankWidth: number
 }
 
 export interface RoofingModel {
@@ -111,9 +113,12 @@ export function buildRoofing(structure: StructureModel, options: RoofingOptions)
   let lamberia: LamberiaPlanks | null = null
   if (options.lamberia) {
     const rafterLen = structure.rafters[0].length
+    const planksPerSlope = Math.ceil(rafterLen / LAMBERIA_WIDTH)
+    const remainder = rafterLen - (planksPerSlope - 1) * LAMBERIA_WIDTH
     lamberia = {
-      planksPerSlope: Math.ceil(rafterLen / LAMBERIA_WIDTH),
+      planksPerSlope,
       plankLength: structure.totalLength,
+      lastPlankWidth: remainder,
     }
   }
 

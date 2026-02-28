@@ -14,7 +14,7 @@ const MAT: Record<string, THREE.MeshLambertMaterial> = {
   pillar:   new THREE.MeshLambertMaterial({ color: 0x5a3a1a }),
   purlin:   new THREE.MeshLambertMaterial({ color: 0x7a5030 }),
   rafter:   new THREE.MeshLambertMaterial({ color: 0x9b6840 }),
-  lamberia: new THREE.MeshLambertMaterial({ color: 0xc8a870 }),
+  lamberia: new THREE.MeshLambertMaterial({ color: 0x7a5030 }),
   // pillar:  new THREE.MeshLambertMaterial({ color: COLOR }),
   // purlin:  new THREE.MeshLambertMaterial({ color: COLOR }),
   // rafter:  new THREE.MeshLambertMaterial({ color: COLOR }),
@@ -284,10 +284,12 @@ function buildLamberiaMeshes(model: StructureModel): THREE.Mesh[] {
   const refLeft = model.rafters[0]
   const rafterLen = refLeft.length
   const planksPerSlope = Math.ceil(rafterLen / LAMBERIA_WIDTH)
+  const lastPlankWidth = rafterLen - (planksPerSlope - 1) * LAMBERIA_WIDTH + 0.01
   const halfLen = model.totalLength / 2
 
-  const topHalf = (LAMBERIA_WIDTH - 0.002) / 2   // half-width of top (sky) edge
-  const botHalf = (LAMBERIA_WIDTH - 0.012) / 2   // half-width of bottom (rafter) edge
+  // Taper insets (fixed gap size, independent of plank width)
+  const TOP_INSET = 0.001
+  const BOT_INSET = 0.022
 
   // Normal to slope surface (outward), scaled by LAMBERIA_HEIGHT
   // Left slope outward normal points toward -z and +y
@@ -307,8 +309,14 @@ function buildLamberiaMeshes(model: StructureModel): THREE.Mesh[] {
     const eaveY = refRafter.eaveEnd.y + RAFTER_DEPTH / (2 * cosP)
 
     for (let i = 0; i < planksPerSlope; i++) {
+      const isLast = i === planksPerSlope - 1
+      const plankW = isLast ? lastPlankWidth : LAMBERIA_WIDTH
+      const topHalf = (plankW - TOP_INSET) / 2
+      const botHalf = (plankW - BOT_INSET) / 2
+
       // Plank center along slope, measured from eave
-      const slopeCenter = (i + 0.5) * LAMBERIA_WIDTH
+      const slopeStart = i * LAMBERIA_WIDTH
+      const slopeCenter = slopeStart + plankW / 2
 
       // Center of plank on rafter surface
       const cz = eaveZ + sign * slopeCenter * cosP

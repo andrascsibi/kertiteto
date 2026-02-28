@@ -145,4 +145,13 @@ describe('lamberia', () => {
     const roofing = buildRoofing(structure, { ...opts, lamberia: true })
     expect(roofing.lamberia!.plankLength).toBe(structure.totalLength)
   })
+
+  it('last plank width is remainder of rafter length', () => {
+    const roofing = buildRoofing(structure, { ...opts, lamberia: true })
+    const n = roofing.lamberia!.planksPerSlope
+    const expected = rafterLen - (n - 1) * LAMBERIA_WIDTH
+    expect(roofing.lamberia!.lastPlankWidth).toBeCloseTo(expected, 6)
+    expect(roofing.lamberia!.lastPlankWidth).toBeLessThanOrEqual(LAMBERIA_WIDTH)
+    expect(roofing.lamberia!.lastPlankWidth).toBeGreaterThan(0)
+  })
 })
