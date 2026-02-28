@@ -1,5 +1,4 @@
 import { buildStructure, computeMetrics, DEFAULTS, type StructureMetrics } from './model/structure'
-import { pillarCount, rafterCount } from './model/geometry'
 import { fetchPrices, type PriceTable } from './model/prices'
 import { buildRoofing, counterBattenTotalLength, roofBattenTotalLength } from './model/roofing'
 import { createScene } from './renderer/scene'
@@ -127,12 +126,10 @@ function update(): void {
   const rbTotalLen = roofBattenTotalLength(roofing)
 
   // Info badge
-  const nPillars = pillarCount(params.length)
-  const nRafters = rafterCount(params.length)
   info.innerHTML =
     `<strong>${params.width.toFixed(1)} × ${params.length.toFixed(1)} m</strong> · ${params.pitch}°<br>` +
-    `${nPillars} oszlop · ${nRafters * 2} szarufa<br>` +
-    `gerincmagasság: ${model.ridgeHeight.toFixed(2)} m`
+    `alapterület: ${m.totalFootprint.toFixed(1)} m²<br>` +
+    `tető felület: ${m.roofSurface.toFixed(1)} m²`
 
   // Roofing options — always show cost, only add to total when checked
   const ROOFING_OPTIONS = [
