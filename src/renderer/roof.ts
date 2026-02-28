@@ -16,6 +16,7 @@ const MAT: Record<string, THREE.MeshLambertMaterial> = {
   rafter:   new THREE.MeshLambertMaterial({ color: 0x9b6840 }),
   lamberia:  new THREE.MeshLambertMaterial({ color: 0x7a5030 }),
   membrane:  new THREE.MeshLambertMaterial({ color: 0xcccccc }),
+  counterBatten: new THREE.MeshLambertMaterial({ color: 0x40e0d0 }),
   // pillar:  new THREE.MeshLambertMaterial({ color: COLOR }),
   // purlin:  new THREE.MeshLambertMaterial({ color: COLOR }),
   // rafter:  new THREE.MeshLambertMaterial({ color: COLOR }),
@@ -45,6 +46,8 @@ export function buildRoofMeshes(model: StructureModel, options?: RoofRenderOptio
   if (options?.membrane) {
     const membraneMeshes = buildMembraneMeshes(model, !!options.lamberia)
     for (const m of membraneMeshes) group.add(m)
+    const cbMeshes = buildCounterBattenMeshes(model, !!options.lamberia)
+    for (const m of cbMeshes) group.add(m)
   }
 
   return group
@@ -488,6 +491,72 @@ function buildMembraneMeshes(model: StructureModel, hasLamberia: boolean): THREE
     geo.computeVertexNormals()
 
     const mesh = new THREE.Mesh(geo, MAT.membrane)
+    mesh.castShadow = true
+    mesh.receiveShadow = true
+    meshes.push(mesh)
+  }
+
+  return meshes
+}
+
+// ── Counter Battens ──────────────────────────────────────────────────────────
+
+const COUNTER_BATTEN_SIZE = 0.05 // 5×5cm cross-section
+
+/**
+ * Builds counter batten meshes — one per rafter, centered above rafter centerline.
+ *
+ * Counter battens run along the slope direction, slightly longer than rafters
+ * by COUNTER_BATTEN_SIZE * tan(pitch) + LAMBERIA_HEIGHT * tan(pitch) if lamberia
+ * is present. BoxGeometry is used; ridge overlap is acceptable.
+ *
+ * @param hasLamberia Whether lamberia is present underneath
+ */
+function buildCounterBattenMeshes(model: StructureModel, hasLamberia: boolean): THREE.Mesh[] {
+  const DEG = Math.PI / 180
+  const pitch = model.params.pitch * DEG
+  const cosP = Math.cos(pitch)
+  const sinP = Math.sin(pitch)
+  const tanP = Math.tan(pitch)
+
+  const rafterLen = model.rafters[0].length
+  const cbLength = rafterLen + COUNTER_BATTEN_SIZE * tanP + (hasLamberia ? LAMBERIA_HEIGHT * tanP : 0)
+
+  // Normal distance from rafter top surface to counter batten center
+  const normalDist = (hasLamberia ? LAMBERIA_HEIGHT : 0) + MEMBRANE_THICKNESS + COUNTER_BATTEN_SIZE / 2
+
+  const meshes: THREE.Mesh[] = []
+
+  for (const rafter of model.rafters) {
+    const isLeft = rafter.eaveEnd.z < 0
+    const sign = isLeft ? 1 : -1
+
+    // Rafter top surface Y at eave
+    const eaveTopY = rafter.eaveEnd.y + RAFTER_DEPTH / (2 * cosP)
+    const eaveZ = rafter.eaveEnd.z
+
+    // Counter batten center along slope (from eave end)
+    const slopeCenter = cbLength / 2
+
+    // Center position: move along slope from eave + offset by normal
+    const cx = rafter.eaveEnd.x
+    const cy = eaveTopY + slopeCenter * sinP + normalDist * cosP
+    const cz = eaveZ + sign * slopeCenter * cosP - sign * normalDist * sinP
+
+    const geo = new THREE.BoxGeometry(COUNTER_BATTEN_SIZE, COUNTER_BATTEN_SIZE, cbLength)
+    const mesh = new THREE.Mesh(geo, MAT.counterBatten)
+    mesh.position.set(cx, cy, cz)
+
+    // Orient box local Z along slope direction
+    // Use consistent right-handed basis: for right slope, flip slopeDir
+    // instead of negating normal (negating breaks handedness → degenerate quaternion)
+    const zDir = new THREE.Vector3(0, sinP, sign * cosP)
+    const xDir = new THREE.Vector3(1, 0, 0)
+    const yDir = new THREE.Vector3().crossVectors(zDir, xDir)
+    if (yDir.y < 0) { yDir.negate(); zDir.negate() }
+    const basis = new THREE.Matrix4().makeBasis(xDir, yDir, zDir)
+    mesh.quaternion.setFromRotationMatrix(basis)
+
     mesh.castShadow = true
     mesh.receiveShadow = true
     meshes.push(mesh)
