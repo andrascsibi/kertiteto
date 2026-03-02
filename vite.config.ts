@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite'
 
 export default defineConfig({
-  base: '/kertiteto/',
+  base: '/',
   test: {
     include: ['tests/**/*.test.ts'],
   },
