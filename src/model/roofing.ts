@@ -14,6 +14,12 @@ export const FLASHING_DEVELOPED_WIDTH = {
 export const FLASHING_LENGTH  = 2    // meters per piece
 export const FLASHING_OVERLAP = 0.1  // meters overlap between pieces
 
+// Drip edge profile
+export const DRIP_EDGE_FLAT_WIDTH  = 0.09   // 9cm flat part along slope
+export const DRIP_EDGE_VISOR_WIDTH = 0.025  // 2.5cm visor hanging down
+export const DRIP_EDGE_VISOR_ANGLE = 20     // degrees from vertical, leaning outward
+export const DRIP_EDGE_THICKNESS   = 0.0005 // 0.5mm sheet metal
+
 export const SHEET_LENGTH    = 0.51   // 51cm sheet width along X (longitudinal)
 export const SHEET_THICKNESS = 0.001  // 1mm
 export const KORC_HEIGHT     = 0.025  // 2.5cm álló korc height
@@ -59,6 +65,11 @@ export interface MetalSheets {
   korcXPositions: number[]
 }
 
+export interface DripEdgeModel {
+  /** Length along X axis (= totalLength) */
+  length: number
+}
+
 export interface LamberiaPlanks {
   planksPerSlope: number
   plankLength: number
@@ -72,6 +83,7 @@ export interface RoofingModel {
   flashings: Flashings | null
   lamberia: LamberiaPlanks | null
   metalSheets: MetalSheets | null
+  dripEdge: DripEdgeModel | null
 }
 
 export interface RoofingOptions {
@@ -186,7 +198,14 @@ export function buildRoofing(structure: StructureModel, options: RoofingOptions)
     }
   }
 
-  return { counterBattens, roofBattens, flashings, lamberia, metalSheets }
+  let dripEdge: DripEdgeModel | null = null
+  if (options.membrane) {
+    dripEdge = {
+      length: structure.totalLength,
+    }
+  }
+
+  return { counterBattens, roofBattens, flashings, lamberia, metalSheets, dripEdge }
 }
 
 export function counterBattenTotalLength(roofing: RoofingModel): number {

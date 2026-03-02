@@ -6,7 +6,7 @@ import * as THREE from 'three'
 import type { StructureModel, Pillar, Purlin, TieBeam, Rafter, RidgeTie, KneeBrace } from '../model/types'
 import { PILLAR_SIZE, PURLIN_SIZE, RAFTER_WIDTH, RAFTER_DEPTH, RIDGE_TIE_WIDTH, KNEE_BRACE_SIZE, KNEE_BRACE_LENGTH } from '../model/structure'
 import { EAVE_PLUMB_HEIGHT } from '../model/geometry'
-import { LAMBERIA_HEIGHT, LAMBERIA_WIDTH, ROOF_BATTEN_DISTANCE, SHEET_THICKNESS, KORC_HEIGHT, KORC_WIDTH } from '../model/roofing'
+import { LAMBERIA_HEIGHT, LAMBERIA_WIDTH, ROOF_BATTEN_DISTANCE, SHEET_THICKNESS, KORC_HEIGHT, KORC_WIDTH, DRIP_EDGE_FLAT_WIDTH, DRIP_EDGE_VISOR_WIDTH, DRIP_EDGE_VISOR_ANGLE, DRIP_EDGE_THICKNESS } from '../model/roofing'
 import type { RoofingModel } from '../model/roofing'
 
 // const COLOR = '#0c83fa' 
@@ -19,6 +19,7 @@ const MAT: Record<string, THREE.Material> = {
   membrane:  new THREE.MeshLambertMaterial({ color: 0xcccccc }),
   counterBatten: new THREE.MeshLambertMaterial({ color: 0x40e0d0 }),
   metalSheet: new THREE.MeshStandardMaterial({ color: 0x8A3324, metalness: 0.6, roughness: 0.35 }),
+  flashing: new THREE.MeshStandardMaterial({ color: 0x8A3324, metalness: 0.6, roughness: 0.35, side: THREE.DoubleSide }),
   // pillar:  new THREE.MeshLambertMaterial({ color: COLOR }),
   // purlin:  new THREE.MeshLambertMaterial({ color: COLOR }),
   // rafter:  new THREE.MeshLambertMaterial({ color: COLOR }),
@@ -52,6 +53,10 @@ export function buildRoofMeshes(model: StructureModel, options?: RoofRenderOptio
     for (const m of membraneMeshes) group.add(m)
     const cbMeshes = buildCounterBattenMeshes(model, !!options.lamberia)
     for (const m of cbMeshes) group.add(m)
+    if (options.roofingModel?.dripEdge) {
+      const dripMeshes = buildDripEdgeMeshes(model, options.roofingModel.dripEdge, !!options.lamberia)
+      for (const m of dripMeshes) group.add(m)
+    }
   }
 
   if (options?.roofing) {
@@ -728,6 +733,178 @@ function buildMetalSheetMeshes(
       mesh.receiveShadow = true
       meshes.push(mesh)
     }
+  }
+
+  return meshes
+}
+
+// ── Drip Edge ──────────────────────────────────────────────────────────────────
+
+/**
+ * Builds drip edge meshes for both slopes at the eaves.
+ *
+ * Each drip edge consists of two planes:
+ * 1. Flat part: DRIP_EDGE_FLAT_WIDTH (9cm) along slope, sitting on rafter/lamberia surface
+ * 2. Visor: DRIP_EDGE_VISOR_WIDTH (2.5cm), angled DRIP_EDGE_VISOR_ANGLE (15°) from vertical,
+ *    leaning outward from the building
+ *
+ * Both planes run the full dripEdge.length along X. Each plane is a thin slab
+ * (DRIP_EDGE_THICKNESS) rendered with 8 vertices.
+ */
+function buildDripEdgeMeshes(
+  model: StructureModel,
+  dripEdge: import('../model/roofing').DripEdgeModel,
+  hasLamberia: boolean,
+): THREE.Mesh[] {
+  const DEG = Math.PI / 180
+  const pitch = model.params.pitch * DEG
+  const cosP = Math.cos(pitch)
+  const sinP = Math.sin(pitch)
+
+  const halfLen = dripEdge.length / 2
+
+  // Normal offset from rafter top surface (lamberia if present)
+  const normalOffset = hasLamberia ? LAMBERIA_HEIGHT : 0
+
+  // Visor angle from vertical in world space: the visor leans outward.
+  // The visor starts where the flat part's eave edge is, and goes downward
+  // at (90° - DRIP_EDGE_VISOR_ANGLE) from slope surface = visorAngle from vertical.
+  const visorAngle = DRIP_EDGE_VISOR_ANGLE * DEG
+
+  const meshes: THREE.Mesh[] = []
+
+  for (let side = 0; side < 2; side++) {
+    const isLeft = side === 0
+    const sign = isLeft ? 1 : -1
+
+    const refRafter = isLeft ? model.rafters[0] : model.rafters.find(r => r.eaveEnd.z > 0)!
+    const eaveTopY = refRafter.eaveEnd.y + RAFTER_DEPTH / (2 * cosP)
+    const eaveZ = refRafter.eaveEnd.z
+
+    // ── Flat part ─────────────────────────────────────────────────────────
+    // Bottom surface sits on rafter/lamberia top. Runs from eave edge inward
+    // (toward ridge) for DRIP_EDGE_FLAT_WIDTH along slope.
+
+    // Eave edge (outer, slope distance = -0.01, shifted 1cm down slope for visual fit)
+    // Small Y offset to avoid z-fighting with membrane/lamberia surface
+    const slopeShift = -0.01
+    const flatBotEaveY = eaveTopY + normalOffset * cosP - 0.001 + slopeShift * sinP
+    const flatBotEaveZ = eaveZ - sign * normalOffset * sinP + sign * slopeShift * cosP
+
+    // Ridge edge of flat part (slope distance = DRIP_EDGE_FLAT_WIDTH inward)
+    const flatBotRidgeY = flatBotEaveY + DRIP_EDGE_FLAT_WIDTH * sinP
+    const flatBotRidgeZ = flatBotEaveZ + sign * DRIP_EDGE_FLAT_WIDTH * cosP
+
+    // Top surface = bottom + thickness along normal
+    const tOffY = DRIP_EDGE_THICKNESS * cosP
+    const tOffZ = DRIP_EDGE_THICKNESS * sinP
+
+    const flatTopEaveY = flatBotEaveY + tOffY
+    const flatTopEaveZ = flatBotEaveZ - sign * tOffZ
+    const flatTopRidgeY = flatBotRidgeY + tOffY
+    const flatTopRidgeZ = flatBotRidgeZ - sign * tOffZ
+
+    const flatPos = new Float32Array([
+      -halfLen, flatBotEaveY,  flatBotEaveZ,   // 0 bot-eave-left
+      -halfLen, flatBotRidgeY, flatBotRidgeZ,  // 1 bot-ridge-left
+      -halfLen, flatTopEaveY,  flatTopEaveZ,   // 2 top-eave-left
+      -halfLen, flatTopRidgeY, flatTopRidgeZ,  // 3 top-ridge-left
+      +halfLen, flatBotEaveY,  flatBotEaveZ,   // 4 bot-eave-right
+      +halfLen, flatBotRidgeY, flatBotRidgeZ,  // 5 bot-ridge-right
+      +halfLen, flatTopEaveY,  flatTopEaveZ,   // 6 top-eave-right
+      +halfLen, flatTopRidgeY, flatTopRidgeZ,  // 7 top-ridge-right
+    ])
+
+    const flatTris = isLeft ? [
+      2, 3, 7,  2, 7, 6,   // top (sky)
+      0, 5, 1,  0, 4, 5,   // bottom (rafter)
+      0, 1, 3,  0, 3, 2,   // left end (-x)
+      4, 6, 7,  4, 7, 5,   // right end (+x)
+      0, 2, 6,  0, 6, 4,   // eave edge
+      1, 5, 7,  1, 7, 3,   // ridge edge
+    ] : [
+      2, 7, 3,  2, 6, 7,
+      0, 1, 5,  0, 5, 4,
+      0, 3, 1,  0, 2, 3,
+      4, 7, 6,  4, 5, 7,
+      0, 6, 2,  0, 4, 6,
+      1, 7, 5,  1, 3, 7,
+    ]
+
+    const flatGeo = new THREE.BufferGeometry()
+    flatGeo.setAttribute('position', new THREE.BufferAttribute(flatPos, 3))
+    flatGeo.setIndex(flatTris)
+    flatGeo.computeVertexNormals()
+    const flatMesh = new THREE.Mesh(flatGeo, MAT.flashing)
+    flatMesh.castShadow = true
+    flatMesh.receiveShadow = true
+    meshes.push(flatMesh)
+
+    // ── Visor part ────────────────────────────────────────────────────────
+    // Starts at the eave edge of the flat part (top surface), goes downward
+    // at visorAngle from vertical, leaning outward (away from building).
+    //
+    // Visor direction in YZ: downward and outward.
+    // "Outward" for left slope (z<0) = toward -z; for right slope = toward +z.
+    // Angle from vertical = visorAngle, so:
+    //   dy = -DRIP_EDGE_VISOR_WIDTH * cos(visorAngle)  (downward)
+    //   dz = -sign * DRIP_EDGE_VISOR_WIDTH * sin(visorAngle)  (outward)
+    const visorDY = -DRIP_EDGE_VISOR_WIDTH * Math.cos(visorAngle)
+    const visorDZ = -sign * DRIP_EDGE_VISOR_WIDTH * Math.sin(visorAngle)
+
+    // Visor top edge = flat part's eave edge (top surface)
+    const visorTopY = flatTopEaveY
+    const visorTopZ = flatTopEaveZ
+
+    // Visor bottom edge
+    const visorBotY = visorTopY + visorDY
+    const visorBotZ = visorTopZ + visorDZ
+
+    // Thickness offset perpendicular to visor surface
+    // Visor surface normal: rotate visor direction 90° (toward building interior)
+    // visor dir = (visorDY, visorDZ), normalized, then rotate 90° CW in YZ
+    const vLen = DRIP_EDGE_VISOR_WIDTH
+    const vnY = visorDZ / vLen   // rotated 90° CW: (dy,dz) → (dz, -dy)
+    const vnZ = -visorDY / vLen
+    const vtOffY = DRIP_EDGE_THICKNESS * vnY
+    const vtOffZ = DRIP_EDGE_THICKNESS * vnZ
+
+    const visorPos = new Float32Array([
+      -halfLen, visorTopY,           visorTopZ,            // 0 outer-top-left
+      -halfLen, visorBotY,           visorBotZ,            // 1 outer-bot-left
+      -halfLen, visorTopY + vtOffY,  visorTopZ + vtOffZ,   // 2 inner-top-left
+      -halfLen, visorBotY + vtOffY,  visorBotZ + vtOffZ,   // 3 inner-bot-left
+      +halfLen, visorTopY,           visorTopZ,            // 4 outer-top-right
+      +halfLen, visorBotY,           visorBotZ,            // 5 outer-bot-right
+      +halfLen, visorTopY + vtOffY,  visorTopZ + vtOffZ,   // 6 inner-top-right
+      +halfLen, visorBotY + vtOffY,  visorBotZ + vtOffZ,   // 7 inner-bot-right
+    ])
+
+    // Faces: outer, inner, top edge, bottom edge, left end, right end
+    const visorTris = isLeft ? [
+      0, 1, 5,  0, 5, 4,   // outer face
+      2, 6, 7,  2, 7, 3,   // inner face
+      0, 4, 6,  0, 6, 2,   // top edge
+      1, 3, 7,  1, 7, 5,   // bottom edge
+      0, 2, 3,  0, 3, 1,   // left end (-x)
+      4, 5, 7,  4, 7, 6,   // right end (+x)
+    ] : [
+      0, 5, 1,  0, 4, 5,   // outer face
+      2, 7, 6,  2, 3, 7,   // inner face
+      0, 6, 4,  0, 2, 6,   // top edge
+      1, 7, 3,  1, 5, 7,   // bottom edge
+      0, 3, 2,  0, 1, 3,   // left end (-x)
+      4, 7, 5,  4, 6, 7,   // right end (+x)
+    ]
+
+    const visorGeo = new THREE.BufferGeometry()
+    visorGeo.setAttribute('position', new THREE.BufferAttribute(visorPos, 3))
+    visorGeo.setIndex(visorTris)
+    visorGeo.computeVertexNormals()
+    const visorMesh = new THREE.Mesh(visorGeo, MAT.flashing)
+    visorMesh.castShadow = true
+    visorMesh.receiveShadow = true
+    meshes.push(visorMesh)
   }
 
   return meshes

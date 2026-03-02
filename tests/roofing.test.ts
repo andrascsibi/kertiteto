@@ -231,3 +231,23 @@ describe('metal sheets', () => {
     }
   })
 })
+
+describe('drip edge', () => {
+  const structure = buildStructure(base)
+  const totalLength = base.length + 2 * base.gableOverhang
+
+  it('no drip edge when membrane disabled', () => {
+    const roofing = buildRoofing(structure, { ...opts, membrane: false })
+    expect(roofing.dripEdge).toBeNull()
+  })
+
+  it('drip edge present when membrane enabled', () => {
+    const roofing = buildRoofing(structure, { ...opts, membrane: true })
+    expect(roofing.dripEdge).not.toBeNull()
+  })
+
+  it('length equals totalLength', () => {
+    const roofing = buildRoofing(structure, { ...opts, membrane: true })
+    expect(roofing.dripEdge!.length).toBeCloseTo(totalLength, 6)
+  })
+})
