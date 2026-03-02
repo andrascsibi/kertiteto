@@ -38,6 +38,10 @@ export const GABLE_FLASHING_OVERHANG   = 0.001  // 1mm X overhang beyond gable (
 export const RIDGE_FLASHING_WIDTH    = 0.205  // 205mm across slope
 export const RIDGE_FLASHING_GAP      = 0.05   // 5cm above metal sheets along slope normal
 export const RIDGE_FLASHING_THICKNESS = 0.0005 // 0.5mm sheet metal
+export const RIDGE_CAP_HEIGHT        = 0.025  // 2.5cm box height (along slope normal)
+export const RIDGE_CAP_GAP           = 0.025  // 2.5cm above metal sheets along slope normal
+export const RIDGE_CAP_WIDTH         = RIDGE_FLASHING_WIDTH - 0.025  // 180mm across slope
+export const RIDGE_CAP_X_EXTRA       = 0.004  // 0.4cm wider than totalLength on each side
 
 export const EAVES_OVERLAP = 0.02  // 2cm — metal sheets + gable flashings extend past eave
 
