@@ -46,6 +46,17 @@ const costLamberia = document.getElementById('cost-lamberia')!
 const costMembrane = document.getElementById('cost-membrane')!
 const costRoofing  = document.getElementById('cost-roofing')!
 
+const ctaButton     = document.getElementById('cta-button') as HTMLButtonElement
+const quoteModal    = document.getElementById('quote-modal')!
+const modalSummary  = document.getElementById('modal-summary')!
+const modalFormView = document.getElementById('modal-form-view')!
+const modalSuccess  = document.getElementById('modal-success-view')!
+const hiddenConfig  = document.getElementById('hidden-config') as HTMLInputElement
+const hiddenPrice   = document.getElementById('hidden-price') as HTMLInputElement
+const quoteForm     = document.getElementById('quote-form') as HTMLFormElement
+const modalCancel   = document.getElementById('modal-cancel')!
+const modalClose    = document.getElementById('modal-close')!
+
 // ── Scene ──────────────────────────────────────────────────────────────────────
 const scene = createScene(viewport)
 
@@ -100,6 +111,9 @@ function computePriceBreakdown(prices: PriceTable, metrics: StructureMetrics): {
 }
 
 // ── State + update ─────────────────────────────────────────────────────────────
+let lastTotal = 0
+let lastConfigSummary = ''
+
 function update(): void {
   const params = {
     width:         parseFloat(inpWidth.value),
@@ -185,6 +199,18 @@ function update(): void {
       `<p class="price-total">${formatHUF(total)}</p>` +
       `<p class="price-unit">${formatHUF(unitPrice)} / m²</p>`
 
+    // Store for modal
+    lastTotal = total
+    const opts = [
+      chkLamberia.checked && 'lambéria',
+      chkMembrane.checked && 'alátét héjazat',
+      chkRoofing.checked  && 'lemez fedés',
+    ].filter(Boolean).join(', ')
+    lastConfigSummary =
+      `${params.width.toFixed(1)} × ${params.length.toFixed(1)} m · ${params.pitch}°` +
+      (opts ? ` · ${opts}` : '')
+    ctaButton.disabled = false
+
     // Debug: line item breakdown
     if (devMode) {
       const allItems = [...items, ...optionItems]
@@ -222,6 +248,47 @@ for (const inp of [inpWidth, inpLength, inpPitch, inpEaves, inpGable]) {
 for (const chk of [chkLamberia, chkMembrane, chkRoofing]) {
   chk.addEventListener('change', update)
 }
+
+// ── Quote modal ─────────────────────────────────────────────────────────────
+function openModal(): void {
+  modalSummary.innerHTML =
+    `<strong>${lastConfigSummary}</strong><br>` +
+    `Becsült ár: <strong>~${formatHUF(lastTotal)}</strong>`
+  hiddenConfig.value = lastConfigSummary
+  hiddenPrice.value = formatHUF(lastTotal)
+  modalFormView.style.display = ''
+  modalSuccess.style.display = 'none'
+  quoteModal.classList.add('open')
+}
+
+function closeModal(): void {
+  quoteModal.classList.remove('open')
+}
+
+ctaButton.addEventListener('click', openModal)
+modalCancel.addEventListener('click', closeModal)
+modalClose.addEventListener('click', closeModal)
+quoteModal.addEventListener('click', (e) => {
+  if (e.target === quoteModal) closeModal()
+})
+
+quoteForm.addEventListener('submit', async (e) => {
+  e.preventDefault()
+  const submitBtn = quoteForm.querySelector('.btn-submit') as HTMLButtonElement
+  submitBtn.disabled = true
+  submitBtn.textContent = 'Küldés…'
+  try {
+    const formData = new FormData(quoteForm)
+    await fetch(quoteForm.action, { method: 'POST', body: formData })
+    modalFormView.style.display = 'none'
+    modalSuccess.style.display = ''
+    quoteForm.reset()
+  } catch {
+    submitBtn.disabled = false
+    submitBtn.textContent = 'Árajánlat kérése'
+    alert('Hiba történt a küldés során. Kérjük próbálja újra!')
+  }
+})
 
 // ── Initial values from hash params or defaults ─────────────────────────────
 inpWidth.value  = String(hashFloat('w', DEFAULTS.width))

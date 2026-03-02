@@ -180,6 +180,153 @@
         to { transform: rotate(360deg); }
       }
 
+      /* ── CTA button ──────────────────────────────────────────────────── */
+      #cta-button {
+        display: block;
+        width: 100%;
+        margin-top: 1rem;
+        padding: 0.75rem 1rem;
+        background: #7a5030;
+        color: #fff;
+        border: none;
+        border-radius: 6px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.15s;
+      }
+      #cta-button:hover { background: #5e3a20; }
+      #cta-button:disabled {
+        background: #b8a898;
+        cursor: not-allowed;
+      }
+
+      /* ── Quote modal ───────────────────────────────────────────────────── */
+      .modal-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.5);
+        z-index: 100;
+        justify-content: center;
+        align-items: center;
+      }
+      .modal-overlay.open {
+        display: flex;
+      }
+      .modal {
+        background: #fff;
+        border-radius: 10px;
+        padding: 1.5rem;
+        width: 92%;
+        max-width: 420px;
+        max-height: 90dvh;
+        overflow-y: auto;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+      }
+      .modal h2 {
+        font-size: 1.1rem;
+        color: #2e1f0f;
+        margin-bottom: 0.25rem;
+      }
+      .modal .modal-reassure {
+        font-size: 0.78rem;
+        color: #7a5030;
+        margin-bottom: 0.75rem;
+      }
+      .modal .modal-summary {
+        background: #f5f0eb;
+        border-radius: 6px;
+        padding: 0.6rem 0.75rem;
+        font-size: 0.78rem;
+        color: #4a3828;
+        line-height: 1.5;
+        margin-bottom: 1rem;
+      }
+      .modal .modal-summary strong {
+        color: #2e1f0f;
+      }
+      .modal .form-group {
+        margin-bottom: 0.75rem;
+      }
+      .modal .form-group label {
+        display: block;
+        font-size: 0.78rem;
+        color: #4a3828;
+        margin-bottom: 0.2rem;
+        font-weight: 500;
+      }
+      .modal .form-group label .required {
+        color: #c0392b;
+      }
+      .modal .form-group input,
+      .modal .form-group textarea {
+        width: 100%;
+        padding: 0.5rem 0.6rem;
+        border: 1px solid #d5ccc4;
+        border-radius: 5px;
+        font-size: 0.85rem;
+        font-family: inherit;
+        color: #2e1f0f;
+        background: #fff;
+        transition: border-color 0.15s;
+      }
+      .modal .form-group input:focus,
+      .modal .form-group textarea:focus {
+        outline: none;
+        border-color: #7a5030;
+      }
+      .modal .form-group textarea {
+        resize: vertical;
+        min-height: 3rem;
+      }
+      .modal-actions {
+        display: flex;
+        gap: 0.5rem;
+        margin-top: 1rem;
+      }
+      .modal-actions .btn-submit {
+        flex: 1;
+        padding: 0.65rem 1rem;
+        background: #7a5030;
+        color: #fff;
+        border: none;
+        border-radius: 6px;
+        font-size: 0.88rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.15s;
+      }
+      .modal-actions .btn-submit:hover { background: #5e3a20; }
+      .modal-actions .btn-cancel {
+        padding: 0.65rem 1rem;
+        background: transparent;
+        color: #8a7060;
+        border: 1px solid #d5ccc4;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        cursor: pointer;
+        transition: border-color 0.15s;
+      }
+      .modal-actions .btn-cancel:hover { border-color: #8a7060; }
+      .modal .modal-success {
+        text-align: center;
+        padding: 1rem 0;
+      }
+      .modal .modal-success .checkmark {
+        font-size: 2.5rem;
+        margin-bottom: 0.5rem;
+      }
+      .modal .modal-success h3 {
+        font-size: 1rem;
+        color: #2e1f0f;
+        margin-bottom: 0.3rem;
+      }
+      .modal .modal-success p {
+        font-size: 0.8rem;
+        color: #8a7060;
+      }
+
       /* ── Debug panel (top-right, hidden by default) ────────────────────── */
       #debug {
         display: none;
@@ -266,6 +413,16 @@
         #pricing .price-total {
           font-size: 1.2rem;
         }
+
+        #cta-button {
+          padding: 0.6rem 0.75rem;
+          font-size: 0.82rem;
+        }
+
+        .modal {
+          width: 95%;
+          padding: 1.25rem;
+        }
       }
     </style>
   </head>
@@ -336,12 +493,62 @@
       </div>
 
       <div id="pricing"></div>
+      <button id="cta-button" disabled>Árajánlat kérése</button>
     </aside>
 
     <main id="viewport">
       <div id="debug"></div>
       <div id="info"></div>
     </main>
+
+    <div class="modal-overlay" id="quote-modal">
+      <div class="modal">
+        <div id="modal-form-view">
+          <h2>Árajánlat kérése</h2>
+          <p class="modal-reassure">Egyedi árajánlatot küldünk 24 órán belül!</p>
+          <div class="modal-summary" id="modal-summary"></div>
+          <form id="quote-form" action="https://formsubmit.co/hello@egyacs.com" method="POST">
+            <input type="hidden" name="_subject" value="Kerti tető árajánlat">
+            <input type="hidden" name="_captcha" value="false">
+            <input type="hidden" name="_template" value="table">
+            <input type="hidden" name="Konfiguráció" id="hidden-config">
+            <input type="hidden" name="Becsült ár" id="hidden-price">
+            <div class="form-group">
+              <label>Név <span class="required">*</span></label>
+              <input type="text" name="Név" required autocomplete="name">
+            </div>
+            <div class="form-group">
+              <label>E-mail cím <span class="required">*</span></label>
+              <input type="email" name="E-mail" required autocomplete="email">
+            </div>
+            <div class="form-group">
+              <label>Telefonszám</label>
+              <input type="tel" name="Telefon" autocomplete="tel">
+            </div>
+            <div class="form-group">
+              <label>Település <span class="required">*</span></label>
+              <input type="text" name="Település" required>
+            </div>
+            <div class="form-group">
+              <label>Megjegyzés</label>
+              <textarea name="Megjegyzés" rows="2"></textarea>
+            </div>
+            <div class="modal-actions">
+              <button type="button" class="btn-cancel" id="modal-cancel">Mégse</button>
+              <button type="submit" class="btn-submit">Árajánlat kérése</button>
+            </div>
+          </form>
+        </div>
+        <div id="modal-success-view" class="modal-success" style="display:none">
+          <div class="checkmark">✓</div>
+          <h3>Köszönjük!</h3>
+          <p>Árajánlatát hamarosan elküldjük a megadott e-mail címre.</p>
+          <div class="modal-actions" style="justify-content:center;margin-top:1.25rem">
+            <button type="button" class="btn-cancel" id="modal-close">Bezárás</button>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <script type="module" src="/src/main.ts"></script>
   </body>
