@@ -19,6 +19,27 @@ export const MAX_RAFTER_SPACING = 0.9
 /** Maximum unsupported span between pillar inner faces before adding middle pillars (m) */
 export const MAX_UNSUPPORTED_SPAN = 3.5
 
+/** Maximum rafter length (excluding eaves overhang) before structure becomes impractical (m) */
+export const MAX_RAFTER_LENGTH = 4.0
+
+/**
+ * Maximum building width for a given pitch, so that rafterLength(w, pitch, 0) <= MAX_RAFTER_LENGTH.
+ * maxWidth = 2 * MAX_RAFTER_LENGTH * cos(pitch)
+ */
+export function maxWidthForPitch(pitchDeg: number): number {
+  return 2 * MAX_RAFTER_LENGTH * Math.cos(pitchDeg * DEG)
+}
+
+/**
+ * Maximum pitch (degrees) for a given width, so that rafterLength(w, pitch, 0) <= MAX_RAFTER_LENGTH.
+ * maxPitch = acos(width / (2 * MAX_RAFTER_LENGTH))
+ */
+export function maxPitchForWidth(width: number): number {
+  const ratio = width / (2 * MAX_RAFTER_LENGTH)
+  if (ratio >= 1) return 0
+  return Math.acos(ratio) / DEG
+}
+
 export interface BirdMouthGeometry {
   /** Horizontal cut width (m) - perpendicular to rafter axis, sits on purlin */
   seatDepth: number

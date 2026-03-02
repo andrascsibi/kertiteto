@@ -1,4 +1,5 @@
 import { buildStructure, computeMetrics, DEFAULTS, type StructureMetrics } from './model/structure'
+import { maxWidthForPitch, maxPitchForWidth } from './model/geometry'
 import { fetchPrices, type PriceTable } from './model/prices'
 import { buildRoofing, counterBattenTotalLength, roofBattenTotalLength, flashingTotalSurface } from './model/roofing'
 import { createScene } from './renderer/scene'
@@ -48,9 +49,11 @@ const valGable  = document.getElementById('val-gable')!
 const chkLamberia = document.getElementById('chk-lamberia') as HTMLInputElement
 const chkMembrane = document.getElementById('chk-membrane') as HTMLInputElement
 const chkRoofing  = document.getElementById('chk-roofing')  as HTMLInputElement
-const costLamberia = document.getElementById('cost-lamberia')!
-const costMembrane = document.getElementById('cost-membrane')!
-const costRoofing  = document.getElementById('cost-roofing')!
+const costLamberia  = document.getElementById('cost-lamberia')!
+const costMembrane  = document.getElementById('cost-membrane')!
+const costRoofing   = document.getElementById('cost-roofing')!
+const clampWarningWidth = document.getElementById('clamp-warning-width')!
+const clampWarningPitch = document.getElementById('clamp-warning-pitch')!
 
 const ctaButton     = document.getElementById('cta-button') as HTMLButtonElement
 const quoteModal    = document.getElementById('quote-modal')!
@@ -120,12 +123,36 @@ function computePriceBreakdown(prices: PriceTable, metrics: StructureMetrics): {
 // ── State + update ─────────────────────────────────────────────────────────────
 let lastTotal = 0
 let lastConfigSummary = ''
+let lastChangedSlider: 'width' | 'pitch' | null = null
 
 function update(): void {
+  let width = parseFloat(inpWidth.value)
+  let pitch = parseFloat(inpPitch.value)
+
+  // Clamp width↔pitch so rafter length (excluding overhang) stays ≤ 4 m
+  // Warning shown under the slider being ADJUSTED (not the one being constrained)
+  clampWarningWidth.textContent = ''
+  clampWarningPitch.textContent = ''
+  if (lastChangedSlider === 'pitch') {
+    const mw = maxWidthForPitch(pitch)
+    if (width > mw) {
+      width = Math.floor(mw * 10) / 10  // round down to slider step (0.1)
+      inpWidth.value = String(width)
+      clampWarningPitch.textContent = `Szélesség ${width.toFixed(1)} m-re korlátozva (szarufák max. 4 m)`
+    }
+  } else {
+    const mp = maxPitchForWidth(width)
+    if (pitch > mp) {
+      pitch = Math.floor(mp)  // round down to slider step (1°)
+      inpPitch.value = String(pitch)
+      clampWarningWidth.textContent = `Hajlásszög ${pitch}°-ra korlátozva (szarufák max. 4 m)`
+    }
+  }
+
   const params = {
-    width:         parseFloat(inpWidth.value),
+    width,
     length:        parseFloat(inpLength.value),
-    pitch:         parseFloat(inpPitch.value),
+    pitch,
     eavesOverhang: parseFloat(inpEaves.value),
     gableOverhang: parseFloat(inpGable.value),
   }
@@ -262,7 +289,9 @@ function update(): void {
 }
 
 // ── Wire up sliders ────────────────────────────────────────────────────────────
-for (const inp of [inpWidth, inpLength, inpPitch, inpEaves, inpGable]) {
+inpWidth.addEventListener('input', () => { lastChangedSlider = 'width'; update() })
+inpPitch.addEventListener('input', () => { lastChangedSlider = 'pitch'; update() })
+for (const inp of [inpLength, inpEaves, inpGable]) {
   inp.addEventListener('input', update)
 }
 for (const chk of [chkLamberia, chkMembrane, chkRoofing]) {
@@ -277,6 +306,9 @@ function openModal(): void {
   hiddenConfig.value = lastConfigSummary
   hiddenPrice.value = formatHUF(lastTotal)
   hiddenUrl.value = window.location.href
+  const submitBtn = quoteForm.querySelector('.btn-submit') as HTMLButtonElement
+  submitBtn.disabled = false
+  submitBtn.textContent = 'Árajánlat kérése'
   modalFormView.style.display = ''
   modalSuccess.style.display = 'none'
   quoteModal.classList.add('open')
