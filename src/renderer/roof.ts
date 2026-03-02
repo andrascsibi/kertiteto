@@ -6,7 +6,7 @@ import * as THREE from 'three'
 import type { StructureModel, Pillar, Purlin, TieBeam, Rafter, RidgeTie, KneeBrace } from '../model/types'
 import { PILLAR_SIZE, PURLIN_SIZE, RAFTER_WIDTH, RAFTER_DEPTH, RIDGE_TIE_WIDTH, KNEE_BRACE_SIZE, KNEE_BRACE_LENGTH } from '../model/structure'
 import { EAVE_PLUMB_HEIGHT } from '../model/geometry'
-import { LAMBERIA_HEIGHT, LAMBERIA_WIDTH, ROOF_BATTEN_DISTANCE, SHEET_THICKNESS, KORC_HEIGHT, KORC_WIDTH, DRIP_EDGE_FLAT_WIDTH, DRIP_EDGE_VISOR_WIDTH, DRIP_EDGE_VISOR_ANGLE, DRIP_EDGE_THICKNESS } from '../model/roofing'
+import { LAMBERIA_HEIGHT, LAMBERIA_WIDTH, ROOF_BATTEN_DISTANCE, SHEET_THICKNESS, KORC_HEIGHT, KORC_WIDTH, DRIP_EDGE_FLAT_WIDTH, DRIP_EDGE_VISOR_WIDTH, DRIP_EDGE_VISOR_ANGLE, DRIP_EDGE_THICKNESS, EAVES_FLASHING_VISOR_WIDTH, EAVES_FLASHING_ANGLE, EAVES_FLASHING_THICKNESS } from '../model/roofing'
 import type { RoofingModel } from '../model/roofing'
 
 // const COLOR = '#0c83fa' 
@@ -65,6 +65,10 @@ export function buildRoofMeshes(model: StructureModel, options?: RoofRenderOptio
     if (options.roofingModel?.metalSheets) {
       const sheetMeshes = buildMetalSheetMeshes(model, options.roofingModel.metalSheets, !!options.lamberia, !!options.membrane)
       for (const m of sheetMeshes) group.add(m)
+    }
+    if (options.roofingModel?.eavesFlashing) {
+      const eavesMeshes = buildEavesFlashingMeshes(model, options.roofingModel.eavesFlashing, !!options.lamberia, !!options.membrane)
+      for (const m of eavesMeshes) group.add(m)
     }
   }
 
@@ -905,6 +909,105 @@ function buildDripEdgeMeshes(
     visorMesh.castShadow = true
     visorMesh.receiveShadow = true
     meshes.push(visorMesh)
+  }
+
+  return meshes
+}
+
+// ── Eaves Flashing ─────────────────────────────────────────────────────────────
+
+/**
+ * Builds eaves flashing meshes for both slopes.
+ *
+ * A visor-only flashing that starts from the top outer edge of the first
+ * roof batten (at the eave) and hangs downward at EAVES_FLASHING_ANGLE
+ * from vertical, leaning outward.
+ */
+function buildEavesFlashingMeshes(
+  model: StructureModel,
+  eavesFlashing: import('../model/roofing').EavesFlashingModel,
+  hasLamberia: boolean,
+  hasMembrane: boolean,
+): THREE.Mesh[] {
+  const DEG = Math.PI / 180
+  const pitch = model.params.pitch * DEG
+  const cosP = Math.cos(pitch)
+  const sinP = Math.sin(pitch)
+
+  const halfLen = eavesFlashing.length / 2
+
+  // Layer offset from rafter top to top of roof batten (same as in buildRoofBattenMeshes)
+  const layerOffset = (hasLamberia ? LAMBERIA_HEIGHT : 0)
+    + (hasMembrane ? MEMBRANE_THICKNESS + COUNTER_BATTEN_SIZE : 0)
+    + ROOF_BATTEN_HEIGHT
+
+  const visorAngle = EAVES_FLASHING_ANGLE * DEG
+
+  const meshes: THREE.Mesh[] = []
+
+  for (let side = 0; side < 2; side++) {
+    const isLeft = side === 0
+    const sign = isLeft ? 1 : -1
+
+    const refRafter = isLeft ? model.rafters[0] : model.rafters.find(r => r.eaveEnd.z > 0)!
+    const eaveTopY = refRafter.eaveEnd.y + RAFTER_DEPTH / (2 * cosP)
+    const eaveZ = refRafter.eaveEnd.z
+
+    // Top outer edge of the first roof batten = eave position + layerOffset along normal
+    // The first batten's lower edge is at the eave (slopePos = 0), so its outer
+    // (eave-side) top edge is at slopePos = 0, normal offset = layerOffset
+    const startY = eaveTopY + layerOffset * cosP
+    const startZ = eaveZ - sign * layerOffset * sinP
+
+    // Visor direction: downward and outward at visorAngle from vertical
+    const visorDY = -EAVES_FLASHING_VISOR_WIDTH * Math.cos(visorAngle)
+    const visorDZ = -sign * EAVES_FLASHING_VISOR_WIDTH * Math.sin(visorAngle)
+
+    const endY = startY + visorDY
+    const endZ = startZ + visorDZ
+
+    // Thickness offset perpendicular to visor surface (toward building interior)
+    const vLen = EAVES_FLASHING_VISOR_WIDTH
+    const vnY = visorDZ / vLen
+    const vnZ = -visorDY / vLen
+    const tOffY = EAVES_FLASHING_THICKNESS * vnY
+    const tOffZ = EAVES_FLASHING_THICKNESS * vnZ
+
+    const pos = new Float32Array([
+      -halfLen, startY,          startZ,          // 0 outer-top-left
+      -halfLen, endY,            endZ,            // 1 outer-bot-left
+      -halfLen, startY + tOffY,  startZ + tOffZ,  // 2 inner-top-left
+      -halfLen, endY + tOffY,    endZ + tOffZ,    // 3 inner-bot-left
+      +halfLen, startY,          startZ,          // 4 outer-top-right
+      +halfLen, endY,            endZ,            // 5 outer-bot-right
+      +halfLen, startY + tOffY,  startZ + tOffZ,  // 6 inner-top-right
+      +halfLen, endY + tOffY,    endZ + tOffZ,    // 7 inner-bot-right
+    ])
+
+    const tris = isLeft ? [
+      0, 1, 5,  0, 5, 4,   // outer face
+      2, 6, 7,  2, 7, 3,   // inner face
+      0, 4, 6,  0, 6, 2,   // top edge
+      1, 3, 7,  1, 7, 5,   // bottom edge
+      0, 2, 3,  0, 3, 1,   // left end (-x)
+      4, 5, 7,  4, 7, 6,   // right end (+x)
+    ] : [
+      0, 5, 1,  0, 4, 5,
+      2, 7, 6,  2, 3, 7,
+      0, 6, 4,  0, 2, 6,
+      1, 7, 3,  1, 5, 7,
+      0, 3, 2,  0, 1, 3,
+      4, 7, 5,  4, 6, 7,
+    ]
+
+    const geo = new THREE.BufferGeometry()
+    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3))
+    geo.setIndex(tris)
+    geo.computeVertexNormals()
+    const mesh = new THREE.Mesh(geo, MAT.flashing)
+    mesh.castShadow = true
+    mesh.receiveShadow = true
+    meshes.push(mesh)
   }
 
   return meshes

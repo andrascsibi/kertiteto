@@ -14,11 +14,16 @@ export const FLASHING_DEVELOPED_WIDTH = {
 export const FLASHING_LENGTH  = 2    // meters per piece
 export const FLASHING_OVERLAP = 0.1  // meters overlap between pieces
 
-// Drip edge profile
+// Drip edge profile (membrane option)
 export const DRIP_EDGE_FLAT_WIDTH  = 0.09   // 9cm flat part along slope
 export const DRIP_EDGE_VISOR_WIDTH = 0.025  // 2.5cm visor hanging down
 export const DRIP_EDGE_VISOR_ANGLE = 20     // degrees from vertical, leaning outward
 export const DRIP_EDGE_THICKNESS   = 0.0005 // 0.5mm sheet metal
+
+// Eaves flashing profile (roofing option)
+export const EAVES_FLASHING_VISOR_WIDTH = 0.05  // 5cm visor
+export const EAVES_FLASHING_ANGLE = 20          // degrees from vertical (same as drip edge)
+export const EAVES_FLASHING_THICKNESS = 0.0005  // 0.5mm sheet metal
 
 export const SHEET_LENGTH    = 0.51   // 51cm sheet width along X (longitudinal)
 export const SHEET_THICKNESS = 0.001  // 1mm
@@ -70,6 +75,11 @@ export interface DripEdgeModel {
   length: number
 }
 
+export interface EavesFlashingModel {
+  /** Length along X axis (= totalLength) */
+  length: number
+}
+
 export interface LamberiaPlanks {
   planksPerSlope: number
   plankLength: number
@@ -84,6 +94,7 @@ export interface RoofingModel {
   lamberia: LamberiaPlanks | null
   metalSheets: MetalSheets | null
   dripEdge: DripEdgeModel | null
+  eavesFlashing: EavesFlashingModel | null
 }
 
 export interface RoofingOptions {
@@ -205,7 +216,14 @@ export function buildRoofing(structure: StructureModel, options: RoofingOptions)
     }
   }
 
-  return { counterBattens, roofBattens, flashings, lamberia, metalSheets, dripEdge }
+  let eavesFlashing: EavesFlashingModel | null = null
+  if (options.roofing) {
+    eavesFlashing = {
+      length: structure.totalLength,
+    }
+  }
+
+  return { counterBattens, roofBattens, flashings, lamberia, metalSheets, dripEdge, eavesFlashing }
 }
 
 export function counterBattenTotalLength(roofing: RoofingModel): number {
