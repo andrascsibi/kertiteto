@@ -6,7 +6,7 @@ import * as THREE from 'three'
 import type { StructureModel, Pillar, Purlin, TieBeam, Rafter, RidgeTie, KneeBrace } from '../model/types'
 import { PILLAR_SIZE, PURLIN_SIZE, RAFTER_WIDTH, RAFTER_DEPTH, RIDGE_TIE_WIDTH, KNEE_BRACE_SIZE, KNEE_BRACE_LENGTH } from '../model/structure'
 import { EAVE_PLUMB_HEIGHT } from '../model/geometry'
-import { LAMBERIA_HEIGHT, LAMBERIA_WIDTH, ROOF_BATTEN_DISTANCE, SHEET_THICKNESS, KORC_HEIGHT, KORC_WIDTH, DRIP_EDGE_FLAT_WIDTH, DRIP_EDGE_VISOR_WIDTH, DRIP_EDGE_VISOR_ANGLE, DRIP_EDGE_THICKNESS, EAVES_FLASHING_VISOR_WIDTH, EAVES_FLASHING_ANGLE, EAVES_FLASHING_THICKNESS, GABLE_FLASHING_SKIRT_HEIGHT, GABLE_FLASHING_SKIRT_THICKNESS, GABLE_FLASHING_CAP_HEIGHT, GABLE_FLASHING_CAP_WIDTH, GABLE_FLASHING_VISOR_WIDTH, GABLE_FLASHING_VISOR_ANGLE } from '../model/roofing'
+import { LAMBERIA_HEIGHT, LAMBERIA_WIDTH, ROOF_BATTEN_DISTANCE, SHEET_THICKNESS, KORC_HEIGHT, KORC_WIDTH, DRIP_EDGE_FLAT_WIDTH, DRIP_EDGE_VISOR_WIDTH, DRIP_EDGE_VISOR_ANGLE, DRIP_EDGE_THICKNESS, EAVES_FLASHING_VISOR_WIDTH, EAVES_FLASHING_ANGLE, EAVES_FLASHING_THICKNESS, GABLE_FLASHING_SKIRT_HEIGHT, GABLE_FLASHING_SKIRT_THICKNESS, GABLE_FLASHING_CAP_HEIGHT, GABLE_FLASHING_CAP_WIDTH, GABLE_FLASHING_VISOR_WIDTH, GABLE_FLASHING_VISOR_ANGLE, RIDGE_FLASHING_WIDTH, RIDGE_FLASHING_GAP, RIDGE_FLASHING_THICKNESS } from '../model/roofing'
 import type { RoofingModel } from '../model/roofing'
 
 // const COLOR = '#0c83fa' 
@@ -73,6 +73,10 @@ export function buildRoofMeshes(model: StructureModel, options?: RoofRenderOptio
     if (options.roofingModel?.gableFlashing) {
       const gableMeshes = buildGableFlashingMeshes(model, options.roofingModel.gableFlashing, !!options.lamberia, !!options.membrane)
       for (const m of gableMeshes) group.add(m)
+    }
+    if (options.roofingModel?.ridgeFlashing) {
+      const ridgeMeshes = buildRidgeFlashingMeshes(model, options.roofingModel.ridgeFlashing, !!options.lamberia, !!options.membrane)
+      for (const m of ridgeMeshes) group.add(m)
     }
   }
 
@@ -1221,6 +1225,79 @@ function buildGableFlashingMeshes(
       capMesh.receiveShadow = true
       meshes.push(capMesh)
     }
+  }
+
+  return meshes
+}
+
+// ── Ridge Flashing ──────────────────────────────────────────────────────────────
+
+/**
+ * Builds ridge flashing meshes — one thin plane per slope, 205mm wide,
+ * sitting 5cm above the metal sheets (along slope normal), meeting at the ridge.
+ */
+function buildRidgeFlashingMeshes(
+  model: StructureModel,
+  ridgeFlashing: import('../model/roofing').RidgeFlashingModel,
+  hasLamberia: boolean,
+  hasMembrane: boolean,
+): THREE.Mesh[] {
+  const DEG = Math.PI / 180
+  const pitch = model.params.pitch * DEG
+  const cosP = Math.cos(pitch)
+  const sinP = Math.sin(pitch)
+  const tanP = Math.tan(pitch)
+
+  const rafterLen = model.rafters[0].length
+
+  // Normal distance from rafter top to ridge flashing surface
+  const layerOffset = (hasLamberia ? LAMBERIA_HEIGHT : 0)
+    + (hasMembrane ? MEMBRANE_THICKNESS + COUNTER_BATTEN_SIZE : 0)
+    + ROOF_BATTEN_HEIGHT
+    + SHEET_THICKNESS
+  const normalDist = layerOffset + RIDGE_FLASHING_GAP + RIDGE_FLASHING_THICKNESS / 2
+
+  // The flashing's ridge edge must account for stacking:
+  // at normalDist from rafter, the ridge meeting point extends by normalDist * tanP
+  const ridgeExtension = normalDist * tanP
+
+  const meshes: THREE.Mesh[] = []
+
+  for (let side = 0; side < 2; side++) {
+    const isLeft = side === 0
+    const sign = isLeft ? 1 : -1
+
+    const refRafter = isLeft ? model.rafters[0] : model.rafters.find(r => r.eaveEnd.z > 0)!
+    const eaveTopY = refRafter.eaveEnd.y + RAFTER_DEPTH / (2 * cosP)
+    const eaveZ = refRafter.eaveEnd.z
+
+    // Slope orientation
+    const zDir = new THREE.Vector3(0, sinP, sign * cosP)
+    const xDir = new THREE.Vector3(1, 0, 0)
+    const yDir = new THREE.Vector3().crossVectors(zDir, xDir)
+    if (yDir.y < 0) { yDir.negate(); zDir.negate() }
+    const basis = new THREE.Matrix4().makeBasis(xDir, yDir, zDir)
+    const quat = new THREE.Quaternion().setFromRotationMatrix(basis)
+
+    // Center of flashing strip along slope:
+    // Ridge edge is at (rafterLen + ridgeExtension), eave edge is RIDGE_FLASHING_WIDTH below
+    const ridgeEdgeSlope = rafterLen + ridgeExtension
+    const centerSlope = ridgeEdgeSlope - RIDGE_FLASHING_WIDTH / 2
+
+    const cY = eaveTopY + centerSlope * sinP + normalDist * cosP
+    const cZ = eaveZ + sign * centerSlope * cosP - sign * normalDist * sinP
+
+    const geo = new THREE.BoxGeometry(
+      ridgeFlashing.length,       // X: full totalLength
+      RIDGE_FLASHING_THICKNESS,   // Y: 0.5mm thick
+      RIDGE_FLASHING_WIDTH,       // Z: 205mm across slope
+    )
+    const mesh = new THREE.Mesh(geo, MAT.flashing)
+    mesh.position.set(0, cY, cZ)
+    mesh.quaternion.copy(quat)
+    mesh.castShadow = true
+    mesh.receiveShadow = true
+    meshes.push(mesh)
   }
 
   return meshes

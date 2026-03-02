@@ -291,3 +291,23 @@ describe('gable flashing', () => {
     expect(roofing.gableFlashing!.halfLength).toBeCloseTo(totalLength / 2, 6)
   })
 })
+
+describe('ridge flashing', () => {
+  const structure = buildStructure(base)
+  const totalLength = base.length + 2 * base.gableOverhang
+
+  it('no ridge flashing when roofing disabled', () => {
+    const roofing = buildRoofing(structure, { ...opts, roofing: false })
+    expect(roofing.ridgeFlashing).toBeNull()
+  })
+
+  it('ridge flashing present when roofing enabled', () => {
+    const roofing = buildRoofing(structure, { ...opts, roofing: true })
+    expect(roofing.ridgeFlashing).not.toBeNull()
+  })
+
+  it('length equals totalLength', () => {
+    const roofing = buildRoofing(structure, { ...opts, roofing: true })
+    expect(roofing.ridgeFlashing!.length).toBeCloseTo(totalLength, 6)
+  })
+})

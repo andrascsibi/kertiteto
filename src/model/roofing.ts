@@ -34,6 +34,11 @@ export const GABLE_FLASHING_VISOR_WIDTH = 0.015  // 1.5cm drip visor at skirt bo
 export const GABLE_FLASHING_VISOR_ANGLE = 60     // degrees from vertical, leaning outward
 export const GABLE_FLASHING_OVERHANG   = 0.001  // 1mm X overhang beyond gable (avoids z-fighting with rafters)
 
+// Ridge flashing profile (roofing option)
+export const RIDGE_FLASHING_WIDTH    = 0.205  // 205mm across slope
+export const RIDGE_FLASHING_GAP      = 0.05   // 5cm above metal sheets along slope normal
+export const RIDGE_FLASHING_THICKNESS = 0.0005 // 0.5mm sheet metal
+
 export const EAVES_OVERLAP = 0.02  // 2cm — metal sheets + gable flashings extend past eave
 
 export const SHEET_LENGTH    = 0.51   // 51cm sheet width along X (longitudinal)
@@ -102,6 +107,11 @@ export interface GableFlashingModel {
   eavesOverlap: number
 }
 
+export interface RidgeFlashingModel {
+  /** Length along X axis (= totalLength) */
+  length: number
+}
+
 export interface LamberiaPlanks {
   planksPerSlope: number
   plankLength: number
@@ -118,6 +128,7 @@ export interface RoofingModel {
   dripEdge: DripEdgeModel | null
   eavesFlashing: EavesFlashingModel | null
   gableFlashing: GableFlashingModel | null
+  ridgeFlashing: RidgeFlashingModel | null
 }
 
 export interface RoofingOptions {
@@ -256,7 +267,14 @@ export function buildRoofing(structure: StructureModel, options: RoofingOptions)
     }
   }
 
-  return { counterBattens, roofBattens, flashings, lamberia, metalSheets, dripEdge, eavesFlashing, gableFlashing }
+  let ridgeFlashing: RidgeFlashingModel | null = null
+  if (options.roofing) {
+    ridgeFlashing = {
+      length: structure.totalLength,
+    }
+  }
+
+  return { counterBattens, roofBattens, flashings, lamberia, metalSheets, dripEdge, eavesFlashing, gableFlashing, ridgeFlashing }
 }
 
 export function counterBattenTotalLength(roofing: RoofingModel): number {
