@@ -18,6 +18,12 @@ function hashFloat(key: string, fallback: number): number {
   const v = parseFloat(hashParams[key])
   return Number.isFinite(v) ? v : fallback
 }
+function hashBool(key: string, fallback: boolean): boolean {
+  const v = hashParams[key]
+  if (v === '0') return false
+  if (v === '1') return true
+  return fallback
+}
 
 // ── DOM refs ───────────────────────────────────────────────────────────────────
 const viewport = document.getElementById('viewport')!
@@ -53,6 +59,7 @@ const modalFormView = document.getElementById('modal-form-view')!
 const modalSuccess  = document.getElementById('modal-success-view')!
 const hiddenConfig  = document.getElementById('hidden-config') as HTMLInputElement
 const hiddenPrice   = document.getElementById('hidden-price') as HTMLInputElement
+const hiddenUrl     = document.getElementById('hidden-url') as HTMLInputElement
 const quoteForm     = document.getElementById('quote-form') as HTMLFormElement
 const modalCancel   = document.getElementById('modal-cancel')!
 const modalClose    = document.getElementById('modal-close')!
@@ -129,6 +136,20 @@ function update(): void {
   valPitch.textContent  = `${params.pitch}°`
   valEaves.textContent  = `${params.eavesOverhang.toFixed(2)} m`
   valGable.textContent  = `${params.gableOverhang.toFixed(2)} m`
+
+  // Sync URL hash
+  const hashParts = [
+    `w=${params.width.toFixed(1)}`,
+    `l=${params.length.toFixed(1)}`,
+    `p=${params.pitch}`,
+    `e=${params.eavesOverhang.toFixed(2)}`,
+    `g=${params.gableOverhang.toFixed(2)}`,
+    `lb=${chkLamberia.checked ? 1 : 0}`,
+    `mb=${chkMembrane.checked ? 1 : 0}`,
+    `rf=${chkRoofing.checked ? 1 : 0}`,
+  ]
+  if (devMode) hashParts.push('dev=true')
+  history.replaceState(null, '', '#' + hashParts.join('&'))
 
   const model = buildStructure(params)
 
@@ -256,6 +277,7 @@ function openModal(): void {
     `Becsült ár: <strong>~${formatHUF(lastTotal)}</strong>`
   hiddenConfig.value = lastConfigSummary
   hiddenPrice.value = formatHUF(lastTotal)
+  hiddenUrl.value = window.location.href
   modalFormView.style.display = ''
   modalSuccess.style.display = 'none'
   quoteModal.classList.add('open')
@@ -296,4 +318,7 @@ inpLength.value = String(hashFloat('l', DEFAULTS.length))
 inpPitch.value  = String(hashFloat('p', DEFAULTS.pitch))
 inpEaves.value  = String(hashFloat('e', DEFAULTS.eavesOverhang))
 inpGable.value  = String(hashFloat('g', DEFAULTS.gableOverhang))
+chkLamberia.checked = hashBool('lb', true)
+chkMembrane.checked = hashBool('mb', true)
+chkRoofing.checked  = hashBool('rf', true)
 update()
