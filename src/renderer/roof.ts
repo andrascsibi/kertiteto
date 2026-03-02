@@ -78,6 +78,10 @@ export function buildRoofMeshes(model: StructureModel, options?: RoofRenderOptio
       const ridgeMeshes = buildRidgeFlashingMeshes(model, options.roofingModel.ridgeFlashing, !!options.lamberia, !!options.membrane)
       for (const m of ridgeMeshes) group.add(m)
     }
+    if (options.roofingModel?.bugGuard) {
+      const bugGuardMeshes = buildBugGuardMeshes(model, options.roofingModel.bugGuard, !!options.lamberia)
+      for (const m of bugGuardMeshes) group.add(m)
+    }
   }
 
   return group
@@ -1319,6 +1323,68 @@ function buildRidgeFlashingMeshes(
     capMesh.castShadow = true
     capMesh.receiveShadow = true
     meshes.push(capMesh)
+  }
+
+  return meshes
+}
+
+// ── Bug Guard (ROVARHALO) ───────────────────────────────────────────────────────
+
+/**
+ * Builds bug guard meshes — wireframe plane at each eave, running the full
+ * totalLength, from rafter top surface to roof batten top. Prevents bugs
+ * from entering the counter-batten cavity.
+ */
+function buildBugGuardMeshes(
+  model: StructureModel,
+  bugGuard: import('../model/roofing').BugGuardModel,
+  hasLamberia: boolean,
+): THREE.Mesh[] {
+  const DEG = Math.PI / 180
+  const pitch = model.params.pitch * DEG
+  const cosP = Math.cos(pitch)
+  const sinP = Math.sin(pitch)
+
+  const meshes: THREE.Mesh[] = []
+
+  // Wireframe material — same color as flashing (RAL 8004), basic for wireframe compatibility
+  const bugGuardMat = new THREE.MeshBasicMaterial({
+    color: 0x8A3324,
+    wireframe: true,
+  })
+
+  // Subdivisions for mesh look: ~1.5cm grid
+  const widthSegs = Math.max(2, Math.round(bugGuard.length / 0.015))
+  const heightSegs = Math.max(2, Math.round(bugGuard.height / 0.015))
+
+  for (let side = 0; side < 2; side++) {
+    const isLeft = side === 0
+    const sign = isLeft ? 1 : -1
+
+    const refRafter = isLeft ? model.rafters[0] : model.rafters.find(r => r.eaveEnd.z > 0)!
+    const eaveTopY = refRafter.eaveEnd.y + RAFTER_DEPTH / (2 * cosP)
+    const eaveZ = refRafter.eaveEnd.z
+
+    // Slope orientation
+    const zDir = new THREE.Vector3(0, sinP, sign * cosP)
+    const xDir = new THREE.Vector3(1, 0, 0)
+    const yDir = new THREE.Vector3().crossVectors(zDir, xDir)
+    if (yDir.y < 0) { yDir.negate(); zDir.negate() }
+    const basis = new THREE.Matrix4().makeBasis(xDir, yDir, zDir)
+    const quat = new THREE.Quaternion().setFromRotationMatrix(basis)
+
+    // Center of the guard: starts at lamberia top (or rafter top), midway up the height
+    const baseOffset = hasLamberia ? LAMBERIA_HEIGHT : 0
+    const normalCenter = baseOffset + bugGuard.height / 2
+    const cY = eaveTopY + normalCenter * cosP
+    const cZ = eaveZ - sign * normalCenter * sinP
+
+    // PlaneGeometry: width = totalLength (along X), height = guard height (along slope normal)
+    const geo = new THREE.PlaneGeometry(bugGuard.length, bugGuard.height, widthSegs, heightSegs)
+    const mesh = new THREE.Mesh(geo, bugGuardMat)
+    mesh.position.set(0, cY, cZ)
+    mesh.quaternion.copy(quat)
+    meshes.push(mesh)
   }
 
   return meshes

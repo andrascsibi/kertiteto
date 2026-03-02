@@ -116,6 +116,13 @@ export interface RidgeFlashingModel {
   length: number
 }
 
+export interface BugGuardModel {
+  /** Length along X axis (= totalLength) */
+  length: number
+  /** Height perpendicular to slope (from rafter top to roof batten top) */
+  height: number
+}
+
 export interface LamberiaPlanks {
   planksPerSlope: number
   plankLength: number
@@ -133,6 +140,7 @@ export interface RoofingModel {
   eavesFlashing: EavesFlashingModel | null
   gableFlashing: GableFlashingModel | null
   ridgeFlashing: RidgeFlashingModel | null
+  bugGuard: BugGuardModel | null
 }
 
 export interface RoofingOptions {
@@ -278,7 +286,18 @@ export function buildRoofing(structure: StructureModel, options: RoofingOptions)
     }
   }
 
-  return { counterBattens, roofBattens, flashings, lamberia, metalSheets, dripEdge, eavesFlashing, gableFlashing, ridgeFlashing }
+  // Bug guard needs both membrane (counter battens create the cavity) and roofing (roof battens cap it)
+  let bugGuard: BugGuardModel | null = null
+  if (options.membrane && options.roofing) {
+    // Height from lamberia top (or rafter top) to roof batten top
+    const height = 0.001 + 0.05 + 0.03  // membrane + counter batten + roof batten
+    bugGuard = {
+      length: structure.totalLength,
+      height,
+    }
+  }
+
+  return { counterBattens, roofBattens, flashings, lamberia, metalSheets, dripEdge, eavesFlashing, gableFlashing, ridgeFlashing, bugGuard }
 }
 
 export function counterBattenTotalLength(roofing: RoofingModel): number {
