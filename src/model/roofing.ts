@@ -21,7 +21,7 @@ export const DRIP_EDGE_VISOR_ANGLE = 20     // degrees from vertical, leaning ou
 export const DRIP_EDGE_THICKNESS   = 0.0005 // 0.5mm sheet metal
 
 // Eaves flashing profile (roofing option)
-export const EAVES_FLASHING_VISOR_WIDTH = 0.05  // 5cm visor
+export const EAVES_FLASHING_VISOR_WIDTH = 0.08  // 5cm visor
 export const EAVES_FLASHING_ANGLE = 20          // degrees from vertical (same as drip edge)
 export const EAVES_FLASHING_THICKNESS = 0.0005  // 0.5mm sheet metal
 
