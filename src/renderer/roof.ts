@@ -11,14 +11,14 @@ import type { RoofingModel } from '../model/roofing'
 
 // const COLOR = '#0c83fa' 
 
-const MAT: Record<string, THREE.MeshLambertMaterial> = {
+const MAT: Record<string, THREE.Material> = {
   pillar:   new THREE.MeshLambertMaterial({ color: 0x5a3a1a }),
   purlin:   new THREE.MeshLambertMaterial({ color: 0x7a5030 }),
   rafter:   new THREE.MeshLambertMaterial({ color: 0x9b6840 }),
   lamberia:  new THREE.MeshLambertMaterial({ color: 0x7a5030 }),
   membrane:  new THREE.MeshLambertMaterial({ color: 0xcccccc }),
   counterBatten: new THREE.MeshLambertMaterial({ color: 0x40e0d0 }),
-  metalSheet: new THREE.MeshLambertMaterial({ color: 0x8899aa }),
+  metalSheet: new THREE.MeshStandardMaterial({ color: 0x8A3324, metalness: 0.6, roughness: 0.35 }),
   // pillar:  new THREE.MeshLambertMaterial({ color: COLOR }),
   // purlin:  new THREE.MeshLambertMaterial({ color: COLOR }),
   // rafter:  new THREE.MeshLambertMaterial({ color: COLOR }),
