@@ -30,6 +30,8 @@ export const GABLE_FLASHING_SKIRT_HEIGHT = 0.142  // 142mm vertical skirt
 export const GABLE_FLASHING_SKIRT_THICKNESS = 0.001  // 1mm
 export const GABLE_FLASHING_CAP_HEIGHT = 0.025  // 2.5cm cap height (perpendicular to slope)
 export const GABLE_FLASHING_CAP_WIDTH  = 0.075   // 7.5cm cap width (along X)
+export const GABLE_FLASHING_VISOR_WIDTH = 0.015  // 1.5cm drip visor at skirt bottom
+export const GABLE_FLASHING_VISOR_ANGLE = 60     // degrees from vertical, leaning outward
 export const GABLE_FLASHING_OVERHANG   = 0.001  // 1mm X overhang beyond gable (avoids z-fighting with rafters)
 
 export const EAVES_OVERLAP = 0.02  // 2cm — metal sheets + gable flashings extend past eave

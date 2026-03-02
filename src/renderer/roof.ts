@@ -6,7 +6,7 @@ import * as THREE from 'three'
 import type { StructureModel, Pillar, Purlin, TieBeam, Rafter, RidgeTie, KneeBrace } from '../model/types'
 import { PILLAR_SIZE, PURLIN_SIZE, RAFTER_WIDTH, RAFTER_DEPTH, RIDGE_TIE_WIDTH, KNEE_BRACE_SIZE, KNEE_BRACE_LENGTH } from '../model/structure'
 import { EAVE_PLUMB_HEIGHT } from '../model/geometry'
-import { LAMBERIA_HEIGHT, LAMBERIA_WIDTH, ROOF_BATTEN_DISTANCE, SHEET_THICKNESS, KORC_HEIGHT, KORC_WIDTH, DRIP_EDGE_FLAT_WIDTH, DRIP_EDGE_VISOR_WIDTH, DRIP_EDGE_VISOR_ANGLE, DRIP_EDGE_THICKNESS, EAVES_FLASHING_VISOR_WIDTH, EAVES_FLASHING_ANGLE, EAVES_FLASHING_THICKNESS, GABLE_FLASHING_SKIRT_HEIGHT, GABLE_FLASHING_SKIRT_THICKNESS, GABLE_FLASHING_CAP_HEIGHT, GABLE_FLASHING_CAP_WIDTH } from '../model/roofing'
+import { LAMBERIA_HEIGHT, LAMBERIA_WIDTH, ROOF_BATTEN_DISTANCE, SHEET_THICKNESS, KORC_HEIGHT, KORC_WIDTH, DRIP_EDGE_FLAT_WIDTH, DRIP_EDGE_VISOR_WIDTH, DRIP_EDGE_VISOR_ANGLE, DRIP_EDGE_THICKNESS, EAVES_FLASHING_VISOR_WIDTH, EAVES_FLASHING_ANGLE, EAVES_FLASHING_THICKNESS, GABLE_FLASHING_SKIRT_HEIGHT, GABLE_FLASHING_SKIRT_THICKNESS, GABLE_FLASHING_CAP_HEIGHT, GABLE_FLASHING_CAP_WIDTH, GABLE_FLASHING_VISOR_WIDTH, GABLE_FLASHING_VISOR_ANGLE } from '../model/roofing'
 import type { RoofingModel } from '../model/roofing'
 
 // const COLOR = '#0c83fa' 
@@ -1104,6 +1104,101 @@ function buildGableFlashingMeshes(
       skirtMesh.castShadow = true
       skirtMesh.receiveShadow = true
       meshes.push(skirtMesh)
+
+      // ── Skirt drip visor (trapezoid prism) ─────────────────────────────
+      // 1.5cm visor at skirt bottom edge, angled from slope-normal, leaning outward.
+      // The outer edge sits lower by VISOR_WIDTH * cos(VISOR_ANGLE) in the
+      // slope-normal direction, so at the ridge it must be shorter by that
+      // amount × tan(pitch). This makes it a trapezoid prism, not a box.
+      {
+        const visorAngle = GABLE_FLASHING_VISOR_ANGLE * DEG
+        const skirtBotNormal = skirtTopNormal - GABLE_FLASHING_SKIRT_HEIGHT
+        const outwardX = gableEnd === 0 ? -1 : 1
+
+        // Inner edge (attached to skirt bottom) slope length
+        const innerSlopeLen = skirtSlopeLen - GABLE_FLASHING_SKIRT_HEIGHT * tanP
+        // Outer edge is shorter at ridge by the normal drop × tan(pitch)
+        const normalDrop = GABLE_FLASHING_VISOR_WIDTH * Math.cos(visorAngle)
+        const outerSlopeLen = innerSlopeLen - normalDrop * tanP
+
+        // Visor basis: X=visorDir (inner→outer), Y=visorNorm, Z=slopeZ (eave→ridge)
+        const visorDirX = outwardX * Math.sin(visorAngle)
+        const visorNormalComponent = -Math.cos(visorAngle)
+        const visorDirY = visorNormalComponent * cosP
+        const visorDirZ = -visorNormalComponent * sinP * sign
+
+        const visorDir = new THREE.Vector3(visorDirX, visorDirY, visorDirZ).normalize()
+        const slopeZ = new THREE.Vector3(0, sinP, sign * cosP)
+        if (slopeZ.dot(new THREE.Vector3(0, 1, 0)) < 0) slopeZ.negate()
+        const visorNorm = new THREE.Vector3().crossVectors(slopeZ, visorDir).normalize()
+
+        // Position: inner edge center (skirt bottom, midway along inner slope length)
+        const innerCenter = innerSlopeLen / 2 - eavesOverlap
+        const innerCY = eaveTopY + innerCenter * sinP + skirtBotNormal * cosP
+        const innerCZ = eaveZ + sign * innerCenter * cosP - sign * skirtBotNormal * sinP
+
+        // Build trapezoid prism in world coords from the inner edge center
+        // Local axes: X=visorDir, Y=visorNorm, Z=slopeZ
+        const W = GABLE_FLASHING_VISOR_WIDTH
+        const T = GABLE_FLASHING_SKIRT_THICKNESS
+        const iHL = innerSlopeLen / 2  // inner half-length
+        // Both edges share the same eave end (Z = -iHL) but differ at ridge end
+        const eaveZ2 = -iHL  // same for inner and outer
+        const innerRidgeZ = +iHL
+        const outerRidgeZ = +iHL - (innerSlopeLen - outerSlopeLen)  // = iHL - normalDrop*tanP
+
+        // 8 vertices in local coords (X=visor dir, Y=thickness, Z=slope)
+        const verts = new Float32Array([
+          // inner edge (X=0), bottom/top, eave/ridge
+          0,   -T/2, eaveZ2,        // v0: inner, bottom, eave
+          0,   -T/2, innerRidgeZ,   // v1: inner, bottom, ridge
+          0,   +T/2, eaveZ2,        // v2: inner, top, eave
+          0,   +T/2, innerRidgeZ,   // v3: inner, top, ridge
+          // outer edge (X=W), bottom/top, eave/ridge
+          W,   -T/2, eaveZ2,        // v4: outer, bottom, eave
+          W,   -T/2, outerRidgeZ,   // v5: outer, bottom, ridge
+          W,   +T/2, eaveZ2,        // v6: outer, top, eave
+          W,   +T/2, outerRidgeZ,   // v7: outer, top, ridge
+        ])
+
+        // Transform local vertices to world coords
+        const positions = new Float32Array(24)
+        for (let vi = 0; vi < 8; vi++) {
+          const lx = verts[vi * 3 + 0]
+          const ly = verts[vi * 3 + 1]
+          const lz = verts[vi * 3 + 2]
+          // world = innerEdgeCenter + lx * visorDir + ly * visorNorm + lz * slopeZ
+          positions[vi * 3 + 0] = gableX + lx * visorDir.x + ly * visorNorm.x + lz * slopeZ.x
+          positions[vi * 3 + 1] = innerCY + lx * visorDir.y + ly * visorNorm.y + lz * slopeZ.y
+          positions[vi * 3 + 2] = innerCZ + lx * visorDir.z + ly * visorNorm.z + lz * slopeZ.z
+        }
+
+        // 12 triangles (6 faces × 2 tris)
+        const indices = [
+          // bottom face (-Y): v0, v4, v5, v1
+          0, 4, 5,  0, 5, 1,
+          // top face (+Y): v2, v3, v7, v6
+          2, 3, 7,  2, 7, 6,
+          // inner face (-X): v0, v1, v3, v2
+          0, 1, 3,  0, 3, 2,
+          // outer face (+X): v4, v6, v7, v5
+          4, 6, 7,  4, 7, 5,
+          // eave face (-Z): v0, v2, v6, v4
+          0, 2, 6,  0, 6, 4,
+          // ridge face (+Z): v1, v5, v7, v3
+          1, 5, 7,  1, 7, 3,
+        ]
+
+        const visorGeo = new THREE.BufferGeometry()
+        visorGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3))
+        visorGeo.setIndex(indices)
+        visorGeo.computeVertexNormals()
+
+        const visorMesh = new THREE.Mesh(visorGeo, MAT.flashing)
+        visorMesh.castShadow = true
+        visorMesh.receiveShadow = true
+        meshes.push(visorMesh)
+      }
 
       // ── Top cap ─────────────────────────────────────────────────────────
       const capCenter = capSlopeLen / 2 - eavesOverlap
