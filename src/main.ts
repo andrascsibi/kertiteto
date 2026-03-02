@@ -225,7 +225,7 @@ for (const chk of [chkLamberia, chkMembrane, chkRoofing]) {
 
 // ── Initial values from hash params or defaults ─────────────────────────────
 inpWidth.value  = String(hashFloat('w', DEFAULTS.width))
-inpLength.value = String(hashFloat('h', DEFAULTS.length))
+inpLength.value = String(hashFloat('l', DEFAULTS.length))
 inpPitch.value  = String(hashFloat('p', DEFAULTS.pitch))
 inpEaves.value  = String(hashFloat('e', DEFAULTS.eavesOverhang))
 inpGable.value  = String(hashFloat('g', DEFAULTS.gableOverhang))
