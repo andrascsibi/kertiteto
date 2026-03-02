@@ -691,7 +691,9 @@ function buildMetalSheetMeshes(
   const sheetNormalDist = layerOffset + SHEET_THICKNESS / 2
   const korcNormalDist = layerOffset + KORC_HEIGHT / 2
 
-  const slopeCenter = slopeLength / 2
+  // Shift sheets 2cm down slope to simulate eaves flashing overlap
+  const slopeShift = -0.02
+  const slopeCenter = slopeLength / 2 + slopeShift
   const meshes: THREE.Mesh[] = []
 
   for (let side = 0; side < 2; side++) {
