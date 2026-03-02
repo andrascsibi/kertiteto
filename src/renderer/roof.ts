@@ -6,7 +6,7 @@ import * as THREE from 'three'
 import type { StructureModel, Pillar, Purlin, TieBeam, Rafter, RidgeTie, KneeBrace } from '../model/types'
 import { PILLAR_SIZE, PURLIN_SIZE, RAFTER_WIDTH, RAFTER_DEPTH, RIDGE_TIE_WIDTH, KNEE_BRACE_SIZE, KNEE_BRACE_LENGTH } from '../model/structure'
 import { EAVE_PLUMB_HEIGHT } from '../model/geometry'
-import { LAMBERIA_HEIGHT, LAMBERIA_WIDTH, ROOF_BATTEN_DISTANCE, SHEET_THICKNESS, KORC_HEIGHT, KORC_WIDTH, DRIP_EDGE_FLAT_WIDTH, DRIP_EDGE_VISOR_WIDTH, DRIP_EDGE_VISOR_ANGLE, DRIP_EDGE_THICKNESS, EAVES_FLASHING_VISOR_WIDTH, EAVES_FLASHING_ANGLE, EAVES_FLASHING_THICKNESS } from '../model/roofing'
+import { LAMBERIA_HEIGHT, LAMBERIA_WIDTH, ROOF_BATTEN_DISTANCE, SHEET_THICKNESS, KORC_HEIGHT, KORC_WIDTH, DRIP_EDGE_FLAT_WIDTH, DRIP_EDGE_VISOR_WIDTH, DRIP_EDGE_VISOR_ANGLE, DRIP_EDGE_THICKNESS, EAVES_FLASHING_VISOR_WIDTH, EAVES_FLASHING_ANGLE, EAVES_FLASHING_THICKNESS, GABLE_FLASHING_SKIRT_HEIGHT, GABLE_FLASHING_SKIRT_THICKNESS, GABLE_FLASHING_CAP_HEIGHT, GABLE_FLASHING_CAP_WIDTH } from '../model/roofing'
 import type { RoofingModel } from '../model/roofing'
 
 // const COLOR = '#0c83fa' 
@@ -69,6 +69,10 @@ export function buildRoofMeshes(model: StructureModel, options?: RoofRenderOptio
     if (options.roofingModel?.eavesFlashing) {
       const eavesMeshes = buildEavesFlashingMeshes(model, options.roofingModel.eavesFlashing, !!options.lamberia, !!options.membrane)
       for (const m of eavesMeshes) group.add(m)
+    }
+    if (options.roofingModel?.gableFlashing) {
+      const gableMeshes = buildGableFlashingMeshes(model, options.roofingModel.gableFlashing, !!options.lamberia, !!options.membrane)
+      for (const m of gableMeshes) group.add(m)
     }
   }
 
@@ -691,9 +695,8 @@ function buildMetalSheetMeshes(
   const sheetNormalDist = layerOffset + SHEET_THICKNESS / 2
   const korcNormalDist = layerOffset + KORC_HEIGHT / 2
 
-  // Shift sheets 2cm down slope to simulate eaves flashing overlap
-  const slopeShift = -0.02
-  const slopeCenter = slopeLength / 2 + slopeShift
+  // Shift sheets down slope for eaves flashing overlap
+  const slopeCenter = slopeLength / 2 - metalSheets.eavesOverlap
   const meshes: THREE.Mesh[] = []
 
   for (let side = 0; side < 2; side++) {
@@ -1010,6 +1013,119 @@ function buildEavesFlashingMeshes(
     mesh.castShadow = true
     mesh.receiveShadow = true
     meshes.push(mesh)
+  }
+
+  return meshes
+}
+
+// ── Gable Flashing ─────────────────────────────────────────────────────────────
+
+/**
+ * Builds gable flashing meshes — two elements per gable end per slope:
+ *
+ * 1. Vertical skirt: 1mm thick, 142mm tall, spanning eave to ridge along slope.
+ *    Positioned at x = ±(halfLength + 0.001) to avoid z-fighting with rafters.
+ *
+ * 2. Top cap: 2.5cm high (perpendicular to slope), 5cm wide (along X),
+ *    running eave to ridge on top of the metal sheet stack.
+ *    Slope length includes stacking extension so the two caps meet at the ridge.
+ */
+function buildGableFlashingMeshes(
+  model: StructureModel,
+  gableFlashing: import('../model/roofing').GableFlashingModel,
+  hasLamberia: boolean,
+  hasMembrane: boolean,
+): THREE.Mesh[] {
+  const DEG = Math.PI / 180
+  const pitch = model.params.pitch * DEG
+  const cosP = Math.cos(pitch)
+  const sinP = Math.sin(pitch)
+  const tanP = Math.tan(pitch)
+
+  const rafterLen = model.rafters[0].length
+  const halfLength = gableFlashing.halfLength
+  const overhang = gableFlashing.overhang
+  const eavesOverlap = gableFlashing.eavesOverlap
+
+  // Layer offset from rafter top to top of metal sheet
+  const layerOffset = (hasLamberia ? LAMBERIA_HEIGHT : 0)
+    + (hasMembrane ? MEMBRANE_THICKNESS + COUNTER_BATTEN_SIZE : 0)
+    + ROOF_BATTEN_HEIGHT
+    + SHEET_THICKNESS
+
+  // Skirt: top edge at cap top, hanging down GABLE_FLASHING_SKIRT_HEIGHT
+  const skirtTopNormal = layerOffset + GABLE_FLASHING_CAP_HEIGHT
+  const skirtSlopeLen = rafterLen + skirtTopNormal * tanP + eavesOverlap
+
+  // Cap: sits on top of metal sheets, slope length extended so caps meet at ridge
+  const capCenterNormal = layerOffset + GABLE_FLASHING_CAP_HEIGHT / 2
+  const capTopNormal = layerOffset + GABLE_FLASHING_CAP_HEIGHT
+  const capSlopeLen = rafterLen + capTopNormal * tanP + eavesOverlap
+
+  const meshes: THREE.Mesh[] = []
+
+  for (let gableEnd = 0; gableEnd < 2; gableEnd++) {
+    // gableEnd 0 = left (-x), gableEnd 1 = right (+x)
+    const gableX = gableEnd === 0
+      ? -(halfLength + overhang)
+      : +(halfLength + overhang)
+
+    for (let side = 0; side < 2; side++) {
+      const isLeft = side === 0
+      const sign = isLeft ? 1 : -1
+
+      const refRafter = isLeft ? model.rafters[0] : model.rafters.find(r => r.eaveEnd.z > 0)!
+      const eaveTopY = refRafter.eaveEnd.y + RAFTER_DEPTH / (2 * cosP)
+      const eaveZ = refRafter.eaveEnd.z
+
+      // Slope orientation
+      const zDir = new THREE.Vector3(0, sinP, sign * cosP)
+      const xDir = new THREE.Vector3(1, 0, 0)
+      const yDir = new THREE.Vector3().crossVectors(zDir, xDir)
+      if (yDir.y < 0) { yDir.negate(); zDir.negate() }
+      const basis = new THREE.Matrix4().makeBasis(xDir, yDir, zDir)
+      const quat = new THREE.Quaternion().setFromRotationMatrix(basis)
+
+      // ── Skirt (vertical plane) ──────────────────────────────────────────
+      // Center along slope, shifted down by eavesOverlap
+      const skirtCenter = skirtSlopeLen / 2 - eavesOverlap
+      const skirtNormalDist = skirtTopNormal - GABLE_FLASHING_SKIRT_HEIGHT / 2
+      const skirtCY = eaveTopY + skirtCenter * sinP + skirtNormalDist * cosP
+      const skirtCZ = eaveZ + sign * skirtCenter * cosP - sign * skirtNormalDist * sinP
+
+      const skirtGeo = new THREE.BoxGeometry(
+        GABLE_FLASHING_SKIRT_THICKNESS,  // X: 1mm thick
+        GABLE_FLASHING_SKIRT_HEIGHT,     // Y: 142mm perpendicular to slope
+        skirtSlopeLen,                    // Z: eave to ridge
+      )
+      const skirtMesh = new THREE.Mesh(skirtGeo, MAT.flashing)
+      skirtMesh.position.set(gableX, skirtCY, skirtCZ)
+      skirtMesh.quaternion.copy(quat)
+      skirtMesh.castShadow = true
+      skirtMesh.receiveShadow = true
+      meshes.push(skirtMesh)
+
+      // ── Top cap ─────────────────────────────────────────────────────────
+      const capCenter = capSlopeLen / 2 - eavesOverlap
+      const capCY = eaveTopY + capCenter * sinP + capCenterNormal * cosP
+      const capCZ = eaveZ + sign * capCenter * cosP - sign * capCenterNormal * sinP
+
+      // Cap X position: outer face flush with skirt
+      const inwardSign = gableEnd === 0 ? 1 : -1
+      const capX = gableX + inwardSign * GABLE_FLASHING_CAP_WIDTH / 2
+
+      const capGeo = new THREE.BoxGeometry(
+        GABLE_FLASHING_CAP_WIDTH,   // X: 5cm wide
+        GABLE_FLASHING_CAP_HEIGHT,  // Y: 2.5cm perpendicular to slope
+        capSlopeLen,                // Z: eave to ridge (extended for stacking)
+      )
+      const capMesh = new THREE.Mesh(capGeo, MAT.flashing)
+      capMesh.position.set(capX, capCY, capCZ)
+      capMesh.quaternion.copy(quat)
+      capMesh.castShadow = true
+      capMesh.receiveShadow = true
+      meshes.push(capMesh)
+    }
   }
 
   return meshes

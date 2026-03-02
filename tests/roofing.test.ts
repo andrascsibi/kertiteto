@@ -271,3 +271,23 @@ describe('eaves flashing', () => {
     expect(roofing.eavesFlashing!.length).toBeCloseTo(totalLength, 6)
   })
 })
+
+describe('gable flashing', () => {
+  const structure = buildStructure(base)
+  const totalLength = base.length + 2 * base.gableOverhang
+
+  it('no gable flashing when roofing disabled', () => {
+    const roofing = buildRoofing(structure, { ...opts, roofing: false })
+    expect(roofing.gableFlashing).toBeNull()
+  })
+
+  it('gable flashing present when roofing enabled', () => {
+    const roofing = buildRoofing(structure, { ...opts, roofing: true })
+    expect(roofing.gableFlashing).not.toBeNull()
+  })
+
+  it('halfLength equals totalLength / 2', () => {
+    const roofing = buildRoofing(structure, { ...opts, roofing: true })
+    expect(roofing.gableFlashing!.halfLength).toBeCloseTo(totalLength / 2, 6)
+  })
+})
