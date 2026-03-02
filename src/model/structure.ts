@@ -247,8 +247,6 @@ export function computeMetrics(model: StructureModel): StructureMetrics {
     : 0
   const kneeBraceVol = model.kneeBraces.length * KNEE_BRACE_SIZE * KNEE_BRACE_SIZE * KNEE_BRACE_LENGTH
   const timberVolume = pillarVol + basePurVol + ridgePurVol + tieBeamVol + rafterVol + ridgeTieVol + kneeBraceVol
-  console.log('timber volume breakdown (m³):',
-    { pillarVol, basePurVol, ridgePurVol, tieBeamVol, rafterVol, ridgeTieVol, kneeBraceVol, timberVolume })
 
   // Surface (perimeter × length, ignoring ends)
   const pillarSurf   = model.pillars.reduce((sum, p) => sum + p.height * (4 * PILLAR_SIZE), 0)
