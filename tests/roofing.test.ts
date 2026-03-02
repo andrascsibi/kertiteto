@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { buildRoofing, counterBattenTotalLength, roofBattenTotalLength, flashingTotalSurface, ROOF_BATTEN_DISTANCE, FLASHING_LENGTH, FLASHING_OVERLAP, FLASHING_DEVELOPED_WIDTH, LAMBERIA_WIDTH } from '../src/model/roofing'
+import { buildRoofing, counterBattenTotalLength, roofBattenTotalLength, flashingTotalSurface, ROOF_BATTEN_DISTANCE, FLASHING_LENGTH, FLASHING_OVERLAP, FLASHING_DEVELOPED_WIDTH, LAMBERIA_WIDTH, SHEET_LENGTH } from '../src/model/roofing'
 import { buildStructure } from '../src/model/structure'
 import type { InputParams } from '../src/model/types'
 
@@ -153,5 +153,81 @@ describe('lamberia', () => {
     expect(roofing.lamberia!.lastPlankWidth).toBeCloseTo(expected, 6)
     expect(roofing.lamberia!.lastPlankWidth).toBeLessThanOrEqual(LAMBERIA_WIDTH)
     expect(roofing.lamberia!.lastPlankWidth).toBeGreaterThan(0)
+  })
+})
+
+describe('metal sheets', () => {
+  const structure = buildStructure(base)
+  const totalLength = base.length + 2 * base.gableOverhang  // 4.6
+  const rafterLen = structure.rafters[0].length
+
+  it('no metal sheets when roofing disabled', () => {
+    const roofing = buildRoofing(structure, { ...opts, roofing: false })
+    expect(roofing.metalSheets).toBeNull()
+  })
+
+  it('correct number of sheets per slope', () => {
+    const roofing = buildRoofing(structure, { ...opts, roofing: true })
+    const expected = Math.ceil(totalLength / SHEET_LENGTH)
+    expect(roofing.metalSheets!.sheetsPerSlope).toBe(expected)
+  })
+
+  it('sheets array has correct count', () => {
+    const roofing = buildRoofing(structure, { ...opts, roofing: true })
+    expect(roofing.metalSheets!.sheets.length).toBe(roofing.metalSheets!.sheetsPerSlope)
+  })
+
+  it('gable sheets are equal width and centered', () => {
+    const roofing = buildRoofing(structure, { ...opts, roofing: true })
+    const ms = roofing.metalSheets!
+    if (ms.sheetsPerSlope === 1) return // single sheet covers everything
+    const first = ms.sheets[0]
+    const last = ms.sheets[ms.sheets.length - 1]
+    // Gable sheets have equal width
+    expect(first.width).toBeCloseTo(last.width, 6)
+    // Gable sheets are symmetric around x=0
+    expect(first.x).toBeCloseTo(-last.x, 6)
+    // Gable sheet width <= SHEET_LENGTH
+    expect(first.width).toBeLessThanOrEqual(SHEET_LENGTH + 1e-9)
+    expect(first.width).toBeGreaterThan(0)
+  })
+
+  it('inner sheets are full SHEET_LENGTH width', () => {
+    const roofing = buildRoofing(structure, { ...opts, roofing: true })
+    const ms = roofing.metalSheets!
+    if (ms.sheetsPerSlope <= 2) return // no inner sheets
+    for (let i = 1; i < ms.sheets.length - 1; i++) {
+      expect(ms.sheets[i].width).toBeCloseTo(SHEET_LENGTH, 6)
+    }
+  })
+
+  it('total sheet widths sum to totalLength', () => {
+    const roofing = buildRoofing(structure, { ...opts, roofing: true })
+    const ms = roofing.metalSheets!
+    const sum = ms.sheets.reduce((s, sh) => s + sh.width, 0)
+    expect(sum).toBeCloseTo(totalLength, 6)
+  })
+
+  it('slopeLength equals rafter length', () => {
+    const roofing = buildRoofing(structure, { ...opts, roofing: true })
+    expect(roofing.metalSheets!.slopeLength).toBeCloseTo(rafterLen, 6)
+  })
+
+  it('correct number of korc positions (sheetsPerSlope - 1)', () => {
+    const roofing = buildRoofing(structure, { ...opts, roofing: true })
+    const ms = roofing.metalSheets!
+    expect(ms.korcXPositions.length).toBe(ms.sheetsPerSlope - 1)
+  })
+
+  it('korc positions are at sheet junctions', () => {
+    const roofing = buildRoofing(structure, { ...opts, roofing: true })
+    const ms = roofing.metalSheets!
+    for (let i = 0; i < ms.korcXPositions.length; i++) {
+      // Korc at right edge of sheet i = left edge of sheet i+1
+      const rightEdge = ms.sheets[i].x + ms.sheets[i].width / 2
+      const leftEdge = ms.sheets[i + 1].x - ms.sheets[i + 1].width / 2
+      expect(ms.korcXPositions[i]).toBeCloseTo(rightEdge, 6)
+      expect(ms.korcXPositions[i]).toBeCloseTo(leftEdge, 6)
+    }
   })
 })

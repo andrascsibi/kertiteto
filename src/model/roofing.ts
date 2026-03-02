@@ -14,6 +14,11 @@ export const FLASHING_DEVELOPED_WIDTH = {
 export const FLASHING_LENGTH  = 2    // meters per piece
 export const FLASHING_OVERLAP = 0.1  // meters overlap between pieces
 
+export const SHEET_LENGTH    = 0.51   // 51cm sheet width along X (longitudinal)
+export const SHEET_THICKNESS = 0.001  // 1mm
+export const KORC_HEIGHT     = 0.025  // 2.5cm álló korc height
+export const KORC_WIDTH      = 0.01   // 1cm álló korc width
+
 export interface CounterBatten {
   /** Length along slope, same as corresponding rafter (m) */
   length: number
@@ -37,6 +42,23 @@ export interface Flashings {
   totalSurface: number
 }
 
+export interface MetalSheet {
+  /** Center X position */
+  x: number
+  /** Width along X axis (SHEET_LENGTH for full sheets, less for gable cut sheets) */
+  width: number
+}
+
+export interface MetalSheets {
+  sheetsPerSlope: number
+  /** Positioned sheets for one slope (symmetric — same for both slopes) */
+  sheets: MetalSheet[]
+  /** Extent of each sheet along the slope direction (m) */
+  slopeLength: number
+  /** X positions of álló korc junctions between sheets */
+  korcXPositions: number[]
+}
+
 export interface LamberiaPlanks {
   planksPerSlope: number
   plankLength: number
@@ -49,6 +71,7 @@ export interface RoofingModel {
   roofBattens: RoofBatten[]
   flashings: Flashings | null
   lamberia: LamberiaPlanks | null
+  metalSheets: MetalSheets | null
 }
 
 export interface RoofingOptions {
@@ -122,7 +145,48 @@ export function buildRoofing(structure: StructureModel, options: RoofingOptions)
     }
   }
 
-  return { counterBattens, roofBattens, flashings, lamberia }
+  let metalSheets: MetalSheets | null = null
+  if (options.roofing) {
+    const totalLength = structure.totalLength
+    const rafterLen = structure.rafters[0].length
+    const numSheets = Math.ceil(totalLength / SHEET_LENGTH)
+
+    const sheets: MetalSheet[] = []
+    const korcXPositions: number[] = []
+
+    if (numSheets === 1) {
+      sheets.push({ x: 0, width: totalLength })
+    } else {
+      const innerCount = numSheets - 2
+      const gableWidth = (totalLength - innerCount * SHEET_LENGTH) / 2
+      const halfTotal = totalLength / 2
+
+      // First gable sheet (left, -x side)
+      let cursor = -halfTotal
+      sheets.push({ x: cursor + gableWidth / 2, width: gableWidth })
+      cursor += gableWidth
+
+      // Inner full sheets
+      for (let i = 0; i < innerCount; i++) {
+        korcXPositions.push(cursor)
+        sheets.push({ x: cursor + SHEET_LENGTH / 2, width: SHEET_LENGTH })
+        cursor += SHEET_LENGTH
+      }
+
+      // Last korc + gable sheet (right, +x side)
+      korcXPositions.push(cursor)
+      sheets.push({ x: cursor + gableWidth / 2, width: gableWidth })
+    }
+
+    metalSheets = {
+      sheetsPerSlope: numSheets,
+      sheets,
+      slopeLength: rafterLen,
+      korcXPositions,
+    }
+  }
+
+  return { counterBattens, roofBattens, flashings, lamberia, metalSheets }
 }
 
 export function counterBattenTotalLength(roofing: RoofingModel): number {

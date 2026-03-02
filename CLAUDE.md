@@ -31,6 +31,27 @@ with Hungarian roofing knowledge. Speaks technical Hungarian roofing terminology
 - **Minimal deps** — Vite + Three.js + Vitest, that's it
 - **Static hosting** — GitHub Pages, GitHub Actions CI/CD
 
+## Design Vision: Abstract Model First
+The core principle: build a **complete abstract model** of the structure and roofing,
+derived purely from user input params and physical constants. This model is the single
+source of truth, consumed by multiple downstream engines:
+
+- **Pricing engine** — computes costs from model quantities
+- **3D renderer** — builds Three.js meshes from model geometry
+- **Cut list generator** (future) — produces material cutting lists
+- **PDF quote producer** (future) — generates customer-facing quotes
+
+The abstract model should contain:
+1. **Derived metrics** — totalLength, rafterLength, slopeSpan, tanPitch, etc.
+2. **Concrete items** — every individual element (each batten, each rafter, each sheet)
+   as an object with correct dimensions and position, with layer stacking offsets
+   properly resolved at the model level, not in the renderer.
+
+This means renderers and pricing should be thin consumers that map model objects to
+their domain — no geometry calculations, no stacking logic, no spacing derivation.
+Currently some roofing elements (battens, counter battens) have their geometry
+computed inside the renderer; these should be refactored to follow this pattern.
+
 ## Stack
 TypeScript + Vite + Three.js + Vitest + GitHub Pages + GitHub Actions
 Google Sheets (pricing) + Web3Forms (lead capture)

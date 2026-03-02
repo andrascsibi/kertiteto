@@ -6,7 +6,8 @@ import * as THREE from 'three'
 import type { StructureModel, Pillar, Purlin, TieBeam, Rafter, RidgeTie, KneeBrace } from '../model/types'
 import { PILLAR_SIZE, PURLIN_SIZE, RAFTER_WIDTH, RAFTER_DEPTH, RIDGE_TIE_WIDTH, KNEE_BRACE_SIZE, KNEE_BRACE_LENGTH } from '../model/structure'
 import { EAVE_PLUMB_HEIGHT } from '../model/geometry'
-import { LAMBERIA_HEIGHT, LAMBERIA_WIDTH, ROOF_BATTEN_DISTANCE } from '../model/roofing'
+import { LAMBERIA_HEIGHT, LAMBERIA_WIDTH, ROOF_BATTEN_DISTANCE, SHEET_THICKNESS, KORC_HEIGHT, KORC_WIDTH } from '../model/roofing'
+import type { RoofingModel } from '../model/roofing'
 
 // const COLOR = '#0c83fa' 
 
@@ -17,6 +18,7 @@ const MAT: Record<string, THREE.MeshLambertMaterial> = {
   lamberia:  new THREE.MeshLambertMaterial({ color: 0x7a5030 }),
   membrane:  new THREE.MeshLambertMaterial({ color: 0xcccccc }),
   counterBatten: new THREE.MeshLambertMaterial({ color: 0x40e0d0 }),
+  metalSheet: new THREE.MeshLambertMaterial({ color: 0x8899aa }),
   // pillar:  new THREE.MeshLambertMaterial({ color: COLOR }),
   // purlin:  new THREE.MeshLambertMaterial({ color: COLOR }),
   // rafter:  new THREE.MeshLambertMaterial({ color: COLOR }),
@@ -26,6 +28,7 @@ export interface RoofRenderOptions {
   lamberia?: boolean
   membrane?: boolean
   roofing?: boolean
+  roofingModel?: RoofingModel
 }
 
 export function buildRoofMeshes(model: StructureModel, options?: RoofRenderOptions): THREE.Group {
@@ -54,6 +57,10 @@ export function buildRoofMeshes(model: StructureModel, options?: RoofRenderOptio
   if (options?.roofing) {
     const rbMeshes = buildRoofBattenMeshes(model, !!options.lamberia, !!options.membrane)
     for (const m of rbMeshes) group.add(m)
+    if (options.roofingModel?.metalSheets) {
+      const sheetMeshes = buildMetalSheetMeshes(model, options.roofingModel.metalSheets, !!options.lamberia, !!options.membrane)
+      for (const m of sheetMeshes) group.add(m)
+    }
   }
 
   return group
@@ -637,6 +644,86 @@ function buildRoofBattenMeshes(model: StructureModel, hasLamberia: boolean, hasM
       mesh.position.set(0, cy, cz)
       mesh.quaternion.copy(quat)
 
+      mesh.castShadow = true
+      mesh.receiveShadow = true
+      meshes.push(mesh)
+    }
+  }
+
+  return meshes
+}
+
+// ── Metal Sheets ─────────────────────────────────────────────────────────────
+
+/**
+ * Builds metal sheet and álló korc meshes for both slopes.
+ *
+ * Each sheet is a thin slab (SHEET_THICKNESS) positioned from the MetalSheets
+ * model. Álló korcs are small boxes (KORC_WIDTH × KORC_HEIGHT) at each sheet
+ * junction, running the full slope length.
+ */
+function buildMetalSheetMeshes(
+  model: StructureModel,
+  metalSheets: import('../model/roofing').MetalSheets,
+  hasLamberia: boolean,
+  hasMembrane: boolean,
+): THREE.Mesh[] {
+  const DEG = Math.PI / 180
+  const pitch = model.params.pitch * DEG
+  const cosP = Math.cos(pitch)
+  const sinP = Math.sin(pitch)
+
+  const slopeLength = metalSheets.slopeLength
+
+  // Normal distance from rafter top to sheet/korc center
+  const layerOffset = (hasLamberia ? LAMBERIA_HEIGHT : 0)
+    + (hasMembrane ? MEMBRANE_THICKNESS + COUNTER_BATTEN_SIZE : 0)
+    + ROOF_BATTEN_HEIGHT
+  const sheetNormalDist = layerOffset + SHEET_THICKNESS / 2
+  const korcNormalDist = layerOffset + KORC_HEIGHT / 2
+
+  const slopeCenter = slopeLength / 2
+  const meshes: THREE.Mesh[] = []
+
+  for (let side = 0; side < 2; side++) {
+    const isLeft = side === 0
+    const sign = isLeft ? 1 : -1
+
+    const refRafter = isLeft ? model.rafters[0] : model.rafters.find(r => r.eaveEnd.z > 0)!
+    const eaveTopY = refRafter.eaveEnd.y + RAFTER_DEPTH / (2 * cosP)
+    const eaveZ = refRafter.eaveEnd.z
+
+    // Slope orientation (same basis as battens)
+    const zDir = new THREE.Vector3(0, sinP, sign * cosP)
+    const xDir = new THREE.Vector3(1, 0, 0)
+    const yDir = new THREE.Vector3().crossVectors(zDir, xDir)
+    if (yDir.y < 0) { yDir.negate(); zDir.negate() }
+    const basis = new THREE.Matrix4().makeBasis(xDir, yDir, zDir)
+    const quat = new THREE.Quaternion().setFromRotationMatrix(basis)
+
+    // Sheet center in YZ (slope midpoint + normal offset)
+    const sheetCY = eaveTopY + slopeCenter * sinP + sheetNormalDist * cosP
+    const sheetCZ = eaveZ + sign * slopeCenter * cosP - sign * sheetNormalDist * sinP
+
+    for (const sheet of metalSheets.sheets) {
+      const geo = new THREE.BoxGeometry(sheet.width, SHEET_THICKNESS, slopeLength)
+      const mesh = new THREE.Mesh(geo, MAT.metalSheet)
+      mesh.position.set(sheet.x, sheetCY, sheetCZ)
+      mesh.quaternion.copy(quat)
+      mesh.castShadow = true
+      mesh.receiveShadow = true
+      meshes.push(mesh)
+    }
+
+    // Álló korcs at sheet junctions
+    const korcCY = eaveTopY + slopeCenter * sinP + korcNormalDist * cosP
+    const korcCZ = eaveZ + sign * slopeCenter * cosP - sign * korcNormalDist * sinP
+
+    for (const korcX of metalSheets.korcXPositions) {
+      const geo = new THREE.BoxGeometry(KORC_WIDTH, KORC_HEIGHT, slopeLength)
+      const mesh = new THREE.Mesh(geo, MAT.metalSheet)
+      mesh.position.set(korcX, korcCY, korcCZ)
+      mesh.quaternion.copy(quat)
       mesh.castShadow = true
       mesh.receiveShadow = true
       meshes.push(mesh)

@@ -117,11 +117,13 @@ function update(): void {
   valGable.textContent  = `${params.gableOverhang.toFixed(2)} m`
 
   const model = buildStructure(params)
-  scene.updateModel(model, { lamberia: chkLamberia.checked, membrane: chkMembrane.checked, roofing: chkRoofing.checked })
 
   const m = computeMetrics(model)
   // Always build with all options enabled so cost previews include everything
   const roofing = buildRoofing(model, { lamberia: true, membrane: true, roofing: true })
+  // Build roofing model with current checkbox state for rendering
+  const renderRoofing = buildRoofing(model, { lamberia: chkLamberia.checked, membrane: chkMembrane.checked, roofing: chkRoofing.checked })
+  scene.updateModel(model, { lamberia: chkLamberia.checked, membrane: chkMembrane.checked, roofing: chkRoofing.checked, roofingModel: renderRoofing })
   const cbTotalLen = counterBattenTotalLength(roofing)
   const rbTotalLen = roofBattenTotalLength(roofing)
   const flashingSurface = flashingTotalSurface(roofing)
