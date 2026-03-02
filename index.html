@@ -78,6 +78,29 @@
         cursor: pointer;
       }
 
+      /* ── Advanced section (collapsible) ──────────────────────────────────── */
+      .advanced-section {
+        margin: 0;
+      }
+      .advanced-section > summary {
+        cursor: pointer;
+        list-style: none;
+      }
+      .advanced-section > summary::-webkit-details-marker { display: none; }
+      .advanced-section > summary::after {
+        content: '▸';
+        float: right;
+        font-size: 0.7rem;
+        color: #9a8070;
+        transition: transform 0.15s;
+      }
+      .advanced-section[open] > summary::after {
+        transform: rotate(90deg);
+      }
+      .advanced-section > .param:first-of-type {
+        margin-top: 0.75rem;
+      }
+
       /* ── Options (checkboxes) ────────────────────────────────────────────── */
       .option {
         margin-bottom: 0.6rem;
@@ -449,31 +472,33 @@
         <input type="range" id="inp-length" min="2.0" max="20.0" step="0.1">
       </div>
 
-      <p class="section-title">Tető</p>
+      <details id="advanced" class="advanced-section">
+        <summary class="section-title">Haladó beállítások</summary>
 
-      <div class="param">
-        <label>
-          <span>Hajlásszög</span>
-          <span class="val" id="val-pitch"></span>
-        </label>
-        <input type="range" id="inp-pitch" min="15" max="45" step="1">
-      </div>
+        <div class="param">
+          <label>
+            <span>Hajlásszög</span>
+            <span class="val" id="val-pitch"></span>
+          </label>
+          <input type="range" id="inp-pitch" min="15" max="45" step="1">
+        </div>
 
-      <div class="param">
-        <label>
-          <span>Eresznyúlás</span>
-          <span class="val" id="val-eaves"></span>
-        </label>
-        <input type="range" id="inp-eaves" min="0.20" max="1.00" step="0.05">
-      </div>
+        <div class="param">
+          <label>
+            <span>Eresznyúlás</span>
+            <span class="val" id="val-eaves"></span>
+          </label>
+          <input type="range" id="inp-eaves" min="0.20" max="1.00" step="0.05">
+        </div>
 
-      <div class="param">
-        <label>
-          <span>Oromzat-nyúlás</span>
-          <span class="val" id="val-gable"></span>
-        </label>
-        <input type="range" id="inp-gable" min="0.10" max="0.60" step="0.05">
-      </div>
+        <div class="param">
+          <label>
+            <span>Oromzat-nyúlás</span>
+            <span class="val" id="val-gable"></span>
+          </label>
+          <input type="range" id="inp-gable" min="0.10" max="0.60" step="0.05">
+        </div>
+      </details>
 
       <p class="section-title">Héjazat</p>
 

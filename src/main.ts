@@ -137,19 +137,18 @@ function update(): void {
   valEaves.textContent  = `${params.eavesOverhang.toFixed(2)} m`
   valGable.textContent  = `${params.gableOverhang.toFixed(2)} m`
 
-  // Sync URL hash
-  const hashParts = [
-    `w=${params.width.toFixed(1)}`,
-    `l=${params.length.toFixed(1)}`,
-    `p=${params.pitch}`,
-    `e=${params.eavesOverhang.toFixed(2)}`,
-    `g=${params.gableOverhang.toFixed(2)}`,
-    `lb=${chkLamberia.checked ? 1 : 0}`,
-    `mb=${chkMembrane.checked ? 1 : 0}`,
-    `rf=${chkRoofing.checked ? 1 : 0}`,
-  ]
+  // Sync URL hash — only include non-default values to keep URL clean
+  const hashParts: string[] = []
+  if (params.width         !== DEFAULTS.width)         hashParts.push(`w=${params.width.toFixed(1)}`)
+  if (params.length        !== DEFAULTS.length)        hashParts.push(`l=${params.length.toFixed(1)}`)
+  if (params.pitch         !== DEFAULTS.pitch)         hashParts.push(`p=${params.pitch}`)
+  if (params.eavesOverhang !== DEFAULTS.eavesOverhang) hashParts.push(`e=${params.eavesOverhang.toFixed(2)}`)
+  if (params.gableOverhang !== DEFAULTS.gableOverhang) hashParts.push(`g=${params.gableOverhang.toFixed(2)}`)
+  if (!chkLamberia.checked) hashParts.push('lb=0')
+  if (!chkMembrane.checked) hashParts.push('mb=0')
+  if (!chkRoofing.checked)  hashParts.push('rf=0')
   if (devMode) hashParts.push('dev=true')
-  history.replaceState(null, '', '#' + hashParts.join('&'))
+  history.replaceState(null, '', hashParts.length ? '#' + hashParts.join('&') : location.pathname)
 
   const model = buildStructure(params)
 
@@ -321,4 +320,11 @@ inpGable.value  = String(hashFloat('g', DEFAULTS.gableOverhang))
 chkLamberia.checked = hashBool('lb', true)
 chkMembrane.checked = hashBool('mb', true)
 chkRoofing.checked  = hashBool('rf', true)
+
+// Auto-open advanced section if any advanced param was customised in the URL
+const advanced = document.getElementById('advanced') as HTMLDetailsElement
+if ('p' in hashParams || 'e' in hashParams || 'g' in hashParams) {
+  advanced.open = true
+}
+
 update()
