@@ -54,7 +54,7 @@ let prices: PriceTable | null = null
 pricing.innerHTML = '<p class="price-loading">Árak betöltése…</p>'
 fetchPrices()
   .then(p => { prices = p; update() })
-  .catch(() => { pricing.innerHTML = '<p class="price-loading">Árak nem elérhetők</p>' })
+  .catch(() => { pricing.innerHTML = '<p class="price-loading error">Árak nem elérhetők</p>' })
 
 function formatHUF(amount: number): string {
   return Math.round(amount).toLocaleString('hu-HU') + ' Ft'

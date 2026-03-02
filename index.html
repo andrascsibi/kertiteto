@@ -159,6 +159,25 @@
         font-size: 0.75rem;
         color: #9a8070;
         font-style: italic;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      #pricing .price-loading::before {
+        content: '';
+        display: inline-block;
+        width: 14px;
+        height: 14px;
+        border: 2px solid #9a8070;
+        border-top-color: transparent;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+      }
+      #pricing .price-loading.error::before {
+        display: none;
+      }
+      @keyframes spin {
+        to { transform: rotate(360deg); }
       }
 
       /* ── Debug panel (top-right, hidden by default) ────────────────────── */
