@@ -23,7 +23,7 @@ export function createScene(container: HTMLElement): SceneHandle {
 
   // ── Camera ──────────────────────────────────────────────────────────────────
   const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100)
-  camera.position.set(9, 6, 7)
+  camera.position.set(8, 3.7, 9)
 
   // ── Controls ────────────────────────────────────────────────────────────────
   const controls = new OrbitControls(camera, renderer.domElement)
