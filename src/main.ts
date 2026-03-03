@@ -3,6 +3,7 @@ import { maxWidthForPitch, maxPitchForWidth } from './model/geometry'
 import { fetchPrices, type PriceTable } from './model/prices'
 import { buildRoofing, counterBattenTotalLength, roofBattenTotalLength, flashingTotalSurface } from './model/roofing'
 import { createScene } from './renderer/scene'
+import { setMetalAppearance } from './renderer/roof'
 
 // ── Hash params ──────────────────────────────────────────────────────────────
 function parseHash(): Record<string, string> {
@@ -177,6 +178,9 @@ function update(): void {
   if (!chkLamberia.checked) hashParts.push('lb=0')
   if (!chkMembrane.checked) hashParts.push('mb=0')
   if (!chkRoofing.checked)  hashParts.push('rf=0')
+  if (selectedRal !== '8004' || selectedFinish !== 'matt') {
+    hashParts.push(`c=${selectedRal}${selectedFinish === 'matt' ? 'm' : 'f'}`)
+  }
   if (devMode) hashParts.push('dev=true')
   history.replaceState(null, '', hashParts.length ? '#' + hashParts.join('&') : location.pathname)
 
@@ -256,7 +260,7 @@ function update(): void {
     const opts = [
       chkLamberia.checked && 'lambéria',
       chkMembrane.checked && 'alátét héjazat',
-      chkRoofing.checked  && 'lemez fedés',
+      chkRoofing.checked  && `lemez fedés (RAL ${selectedRal}, ${selectedFinish === 'matt' ? 'matt' : 'fényes'})`,
     ].filter(Boolean).join(', ')
     lastConfigSummary =
       `${params.width.toFixed(1)} × ${params.length.toFixed(1)} m · ${params.pitch}°` +
@@ -303,6 +307,85 @@ for (const inp of [inpLength, inpEaves, inpGable]) {
 for (const chk of [chkLamberia, chkMembrane, chkRoofing]) {
   chk.addEventListener('change', update)
 }
+
+// ── Color picker ────────────────────────────────────────────────────────────
+const RAL_COLORS = [
+  { ral: '8004', name: 'Téglavörös',   hex: 0x8A3324, shiny: true },
+  { ral: '8017', name: 'Csokibarna',   hex: 0x44322D, shiny: true },
+  { ral: '7016', name: 'Antracit',     hex: 0x383E42, shiny: true },
+  { ral: '3009', name: 'Bordó',        hex: 0x6D342D, shiny: true },
+  { ral: '6020', name: 'Mohazöld',     hex: 0x37422F, shiny: false },
+  { ral: '7005', name: 'Bazaltszürke', hex: 0x6C7059, shiny: false },
+]
+
+const ROUGHNESS_MATT = 0.65
+const ROUGHNESS_SHINY = 0.35
+
+let selectedRal = '8004'
+let selectedFinish: 'matt' | 'shiny' = 'matt'
+
+const colorSwatch = document.getElementById('color-swatch') as HTMLButtonElement
+const colorPickerEl = document.getElementById('color-picker')!
+
+// Build picker grid
+const cpGrid = document.createElement('div')
+cpGrid.className = 'color-picker-grid'
+
+function hexStr(hex: number): string { return '#' + hex.toString(16).padStart(6, '0') }
+
+for (const finish of ['matt', 'shiny'] as const) {
+  const label = document.createElement('span')
+  label.className = 'color-picker-label'
+  label.textContent = finish === 'matt' ? 'Matt' : 'Fényes'
+  cpGrid.appendChild(label)
+
+  for (const c of RAL_COLORS) {
+    const dot = document.createElement('button')
+    dot.type = 'button'
+    dot.className = 'color-dot'
+    if (finish === 'shiny' && !c.shiny) {
+      dot.classList.add('empty')
+    } else {
+      dot.style.backgroundColor = hexStr(c.hex)
+      dot.title = `RAL ${c.ral} — ${c.name} (${finish === 'matt' ? 'matt' : 'fényes'})`
+      dot.dataset.ral = c.ral
+      dot.dataset.finish = finish
+      dot.addEventListener('click', () => selectColor(c.ral, finish))
+    }
+    cpGrid.appendChild(dot)
+  }
+}
+colorPickerEl.appendChild(cpGrid)
+
+function selectColor(ral: string, finish: 'matt' | 'shiny'): void {
+  selectedRal = ral
+  selectedFinish = finish
+  const color = RAL_COLORS.find(c => c.ral === ral)!
+  const roughness = finish === 'matt' ? ROUGHNESS_MATT : ROUGHNESS_SHINY
+  setMetalAppearance(color.hex, roughness)
+  colorSwatch.style.backgroundColor = hexStr(color.hex)
+
+  cpGrid.querySelectorAll('.color-dot').forEach(d => d.classList.remove('selected'))
+  const sel = cpGrid.querySelector(`.color-dot[data-ral="${ral}"][data-finish="${finish}"]`)
+  sel?.classList.add('selected')
+
+  colorPickerEl.classList.remove('open')
+  update()
+}
+
+colorSwatch.addEventListener('click', (e) => {
+  e.stopPropagation()
+  colorPickerEl.classList.toggle('open')
+})
+
+document.addEventListener('click', (e) => {
+  if (!colorPickerEl.contains(e.target as Node) && e.target !== colorSwatch) {
+    colorPickerEl.classList.remove('open')
+  }
+})
+
+// Mark initial selection
+cpGrid.querySelector('.color-dot[data-ral="8004"][data-finish="matt"]')?.classList.add('selected')
 
 // ── Quote modal ─────────────────────────────────────────────────────────────
 function openModal(): void {
@@ -358,6 +441,16 @@ inpGable.value  = String(hashFloat('g', DEFAULTS.gableOverhang))
 chkLamberia.checked = hashBool('lb', true)
 chkMembrane.checked = hashBool('mb', true)
 chkRoofing.checked  = hashBool('rf', true)
+
+// Restore color from URL
+const cParam = hashParams['c']
+if (cParam) {
+  const finish = cParam.endsWith('f') ? 'shiny' as const : 'matt' as const
+  const ral = cParam.replace(/[mf]$/, '')
+  if (RAL_COLORS.find(c => c.ral === ral && (finish === 'matt' || c.shiny))) {
+    selectColor(ral, finish)
+  }
+}
 
 // Auto-open advanced section if any advanced param was customised in the URL
 const advanced = document.getElementById('advanced') as HTMLDetailsElement

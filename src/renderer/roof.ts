@@ -18,8 +18,8 @@ const MAT: Record<string, THREE.Material> = {
   lamberia:  new THREE.MeshLambertMaterial({ color: 0x7a5030 }),
   membrane:  new THREE.MeshLambertMaterial({ color: 0xcccccc }),
   counterBatten: new THREE.MeshLambertMaterial({ color: 0x40e0d0 }),
-  metalSheet: new THREE.MeshStandardMaterial({ color: 0x8A3324, metalness: 0.6, roughness: 0.35 }),
-  flashing: new THREE.MeshStandardMaterial({ color: 0x8A3324, metalness: 0.6, roughness: 0.35, side: THREE.DoubleSide }),
+  metalSheet: new THREE.MeshStandardMaterial({ color: 0x8A3324, metalness: 0.6, roughness: 0.65 }),
+  flashing: new THREE.MeshStandardMaterial({ color: 0x8A3324, metalness: 0.6, roughness: 0.65, side: THREE.DoubleSide }),
   // pillar:  new THREE.MeshLambertMaterial({ color: COLOR }),
   // purlin:  new THREE.MeshLambertMaterial({ color: COLOR }),
   // rafter:  new THREE.MeshLambertMaterial({ color: COLOR }),
@@ -89,6 +89,15 @@ export function buildRoofMeshes(model: StructureModel, options?: RoofRenderOptio
 
 export function disposeMaterials(): void {
   for (const mat of Object.values(MAT)) mat.dispose()
+}
+
+export function setMetalAppearance(color: number, roughness: number): void {
+  const sheet = MAT.metalSheet as THREE.MeshStandardMaterial
+  const flash = MAT.flashing as THREE.MeshStandardMaterial
+  sheet.color.setHex(color)
+  sheet.roughness = roughness
+  flash.color.setHex(color)
+  flash.roughness = roughness
 }
 
 // ── Per-element mesh builders ─────────────────────────────────────────────────
