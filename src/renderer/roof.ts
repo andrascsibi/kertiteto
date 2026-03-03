@@ -18,8 +18,8 @@ const MAT: Record<string, THREE.Material> = {
   lamberia:  new THREE.MeshLambertMaterial({ color: 0x7a5030 }),
   membrane:  new THREE.MeshLambertMaterial({ color: 0xcccccc }),
   counterBatten: new THREE.MeshLambertMaterial({ color: 0x40e0d0 }),
-  metalSheet: new THREE.MeshStandardMaterial({ color: 0x8A3324, metalness: 0.6, roughness: 0.65 }),
-  flashing: new THREE.MeshStandardMaterial({ color: 0x8A3324, metalness: 0.6, roughness: 0.65, side: THREE.DoubleSide }),
+  metalSheet: new THREE.MeshStandardMaterial({ color: 0xC4644A, metalness: 0.6, roughness: 0.65 }),
+  flashing: new THREE.MeshStandardMaterial({ color: 0xC4644A, metalness: 0.6, roughness: 0.65, side: THREE.DoubleSide }),
   // pillar:  new THREE.MeshLambertMaterial({ color: COLOR }),
   // purlin:  new THREE.MeshLambertMaterial({ color: COLOR }),
   // rafter:  new THREE.MeshLambertMaterial({ color: COLOR }),
@@ -1358,7 +1358,7 @@ function buildBugGuardMeshes(
 
   // Wireframe material — same color as flashing (RAL 8004), basic for wireframe compatibility
   const bugGuardMat = new THREE.MeshBasicMaterial({
-    color: 0x8A3324,
+    color: 0xC4644A,
     wireframe: true,
   })
 

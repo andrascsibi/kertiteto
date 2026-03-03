@@ -310,12 +310,12 @@ for (const chk of [chkLamberia, chkMembrane, chkRoofing]) {
 
 // ── Color picker ────────────────────────────────────────────────────────────
 const RAL_COLORS = [
-  { ral: '8004', name: 'Téglavörös',   hex: 0x8A3324, shiny: true },
-  { ral: '8017', name: 'Csokibarna',   hex: 0x44322D, shiny: true },
-  { ral: '7016', name: 'Antracit',     hex: 0x383E42, shiny: true },
-  { ral: '3009', name: 'Bordó',        hex: 0x6D342D, shiny: true },
-  { ral: '6020', name: 'Mohazöld',     hex: 0x37422F, shiny: false },
-  { ral: '7005', name: 'Bazaltszürke', hex: 0x6C7059, shiny: false },
+  { ral: '8004', name: 'Téglavörös',   hex: 0xC4644A, shiny: true },
+  { ral: '8017', name: 'Csokibarna',   hex: 0x6B4A3A, shiny: true },
+  { ral: '7016', name: 'Antracit',     hex: 0x525A60, shiny: true },
+  { ral: '3009', name: 'Bordó',        hex: 0x8B4538, shiny: true },
+  { ral: '6020', name: 'Mohazöld',     hex: 0x4F5F40, shiny: false },
+  { ral: '7005', name: 'Bazaltszürke', hex: 0x909585, shiny: false },
 ]
 
 const ROUGHNESS_MATT = 0.65
