@@ -303,11 +303,68 @@ function update(): void {
   }
 }
 
+// ── Mobile touch guard for sliders ───────────────────────────────────────────
+// Prevents accidental slider activation while scrolling on mobile.
+// On touchstart we suppress input events and wait ~300ms. If the controls panel
+// scrolls before the timer fires, the touch was a scroll — revert the slider.
+// If the timer fires without scrolling, engage the slider for live dragging.
+const SLIDER_ENGAGE_MS = 300
+const allSliders = [inpWidth, inpPitch, inpLength, inpEaves, inpGable]
+let sliderEngaged = true  // desktop: always engaged
+let engageTimer = 0
+let touchStartValue = ''
+let touchedSlider: HTMLInputElement | null = null
+
+const controlsPanel = document.getElementById('controls')!
+
+function onSliderTouchStart(this: HTMLInputElement) {
+  sliderEngaged = false
+  touchStartValue = this.value
+  touchedSlider = this
+
+  const onScroll = () => {
+    // Panel scrolled — this was a scroll gesture, not a slider drag
+    clearTimeout(engageTimer)
+    sliderEngaged = false
+    touchedSlider = null
+    // Revert slider to its pre-touch value
+    this.value = touchStartValue
+    controlsPanel.removeEventListener('scroll', onScroll)
+  }
+  controlsPanel.addEventListener('scroll', onScroll, { once: true })
+
+  engageTimer = window.setTimeout(() => {
+    // No scroll happened — engage the slider for live updates
+    sliderEngaged = true
+    controlsPanel.removeEventListener('scroll', onScroll)
+    // Apply whatever value the finger has already dragged to
+    this.dispatchEvent(new Event('input'))
+  }, SLIDER_ENGAGE_MS)
+}
+
+function onSliderTouchEnd() {
+  clearTimeout(engageTimer)
+  if (!sliderEngaged && touchedSlider) {
+    // Touch ended before timer but no scroll happened — this was a tap.
+    // Accept the new value.
+    sliderEngaged = true
+    touchedSlider.dispatchEvent(new Event('input'))
+  }
+  sliderEngaged = true
+  touchedSlider = null
+}
+
+for (const inp of allSliders) {
+  inp.addEventListener('touchstart', onSliderTouchStart, { passive: true })
+  inp.addEventListener('touchend', onSliderTouchEnd)
+  inp.addEventListener('touchcancel', onSliderTouchEnd)
+}
+
 // ── Wire up sliders ────────────────────────────────────────────────────────────
-inpWidth.addEventListener('input', () => { lastChangedSlider = 'width'; update() })
-inpPitch.addEventListener('input', () => { lastChangedSlider = 'pitch'; update() })
+inpWidth.addEventListener('input', () => { if (!sliderEngaged) return; lastChangedSlider = 'width'; update() })
+inpPitch.addEventListener('input', () => { if (!sliderEngaged) return; lastChangedSlider = 'pitch'; update() })
 for (const inp of [inpLength, inpEaves, inpGable]) {
-  inp.addEventListener('input', update)
+  inp.addEventListener('input', () => { if (!sliderEngaged) return; update() })
 }
 for (const chk of [chkLamberia, chkMembrane, chkRoofing]) {
   chk.addEventListener('change', update)
