@@ -161,11 +161,11 @@
       }
       .color-swatch:hover { transform: scale(1.15); }
 
-      #color-picker {
+      #color-picker, .color-picker-panel {
         display: none;
-        padding: 0.4rem 0 0.2rem 0;
+        padding: 0 0 0.6rem 0;
       }
-      #color-picker.open { display: block; }
+      #color-picker.open, .color-picker-panel.open { display: block; }
 
       .color-picker-grid {
         display: grid;
@@ -603,9 +603,13 @@
       <p class="section-title">Héjazat</p>
 
       <div class="option">
-        <label><input type="checkbox" id="chk-lamberia" checked> Lambéria</label>
+        <div class="option-header">
+          <label><input type="checkbox" id="chk-lamberia" checked> Lambéria</label>
+          <button type="button" class="color-swatch" id="timber-swatch" title="Lazúr szín választása" style="background:#7a5030"></button>
+        </div>
         <span class="option-cost" id="cost-lamberia"></span>
       </div>
+      <div id="timber-picker" class="color-picker-panel"></div>
 
       <div class="option">
         <label><input type="checkbox" id="chk-membrane" checked> Alátét héjazat</label>

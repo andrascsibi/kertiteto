@@ -100,6 +100,12 @@ export function setMetalAppearance(color: number, roughness: number): void {
   flash.roughness = roughness
 }
 
+export function setTimberColor(color: number): void {
+  for (const key of ['pillar', 'purlin', 'rafter', 'lamberia'] as const) {
+    ;(MAT[key] as THREE.MeshLambertMaterial).color.setHex(color)
+  }
+}
+
 // ── Per-element mesh builders ─────────────────────────────────────────────────
 
 function pillarMesh(p: Pillar): THREE.Mesh {

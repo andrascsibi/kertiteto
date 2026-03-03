@@ -3,7 +3,7 @@ import { maxWidthForPitch, maxPitchForWidth } from './model/geometry'
 import { fetchPrices, type PriceTable } from './model/prices'
 import { buildRoofing, counterBattenTotalLength, roofBattenTotalLength, flashingTotalSurface } from './model/roofing'
 import { createScene } from './renderer/scene'
-import { setMetalAppearance } from './renderer/roof'
+import { setMetalAppearance, setTimberColor } from './renderer/roof'
 
 // ── Hash params ──────────────────────────────────────────────────────────────
 function parseHash(): Record<string, string> {
@@ -181,6 +181,9 @@ function update(): void {
   if (selectedRal !== '8004' || selectedFinish !== 'matt') {
     hashParts.push(`c=${selectedRal}${selectedFinish === 'matt' ? 'm' : 'f'}`)
   }
+  if (selectedTimber !== DEFAULT_TIMBER) {
+    hashParts.push(`t=${selectedTimber}`)
+  }
   if (devMode) hashParts.push('dev=true')
   history.replaceState(null, '', hashParts.length ? '#' + hashParts.join('&') : location.pathname)
 
@@ -257,7 +260,9 @@ function update(): void {
 
     // Store for modal
     lastTotal = total
+    const timberName = TIMBER_COLORS.find(c => c.id === selectedTimber)!.name
     const opts = [
+      `lazúr: ${timberName}`,
       chkLamberia.checked && 'lambéria',
       chkMembrane.checked && 'alátét héjazat',
       chkRoofing.checked  && `lemez fedés (RAL ${selectedRal}, ${selectedFinish === 'matt' ? 'matt' : 'fényes'})`,
@@ -376,16 +381,84 @@ function selectColor(ral: string, finish: 'matt' | 'shiny'): void {
 colorSwatch.addEventListener('click', (e) => {
   e.stopPropagation()
   colorPickerEl.classList.toggle('open')
+  timberPickerEl.classList.remove('open')
 })
 
 document.addEventListener('click', (e) => {
-  if (!colorPickerEl.contains(e.target as Node) && e.target !== colorSwatch) {
+  const t = e.target as Node
+  if (!colorPickerEl.contains(t) && e.target !== colorSwatch) {
     colorPickerEl.classList.remove('open')
+  }
+  if (!timberPickerEl.contains(t) && e.target !== timberSwatch) {
+    timberPickerEl.classList.remove('open')
   }
 })
 
 // Mark initial selection
 cpGrid.querySelector('.color-dot[data-ral="8004"][data-finish="matt"]')?.classList.add('selected')
+
+// ── Timber color picker ─────────────────────────────────────────────────────
+const TIMBER_COLORS = [
+  { id: '6113', name: 'Natúr fenyő',      hex: 0xD4A44A },
+  { id: '609',  name: 'Tölgy',            hex: 0xC89030 },
+  { id: '610',  name: 'Erdei fenyő',      hex: 0xC88C28 },
+  { id: '6123', name: 'Vörös cseresznye', hex: 0xB06828 },
+  { id: '611',  name: 'Dougles fenyő',    hex: 0xA87830 },
+  { id: '612',  name: 'Teak',             hex: 0x986820 },
+  { id: '6179', name: 'Érett tölgy',      hex: 0x906020 },
+  { id: '616',  name: 'Szőke dió',        hex: 0x886828 },
+  { id: '608',  name: 'Közép dió',        hex: 0x7A5020 },
+  { id: '617',  name: 'Antik dió',        hex: 0x604018 },
+  { id: '618',  name: 'Mahagóni',         hex: 0x6A2818 },
+  { id: '6187', name: 'Vörös mahagóni',   hex: 0x581818 },
+  { id: '619',  name: 'Wenge',            hex: 0x3A2818 },
+  { id: '614',  name: 'Sötétzöld',        hex: 0x384828 },
+]
+
+const DEFAULT_TIMBER = '608'
+let selectedTimber = DEFAULT_TIMBER
+
+const timberSwatch = document.getElementById('timber-swatch') as HTMLButtonElement
+const timberPickerEl = document.getElementById('timber-picker')!
+
+const tpGrid = document.createElement('div')
+tpGrid.className = 'color-picker-grid'
+tpGrid.style.gridTemplateColumns = 'repeat(7, 24px)'
+
+for (const c of TIMBER_COLORS) {
+  const dot = document.createElement('button')
+  dot.type = 'button'
+  dot.className = 'color-dot'
+  dot.style.backgroundColor = hexStr(c.hex)
+  dot.title = `XGT-${c.id} — ${c.name}`
+  dot.dataset.timber = c.id
+  dot.addEventListener('click', () => selectTimber(c.id))
+  tpGrid.appendChild(dot)
+}
+timberPickerEl.appendChild(tpGrid)
+
+function selectTimber(id: string): void {
+  selectedTimber = id
+  const color = TIMBER_COLORS.find(c => c.id === id)!
+  setTimberColor(color.hex)
+  timberSwatch.style.backgroundColor = hexStr(color.hex)
+
+  tpGrid.querySelectorAll('.color-dot').forEach(d => d.classList.remove('selected'))
+  tpGrid.querySelector(`.color-dot[data-timber="${id}"]`)?.classList.add('selected')
+
+  timberPickerEl.classList.remove('open')
+  update()
+}
+
+timberSwatch.addEventListener('click', (e) => {
+  e.stopPropagation()
+  timberPickerEl.classList.toggle('open')
+  // Close metal picker if open
+  colorPickerEl.classList.remove('open')
+})
+
+// Set initial timber color + selection
+selectTimber(DEFAULT_TIMBER)
 
 // ── Quote modal ─────────────────────────────────────────────────────────────
 function openModal(): void {
@@ -442,7 +515,7 @@ chkLamberia.checked = hashBool('lb', true)
 chkMembrane.checked = hashBool('mb', true)
 chkRoofing.checked  = hashBool('rf', true)
 
-// Restore color from URL
+// Restore colors from URL
 const cParam = hashParams['c']
 if (cParam) {
   const finish = cParam.endsWith('f') ? 'shiny' as const : 'matt' as const
@@ -450,6 +523,10 @@ if (cParam) {
   if (RAL_COLORS.find(c => c.ral === ral && (finish === 'matt' || c.shiny))) {
     selectColor(ral, finish)
   }
+}
+const tParam = hashParams['t']
+if (tParam && TIMBER_COLORS.find(c => c.id === tParam)) {
+  selectTimber(tParam)
 }
 
 // Auto-open advanced section if any advanced param was customised in the URL
