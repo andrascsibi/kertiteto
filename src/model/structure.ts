@@ -227,6 +227,8 @@ export interface StructureMetrics {
   roofSurface: number
   /** Total footprint including overhangs (m²) */
   totalFootprint: number
+  /** Number of pillars (for ground screws, foundations) */
+  pillarCount: number
 }
 
 export function computeMetrics(model: StructureModel): StructureMetrics {
@@ -273,7 +275,7 @@ export function computeMetrics(model: StructureModel): StructureMetrics {
   const { width, length, eavesOverhang, gableOverhang } = model.params
   const totalFootprint = (width + 2 * eavesOverhang) * (length + 2 * gableOverhang)
 
-  return { timberVolume, timberSurface, roofSurface, totalFootprint }
+  return { timberVolume, timberSurface, roofSurface, totalFootprint, pillarCount: model.pillars.length }
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────

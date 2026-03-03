@@ -104,6 +104,9 @@ const PRICE_ITEMS: { id: string, qty: (m: StructureMetrics) => number }[] = [
   { id: 'lazur',           qty: m => m.timberSurface },
   { id: 'feluletkezeles',  qty: m => m.timberSurface },
   { id: 'szereles',       qty: m => m.timberVolume  },
+  { id: 'szallitas',      qty: () => 1 },
+  { id: 'talajcsavar',    qty: m => m.pillarCount },
+  { id: 'alapozas',       qty: m => m.pillarCount },
 ]
 
 function computePriceBreakdown(prices: PriceTable, metrics: StructureMetrics): { items: PriceLineItem[], total: number } {
@@ -200,6 +203,8 @@ function update(): void {
     { chk: chkLamberia, costEl: costLamberia, items: [
       { key: 'lamberia', qty: m.roofSurface },
       { key: 'lamberiazas', qty: m.roofSurface },
+      { key: 'lazur', qty: m.roofSurface * 1.5, label: 'lamberia lazur', category: 'anyag' as const },
+      { key: 'feluletkezeles', qty: m.roofSurface * 1.5, label: 'lamberia lazurozas', category: 'muhely' as const },
     ]},
     { chk: chkMembrane, costEl: costMembrane, items: [
       { key: 'folia', qty: m.roofSurface },
@@ -221,14 +226,14 @@ function update(): void {
   for (const { chk, costEl, items } of ROOFING_OPTIONS) {
     let cost = 0
     let hasAny = false
-    for (const { key, qty } of items) {
-      const entry = prices?.[key]
+    for (const item of items) {
+      const entry = prices?.[item.key]
       if (!entry) continue
       hasAny = true
-      const subtotal = entry.price * qty
+      const subtotal = entry.price * item.qty
       cost += subtotal
       if (chk.checked) {
-        optionItems.push({ label: key, unitPrice: entry.price, unit: entry.unit, quantity: qty, subtotal, category: entry.category })
+        optionItems.push({ label: item.label ?? item.key, unitPrice: entry.price, unit: entry.unit, quantity: item.qty, subtotal, category: item.category ?? entry.category })
       }
     }
     if (!hasAny) { costEl.textContent = ''; continue }
