@@ -311,7 +311,7 @@ for (const chk of [chkLamberia, chkMembrane, chkRoofing]) {
 // ── Color picker ────────────────────────────────────────────────────────────
 const RAL_COLORS = [
   { ral: '8004', name: 'Téglavörös',   hex: 0xCC6E52, shiny: true },
-  { ral: '8017', name: 'Csokibarna',   hex: 0x6B4A3A, shiny: true },
+  { ral: '8017', name: 'Csokibarna',   hex: 0x8B6350, shiny: true },
   { ral: '7016', name: 'Antracit',     hex: 0x525A60, shiny: true },
   { ral: '3009', name: 'Bordó',        hex: 0x8B4538, shiny: true },
   { ral: '6020', name: 'Mohazöld',     hex: 0x4F5F40, shiny: false },
