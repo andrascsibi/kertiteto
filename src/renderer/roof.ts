@@ -100,9 +100,17 @@ export function setMetalAppearance(color: number, roughness: number): void {
   flash.roughness = roughness
 }
 
+const TIMBER_KEYS = ['pillar', 'purlin', 'rafter', 'lamberia'] as const
+const TIMBER_LIGHTEN_STEP = 0.03
+
 export function setTimberColor(color: number): void {
-  for (const key of ['pillar', 'purlin', 'rafter', 'lamberia'] as const) {
-    ;(MAT[key] as THREE.MeshLambertMaterial).color.setHex(color)
+  const base = new THREE.Color(color)
+  const hsl = { h: 0, s: 0, l: 0 }
+  base.getHSL(hsl)
+  for (let i = 0; i < TIMBER_KEYS.length; i++) {
+    const c = new THREE.Color()
+    c.setHSL(hsl.h, hsl.s, Math.min(1, hsl.l + (i%2) * TIMBER_LIGHTEN_STEP))
+    ;(MAT[TIMBER_KEYS[i]] as THREE.MeshLambertMaterial).color.copy(c)
   }
 }
 
