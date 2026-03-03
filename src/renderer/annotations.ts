@@ -6,7 +6,8 @@ import * as THREE from 'three'
 import type { StructureModel } from '../model/types'
 
 const ANNOTATION_Y = 0.004   // just above grid (0.002)
-const OFFSET = 0.5           // distance from building edge (past overhang)
+const OFFSET_INNER = 0.5     // inner dims: distance from overhang edge
+const OFFSET_OUTER = 1.0     // outer dims: further out past inner
 const TICK_LENGTH = 0.15     // perpendicular end-tick half-length
 const LINE_COLOR = 0xffffff
 
@@ -18,7 +19,7 @@ function makeLabel(text: string): THREE.Sprite | null {
   const ctx = canvas.getContext('2d')!
 
   // Text
-  ctx.font = '700 48px system-ui, -apple-system, sans-serif'
+  ctx.font = '700 52px system-ui, -apple-system, sans-serif'
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
   ctx.fillStyle = '#aaaaaa'
@@ -78,22 +79,43 @@ export function buildAnnotations(model: StructureModel): THREE.Group {
   const group = new THREE.Group()
   const { width, length, eavesOverhang, gableOverhang } = model.params
 
-  // Width annotation — along Z axis, placed in front of building (positive X)
-  const wx = length / 2 + gableOverhang + OFFSET
+  const totalWidth = width + 2 * eavesOverhang
+  const totalLength = length + 2 * gableOverhang
+
+  // Inner: pillar-to-pillar width — along Z, in front of building
+  const iwx = length / 2 + gableOverhang + OFFSET_INNER
   group.add(buildDimension(
-    new THREE.Vector3(wx, ANNOTATION_Y, -width / 2),
-    new THREE.Vector3(wx, ANNOTATION_Y, width / 2),
-    new THREE.Vector3(1, 0, 0),  // ticks run along X
+    new THREE.Vector3(iwx, ANNOTATION_Y, -width / 2),
+    new THREE.Vector3(iwx, ANNOTATION_Y, width / 2),
+    new THREE.Vector3(1, 0, 0),
     `${width.toFixed(1)} m`,
   ))
 
-  // Length annotation — along X axis, placed to the side of building (positive Z)
-  const lz = width / 2 + eavesOverhang + OFFSET
+  // Inner: pillar-to-pillar length — along X, to the side of building
+  const ilz = width / 2 + eavesOverhang + OFFSET_INNER
   group.add(buildDimension(
-    new THREE.Vector3(-length / 2, ANNOTATION_Y, lz),
-    new THREE.Vector3(length / 2, ANNOTATION_Y, lz),
-    new THREE.Vector3(0, 0, 1),  // ticks run along Z
+    new THREE.Vector3(-length / 2, ANNOTATION_Y, ilz),
+    new THREE.Vector3(length / 2, ANNOTATION_Y, ilz),
+    new THREE.Vector3(0, 0, 1),
     `${length.toFixed(1)} m`,
+  ))
+
+  // Outer: total width (with eaves overhangs) — further out
+  const owx = length / 2 + gableOverhang + OFFSET_OUTER
+  group.add(buildDimension(
+    new THREE.Vector3(owx, ANNOTATION_Y, -totalWidth / 2),
+    new THREE.Vector3(owx, ANNOTATION_Y, totalWidth / 2),
+    new THREE.Vector3(1, 0, 0),
+    `${totalWidth.toFixed(1)} m`,
+  ))
+
+  // Outer: total length (with gable overhangs) — further out
+  const olz = width / 2 + eavesOverhang + OFFSET_OUTER
+  group.add(buildDimension(
+    new THREE.Vector3(-totalLength / 2, ANNOTATION_Y, olz),
+    new THREE.Vector3(totalLength / 2, ANNOTATION_Y, olz),
+    new THREE.Vector3(0, 0, 1),
+    `${totalLength.toFixed(1)} m`,
   ))
 
   return group
