@@ -390,6 +390,15 @@
         pointer-events: none;
         font-family: ui-monospace, 'SF Mono', monospace;
       }
+      #debug table {
+        border-collapse: collapse;
+        margin-top: 0.4rem;
+        width: 100%;
+      }
+      #debug td { padding: 0.1rem 0.4rem 0.1rem 0; white-space: nowrap; }
+      #debug td.r { text-align: right; }
+      #debug tr.sep td { border-top: 1px solid rgba(255,255,255,0.2); padding-top: 0.3rem; }
+      #debug tr.total td { font-weight: 700; color: #fff; }
 
       /* ── Responsive: mobile (≤768px) ──────────────────────────────────── */
       @media (max-width: 768px) {

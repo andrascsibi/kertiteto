@@ -266,22 +266,23 @@ function update(): void {
     // Debug: line item breakdown
     if (devMode) {
       const allItems = [...items, ...optionItems]
-      const lines = allItems.map(i => {
+      const rows = allItems.map(i => {
         const emoji = CATEGORY_EMOJI[i.category] ?? '❓'
-        return `${emoji} ${i.label}: ${i.quantity.toFixed(2)} ${i.unit} × ${formatHUF(i.unitPrice)} = ${formatHUF(i.subtotal)}`
-      }).join('<br>')
+        return `<tr><td>${emoji}</td><td>${i.label}</td><td class="r">${i.quantity.toFixed(2)} ${i.unit}</td><td class="r">${formatHUF(i.unitPrice)}</td><td class="r">${formatHUF(i.subtotal)}</td></tr>`
+      }).join('')
+      const catRows = Object.entries(CATEGORY_EMOJI).map(([cat, emoji]) => {
+        const sum = allItems.filter(i => i.category === cat).reduce((s, i) => s + i.subtotal, 0)
+        return `<tr><td>${emoji}</td><td colspan="3">${cat}</td><td class="r">${formatHUF(sum)}</td></tr>`
+      }).join('')
       debug.innerHTML =
-        `szaruhossz: ${model.rafters[0].length.toFixed(2)} m<br>` +
-        `faanyag: ${m.timberVolume.toFixed(2)} m³<br>` +
-        `fa felület: ${m.timberSurface.toFixed(1)} m²<br>` +
-        `héj felület: ${m.roofSurface.toFixed(1)} m²<br>` +
-        `alapterület: ${m.totalFootprint.toFixed(1)} m²<br>` +
-        `<br>${lines}<br>` +
-        Object.entries(CATEGORY_EMOJI).map(([cat, emoji]) => {
-          const sum = allItems.filter(i => i.category === cat).reduce((s, i) => s + i.subtotal, 0)
-          return `${emoji} ${cat}: ${formatHUF(sum)}`
-        }).join('<br>') +
-        `<br>összesen: ${formatHUF(total)}`
+        `szaruhossz: ${model.rafters[0].length.toFixed(2)} m · ` +
+        `faanyag: ${m.timberVolume.toFixed(2)} m³ · ` +
+        `fa felület: ${m.timberSurface.toFixed(1)} m² · ` +
+        `<table>${rows}` +
+        `<tr class="sep"><td colspan="5"></td></tr>` +
+        `${catRows}` +
+        `<tr class="total"><td></td><td colspan="3">összesen</td><td class="r">${formatHUF(total)}</td></tr>` +
+        `</table>`
     }
   } else if (devMode) {
     debug.innerHTML =
