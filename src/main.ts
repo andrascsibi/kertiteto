@@ -399,20 +399,20 @@ cpGrid.querySelector('.color-dot[data-ral="8004"][data-finish="matt"]')?.classLi
 
 // ── Timber color picker ─────────────────────────────────────────────────────
 const TIMBER_COLORS = [
-  { id: '6113', name: 'Natúr fenyő',      hex: 0xD4A44A },
-  { id: '609',  name: 'Tölgy',            hex: 0xC89030 },
-  { id: '610',  name: 'Erdei fenyő',      hex: 0xC88C28 },
+  { id: '6113', name: 'Natúr fenyő',      hex: 0xE4BC60 },
+  { id: '609',  name: 'Tölgy',            hex: 0xD4A44A },
+  { id: '610',  name: 'Erdei fenyő',      hex: 0xC89030 },
+  { id: '611',  name: 'Dougles fenyő',    hex: 0xB88820 },
+  { id: '612',  name: 'Teak',             hex: 0xB87030 },
   { id: '6123', name: 'Vörös cseresznye', hex: 0xB06828 },
-  { id: '611',  name: 'Dougles fenyő',    hex: 0xA87830 },
-  { id: '612',  name: 'Teak',             hex: 0x986820 },
-  { id: '6179', name: 'Érett tölgy',      hex: 0x906020 },
-  { id: '616',  name: 'Szőke dió',        hex: 0x886828 },
+  { id: '6179', name: 'Érett tölgy',      hex: 0xA87830 },
+  { id: '616',  name: 'Szőke dió',        hex: 0x906020 },
   { id: '608',  name: 'Közép dió',        hex: 0x7A5020 },
   { id: '617',  name: 'Antik dió',        hex: 0x604018 },
   { id: '618',  name: 'Mahagóni',         hex: 0x6A2818 },
   { id: '6187', name: 'Vörös mahagóni',   hex: 0x581818 },
   { id: '619',  name: 'Wenge',            hex: 0x3A2818 },
-  { id: '614',  name: 'Sötétzöld',        hex: 0x384828 },
+  { id: '614',  name: 'Sötétzöld',        hex: 0x4A5C38 },
 ]
 
 const DEFAULT_TIMBER = '608'
