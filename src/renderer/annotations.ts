@@ -19,7 +19,7 @@ function makeLabel(text: string): THREE.Sprite | null {
   const ctx = canvas.getContext('2d')!
 
   // Text
-  ctx.font = '700 52px system-ui, -apple-system, sans-serif'
+  ctx.font = '700 64px system-ui, -apple-system, sans-serif'
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
   ctx.fillStyle = '#aaaaaa'
