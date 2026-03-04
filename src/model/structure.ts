@@ -279,6 +279,23 @@ export function buildStructure(params: InputParams): StructureModel {
     }
   }
 
+  // ── King braces (center purlin → main rafter, in x=const plane at 45°) ───
+  if (needsCenterPurlin && mainPillarXs.length > 0) {
+    const kingBraceD = (yRafterAtRidge - yPurlinCenter) / (1 + tanPitch)
+    for (const mx of mainPillarXs) {
+      // Left slope
+      kneeBraces.push({
+        start: { x: mx, y: yPurlinCenter, z: 0 },
+        end:   { x: mx, y: yPurlinCenter + kingBraceD, z: -kingBraceD },
+      })
+      // Right slope
+      kneeBraces.push({
+        start: { x: mx, y: yPurlinCenter, z: 0 },
+        end:   { x: mx, y: yPurlinCenter + kingBraceD, z: +kingBraceD },
+      })
+    }
+  }
+
   return {
     params,
     ridgeHeight: H_ridge,

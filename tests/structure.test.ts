@@ -613,16 +613,20 @@ describe('corner knee braces (KONYOKFA)', () => {
     // Corner side: 2×2×3=12, Interior side: 1×2×5=10
     // Ridge pillar: 2×5=10, Mid purlin crossing: 1×4=4
     // King post→ridge: 1 interior × 2 = 2, Center pillar→ridge: 2 corner × 1 = 2
-    expect(m.kneeBraces.length).toBe(40)
+    // King braces (purlin→main rafter): 1 main rafter × 2 sides = 2
+    expect(m.kneeBraces.length).toBe(42)
   })
 
-  it('wide building: all braces have length ≈ KNEE_BRACE_LENGTH or RIDGE_KNEE_BRACE_LENGTH', () => {
+  it('wide building: all braces have length ≈ KNEE_BRACE_LENGTH, RIDGE_KNEE_BRACE_LENGTH, or are king braces at 45°', () => {
     const m = buildStructure({ ...base, width: 5 })
     for (const kb of m.kneeBraces) {
-      const len = dist(kb.start, kb.end)
+      const dx = kb.end.x - kb.start.x, dy = kb.end.y - kb.start.y, dz = kb.end.z - kb.start.z
+      const len = Math.sqrt(dx * dx + dy * dy + dz * dz)
       const isStandard = Math.abs(len - KNEE_BRACE_LENGTH) < 1e-6
       const isRidge = Math.abs(len - RIDGE_KNEE_BRACE_LENGTH) < 1e-6
-      expect(isStandard || isRidge).toBe(true)
+      // King braces: x=const plane, 45° (dy ≈ |dz|), variable length
+      const isKingBrace = Math.abs(dx) < 1e-9 && Math.abs(Math.abs(dy) - Math.abs(dz)) < 1e-6 && len > 0.1
+      expect(isStandard || isRidge || isKingBrace).toBe(true)
     }
   })
 
