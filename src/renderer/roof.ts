@@ -4,7 +4,7 @@
 
 import * as THREE from 'three'
 import type { StructureModel, Pillar, Purlin, TieBeam, Rafter, RidgeTie, KneeBrace } from '../model/types'
-import { PILLAR_SIZE, PURLIN_SIZE, RAFTER_WIDTH, RAFTER_DEPTH, RIDGE_TIE_WIDTH, KNEE_BRACE_SIZE } from '../model/structure'
+import { PILLAR_SIZE, PURLIN_SIZE, RIDGE_TIE_WIDTH, KNEE_BRACE_SIZE } from '../model/structure'
 import { EAVE_PLUMB_HEIGHT } from '../model/geometry'
 import { LAMBERIA_HEIGHT, LAMBERIA_WIDTH, ROOF_BATTEN_DISTANCE, SHEET_THICKNESS, KORC_HEIGHT, KORC_WIDTH, DRIP_EDGE_FLAT_WIDTH, DRIP_EDGE_VISOR_WIDTH, DRIP_EDGE_VISOR_ANGLE, DRIP_EDGE_THICKNESS, EAVES_FLASHING_VISOR_WIDTH, EAVES_FLASHING_ANGLE, EAVES_FLASHING_THICKNESS, GABLE_FLASHING_SKIRT_HEIGHT, GABLE_FLASHING_SKIRT_THICKNESS, GABLE_FLASHING_CAP_HEIGHT, GABLE_FLASHING_CAP_WIDTH, GABLE_FLASHING_VISOR_WIDTH, GABLE_FLASHING_VISOR_ANGLE, RIDGE_FLASHING_WIDTH, RIDGE_FLASHING_GAP, RIDGE_FLASHING_THICKNESS, RIDGE_CAP_HEIGHT, RIDGE_CAP_GAP, RIDGE_CAP_WIDTH, RIDGE_CAP_X_EXTRA } from '../model/roofing'
 import type { RoofingModel } from '../model/roofing'
@@ -232,8 +232,8 @@ function rafterMesh(r: Rafter, pitchDeg: number): THREE.Mesh {
   const tanP = Math.tan(pitchDeg * DEG)
   const isLeft = r.eaveEnd.z < 0
 
-  const rw = RAFTER_WIDTH  // 0.075 m
-  const rd = RAFTER_DEPTH  // 0.15  m
+  const rw = r.width
+  const rd = r.depth
   const x  = r.eaveEnd.x  // same for both ends
 
   // ── Eave end ──────────────────────────────────────────────────────────────
@@ -423,7 +423,7 @@ function buildLamberiaMeshes(model: StructureModel): THREE.Mesh[] {
 
     const refRafter = isLeft ? refLeft : model.rafters.find(r => r.eaveEnd.z > 0)!
     const eaveZ = refRafter.eaveEnd.z
-    const eaveY = refRafter.eaveEnd.y + RAFTER_DEPTH / (2 * cosP)
+    const eaveY = refRafter.eaveEnd.y + refRafter.depth / (2 * cosP)
 
     for (let i = 0; i < planksPerSlope; i++) {
       const isLast = i === planksPerSlope - 1
@@ -534,7 +534,7 @@ function buildMembraneMeshes(model: StructureModel, hasLamberia: boolean): THREE
 
     const refRafter = isLeft ? refLeft : model.rafters.find(r => r.eaveEnd.z > 0)!
     const eaveZ = refRafter.eaveEnd.z
-    const eaveY = refRafter.eaveEnd.y + RAFTER_DEPTH / (2 * cosP)
+    const eaveY = refRafter.eaveEnd.y + refRafter.depth / (2 * cosP)
 
     // Bottom surface of membrane (= top of lamberia or rafter surface + baseOffset)
     const bnY = cosP * baseOffset  // normal offset Y component
@@ -638,7 +638,7 @@ function buildCounterBattenMeshes(model: StructureModel, hasLamberia: boolean): 
     const sign = isLeft ? 1 : -1
 
     // Rafter top surface Y at eave
-    const eaveTopY = rafter.eaveEnd.y + RAFTER_DEPTH / (2 * cosP)
+    const eaveTopY = rafter.eaveEnd.y + rafter.depth / (2 * cosP)
     const eaveZ = rafter.eaveEnd.z
 
     // Counter batten center along slope (from eave end)
@@ -714,7 +714,7 @@ function buildRoofBattenMeshes(model: StructureModel, hasLamberia: boolean, hasM
     const sign = isLeft ? 1 : -1
 
     const refRafter = isLeft ? model.rafters[0] : model.rafters.find(r => r.eaveEnd.z > 0)!
-    const eaveTopY = refRafter.eaveEnd.y + RAFTER_DEPTH / (2 * cosP)
+    const eaveTopY = refRafter.eaveEnd.y + refRafter.depth / (2 * cosP)
     const eaveZ = refRafter.eaveEnd.z
 
     // Compute orientation once per slope (same basis as counter battens)
@@ -784,7 +784,7 @@ function buildMetalSheetMeshes(
     const sign = isLeft ? 1 : -1
 
     const refRafter = isLeft ? model.rafters[0] : model.rafters.find(r => r.eaveEnd.z > 0)!
-    const eaveTopY = refRafter.eaveEnd.y + RAFTER_DEPTH / (2 * cosP)
+    const eaveTopY = refRafter.eaveEnd.y + refRafter.depth / (2 * cosP)
     const eaveZ = refRafter.eaveEnd.z
 
     // Slope orientation (same basis as battens)
@@ -867,7 +867,7 @@ function buildDripEdgeMeshes(
     const sign = isLeft ? 1 : -1
 
     const refRafter = isLeft ? model.rafters[0] : model.rafters.find(r => r.eaveEnd.z > 0)!
-    const eaveTopY = refRafter.eaveEnd.y + RAFTER_DEPTH / (2 * cosP)
+    const eaveTopY = refRafter.eaveEnd.y + refRafter.depth / (2 * cosP)
     const eaveZ = refRafter.eaveEnd.z
 
     // ── Flat part ─────────────────────────────────────────────────────────
@@ -1035,7 +1035,7 @@ function buildEavesFlashingMeshes(
     const sign = isLeft ? 1 : -1
 
     const refRafter = isLeft ? model.rafters[0] : model.rafters.find(r => r.eaveEnd.z > 0)!
-    const eaveTopY = refRafter.eaveEnd.y + RAFTER_DEPTH / (2 * cosP)
+    const eaveTopY = refRafter.eaveEnd.y + refRafter.depth / (2 * cosP)
     const eaveZ = refRafter.eaveEnd.z
 
     // Top outer edge of the first roof batten = eave position + layerOffset along normal
@@ -1155,7 +1155,7 @@ function buildGableFlashingMeshes(
       const sign = isLeft ? 1 : -1
 
       const refRafter = isLeft ? model.rafters[0] : model.rafters.find(r => r.eaveEnd.z > 0)!
-      const eaveTopY = refRafter.eaveEnd.y + RAFTER_DEPTH / (2 * cosP)
+      const eaveTopY = refRafter.eaveEnd.y + refRafter.depth / (2 * cosP)
       const eaveZ = refRafter.eaveEnd.z
 
       // Slope orientation
@@ -1344,7 +1344,7 @@ function buildRidgeFlashingMeshes(
     const sign = isLeft ? 1 : -1
 
     const refRafter = isLeft ? model.rafters[0] : model.rafters.find(r => r.eaveEnd.z > 0)!
-    const eaveTopY = refRafter.eaveEnd.y + RAFTER_DEPTH / (2 * cosP)
+    const eaveTopY = refRafter.eaveEnd.y + refRafter.depth / (2 * cosP)
     const eaveZ = refRafter.eaveEnd.z
 
     // Slope orientation
@@ -1434,7 +1434,7 @@ function buildBugGuardMeshes(
     const sign = isLeft ? 1 : -1
 
     const refRafter = isLeft ? model.rafters[0] : model.rafters.find(r => r.eaveEnd.z > 0)!
-    const eaveTopY = refRafter.eaveEnd.y + RAFTER_DEPTH / (2 * cosP)
+    const eaveTopY = refRafter.eaveEnd.y + refRafter.depth / (2 * cosP)
     const eaveZ = refRafter.eaveEnd.z
 
     // Slope orientation

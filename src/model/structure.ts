@@ -39,6 +39,7 @@ import {
   birdMouthAtRidgePurlin,
   MAX_RAFTER_SPACING,
   MAX_UNSUPPORTED_TIE_BEAM_SPAN,
+  LONG_RAFTER_LENGTH,
   BIRD_MOUTH_PLUMB_HEIGHT,
 } from './geometry'
 
@@ -46,8 +47,9 @@ import {
 export const PILLAR_SIZE  = 0.15   // 15×15 cm
 export const PURLIN_SIZE  = 0.15   // 15×15 cm (TALP SZELEMEN)
 export const RIDGE_SIZE   = 0.10   // 10×10 cm (GERINC SZELEMEN)
-export const RAFTER_WIDTH = 0.075  // 7.5 cm
-export const RAFTER_DEPTH = 0.15   // 15 cm (the tall dimension, perpendicular to rafter axis)
+export const RAFTER_WIDTH = 0.075       // 7.5 cm (default)
+export const RAFTER_WIDTH_LONG = 0.10   // 10 cm (for long rafter spans)
+export const RAFTER_DEPTH = 0.15        // 15 cm (the tall dimension, perpendicular to rafter axis)
 
 export const RIDGE_TIE_NOTCH = 0.05 // overlap with ridge purlin (m)
 export const RIDGE_TIE_WIDTH = 0.05 // 5 cm (along ridge direction)
@@ -136,8 +138,10 @@ export function buildStructure(params: InputParams): StructureModel {
   // Gable rafters are flush with the purlin ends.
   // Regular (fill) rafters are evenly spaced within each segment, respecting MAX_RAFTER_SPACING.
   const purlinLength = length + 2 * gableOverhang
-  const xGableLeft   = xMin + RAFTER_WIDTH / 2
-  const xGableRight  = xMax - RAFTER_WIDTH / 2
+  const rafterSpan = rafterLength(width, pitch, 0)
+  const rw = rafterSpan > LONG_RAFTER_LENGTH ? RAFTER_WIDTH_LONG : RAFTER_WIDTH
+  const xGableLeft   = xMin + rw / 2
+  const xGableRight  = xMax - rw / 2
 
   // Which pillar positions become main rafter anchors
   const mainPillarXs = pillarXPositions.length >= 4 ? pillarXPositions : pillarXPositions.slice(1, -1)
@@ -199,6 +203,8 @@ export function buildStructure(params: InputParams): StructureModel {
       birdMouthBase:  { ...bmBase,  distanceFromEave: dBase  },
       birdMouthRidge: { ...bmRidge, distanceFromEave: dRidge },
       length: rLength,
+      width: rw,
+      depth: RAFTER_DEPTH,
       type: rp.type,
     })
 
@@ -208,6 +214,8 @@ export function buildStructure(params: InputParams): StructureModel {
       birdMouthBase:  { ...bmBase,  distanceFromEave: dBase  },
       birdMouthRidge: { ...bmRidge, distanceFromEave: dRidge },
       length: rLength,
+      width: rw,
+      depth: RAFTER_DEPTH,
       type: rp.type,
     })
   }
@@ -221,7 +229,7 @@ export function buildStructure(params: InputParams): StructureModel {
   const yRafterTop      = yRafterAtRidge + RAFTER_DEPTH / (2 * cosPitch)
   const zHalfTop        = (yRafterTop - yRidgeTieTop) / tanPitch
   const zHalfBottom     = zHalfTop + RIDGE_TIE_DEPTH / tanPitch
-  const xOffset         = RAFTER_WIDTH / 2 + RIDGE_TIE_WIDTH / 2
+  const xOffset         = rw / 2 + RIDGE_TIE_WIDTH / 2
 
   const nRafters = rafterPositions.length
   const ridgeTies: RidgeTie[] = []
@@ -339,7 +347,8 @@ export function computeMetrics(model: StructureModel): StructureMetrics {
   const basePurVol  = model.basePurlins.length * PURLIN_SIZE * PURLIN_SIZE * purlinLength
   const ridgePurVol = RIDGE_SIZE * RIDGE_SIZE * purlinLength
   const tieBeamVol  = model.tieBeams.length * PURLIN_SIZE * PURLIN_SIZE * tieBeamLength
-  const rafterVol   = model.rafters.length * RAFTER_WIDTH * RAFTER_DEPTH * Math.ceil(rafterLen + RAFTER_DEPTH * tanPitch)
+  const rafterVol   = model.rafters.reduce((sum, r) =>
+    sum + r.width * r.depth * Math.ceil(rafterLen + r.depth * tanPitch), 0)
   // Ridge tie: trapezoid area × width but assume box geometry because of waste during cutting
   const ridgeTieVol = model.ridgeTies.length > 0
     ? model.ridgeTies.length * 2 * model.ridgeTies[0].zHalfBottom * RIDGE_TIE_DEPTH * RIDGE_TIE_WIDTH
@@ -356,7 +365,8 @@ export function computeMetrics(model: StructureModel): StructureMetrics {
   const basePurSurf  = model.basePurlins.length * purlinLength * 2 * (PURLIN_SIZE + PURLIN_SIZE)
   const ridgePurSurf = purlinLength * 2 * (RIDGE_SIZE + RIDGE_SIZE)
   const tieBeamSurf  = model.tieBeams.length * tieBeamLength * 2 * (PURLIN_SIZE + PURLIN_SIZE)
-  const rafterSurf   = model.rafters.length * rafterLen * (2 * RAFTER_WIDTH + 2 * RAFTER_DEPTH)
+  const rafterSurf   = model.rafters.reduce((sum, r) =>
+    sum + rafterLen * (2 * r.width + 2 * r.depth), 0)
   // Ridge tie surface: top + bottom + 2 sloped sides (ignoring ends)
   const cosPitch = Math.cos(model.params.pitch * Math.PI / 180)
   const ridgeTieSurf = model.ridgeTies.length > 0

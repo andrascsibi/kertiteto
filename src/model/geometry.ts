@@ -22,6 +22,9 @@ export const MAX_UNSUPPORTED_SPAN = 3.5
 /** Maximum unsupported tie beam span (cross-sectional) before requiring center pillars (m) */
 export const MAX_UNSUPPORTED_TIE_BEAM_SPAN = 4.0
 
+/** Rafter span threshold for switching from 7.5×15 to 10×15 cm cross-section (m) */
+export const LONG_RAFTER_LENGTH = 3.0
+
 /** Maximum rafter length (excluding eaves overhang) before structure becomes impractical (m) */
 export const MAX_RAFTER_LENGTH = 4.0
 

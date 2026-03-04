@@ -62,6 +62,10 @@ export interface Rafter {
   birdMouthRidge: BirdMouth
   /** Length along slope (m) */
   length: number
+  /** Cross-section width (m) — along ridge direction */
+  width: number
+  /** Cross-section depth (m) — perpendicular to rafter axis */
+  depth: number
   /** Rafter classification: gable (at purlin ends), main (above pillars), regular (fill) */
   type: RafterType
 }
