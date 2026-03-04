@@ -4,7 +4,7 @@
 
 import * as THREE from 'three'
 import type { StructureModel, Pillar, Purlin, TieBeam, Rafter, RidgeTie, KneeBrace } from '../model/types'
-import { PILLAR_SIZE, PURLIN_SIZE, RIDGE_TIE_WIDTH, KNEE_BRACE_SIZE } from '../model/structure'
+import { PILLAR_SIZE, PURLIN_SIZE, RIDGE_TIE_WIDTH, KNEE_BRACE_WIDTH, KNEE_BRACE_DEPTH } from '../model/structure'
 import { EAVE_PLUMB_HEIGHT } from '../model/geometry'
 import { LAMBERIA_HEIGHT, LAMBERIA_WIDTH, ROOF_BATTEN_DISTANCE, SHEET_THICKNESS, KORC_HEIGHT, KORC_WIDTH, DRIP_EDGE_FLAT_WIDTH, DRIP_EDGE_VISOR_WIDTH, DRIP_EDGE_VISOR_ANGLE, DRIP_EDGE_THICKNESS, EAVES_FLASHING_VISOR_WIDTH, EAVES_FLASHING_ANGLE, EAVES_FLASHING_THICKNESS, GABLE_FLASHING_SKIRT_HEIGHT, GABLE_FLASHING_SKIRT_THICKNESS, GABLE_FLASHING_CAP_HEIGHT, GABLE_FLASHING_CAP_WIDTH, GABLE_FLASHING_VISOR_WIDTH, GABLE_FLASHING_VISOR_ANGLE, RIDGE_FLASHING_WIDTH, RIDGE_FLASHING_GAP, RIDGE_FLASHING_THICKNESS, RIDGE_CAP_HEIGHT, RIDGE_CAP_GAP, RIDGE_CAP_WIDTH, RIDGE_CAP_X_EXTRA } from '../model/roofing'
 import type { RoofingModel } from '../model/roofing'
@@ -349,7 +349,10 @@ function ridgeTieMesh(rt: RidgeTie): THREE.Mesh {
 function kneeBraceMesh(kb: KneeBrace): THREE.Mesh {
   const dx = kb.end.x - kb.start.x, dy = kb.end.y - kb.start.y, dz = kb.end.z - kb.start.z
   const braceLen = Math.sqrt(dx * dx + dy * dy + dz * dz)
-  const geo = new THREE.BoxGeometry(KNEE_BRACE_SIZE, KNEE_BRACE_SIZE, braceLen)
+  const isHorizontal = Math.abs(dy) < 0.001
+  const geo = isHorizontal
+    ? new THREE.BoxGeometry(KNEE_BRACE_DEPTH, KNEE_BRACE_WIDTH, braceLen)
+    : new THREE.BoxGeometry(KNEE_BRACE_WIDTH, KNEE_BRACE_DEPTH, braceLen)
   const mesh = new THREE.Mesh(geo, MAT.pillar)
 
   // Position at midpoint

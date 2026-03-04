@@ -55,7 +55,8 @@ export const RIDGE_TIE_NOTCH = 0.05 // overlap with ridge purlin (m)
 export const RIDGE_TIE_WIDTH = 0.05 // 5 cm (along ridge direction)
 export const RIDGE_TIE_DEPTH = 0.15 // 15 cm (vertical extent)
 
-export const KNEE_BRACE_SIZE   = 0.1  // 10×10 cm cross-section
+export const KNEE_BRACE_WIDTH  = 0.075 // 7.5 cm (along ridge / along purlin)
+export const KNEE_BRACE_DEPTH  = 0.15  // 15 cm (the tall dimension)
 export const KNEE_BRACE_LENGTH = 1.0   // 1 m along diagonal
 export const RIDGE_KNEE_BRACE_LENGTH = 0.8  // shorter braces at ridge to clear ridge ties
 
@@ -355,7 +356,7 @@ export function computeMetrics(model: StructureModel): StructureMetrics {
     : 0
   const kneeBraceVol = model.kneeBraces.reduce((sum, kb) => {
     const dx = kb.end.x - kb.start.x, dy = kb.end.y - kb.start.y, dz = kb.end.z - kb.start.z
-    return sum + KNEE_BRACE_SIZE * KNEE_BRACE_SIZE * Math.sqrt(dx * dx + dy * dy + dz * dz)
+    return sum + KNEE_BRACE_WIDTH * KNEE_BRACE_DEPTH * Math.sqrt(dx * dx + dy * dy + dz * dz)
   }, 0)
   const kingPostVol = model.kingPosts.reduce((sum, kp) => sum + PILLAR_SIZE * PILLAR_SIZE * kp.height, 0)
   const timberVolume = pillarVol + basePurVol + ridgePurVol + tieBeamVol + rafterVol + ridgeTieVol + kneeBraceVol + kingPostVol
@@ -378,7 +379,7 @@ export function computeMetrics(model: StructureModel): StructureMetrics {
     : 0
   const kneeBraceSurf = model.kneeBraces.reduce((sum, kb) => {
     const dx = kb.end.x - kb.start.x, dy = kb.end.y - kb.start.y, dz = kb.end.z - kb.start.z
-    return sum + Math.sqrt(dx * dx + dy * dy + dz * dz) * (4 * KNEE_BRACE_SIZE)
+    return sum + Math.sqrt(dx * dx + dy * dy + dz * dz) * (2 * (KNEE_BRACE_WIDTH + KNEE_BRACE_DEPTH))
   }, 0)
   const kingPostSurf = model.kingPosts.reduce((sum, kp) => sum + kp.height * (4 * PILLAR_SIZE), 0)
   const timberSurface = pillarSurf + basePurSurf + ridgePurSurf + tieBeamSurf + rafterSurf + ridgeTieSurf + kneeBraceSurf + kingPostSurf
