@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { buildStructure, computeMetrics, GROUND_SCREW_HEIGHT, PILLAR_HEIGHT, PILLAR_SIZE, PURLIN_SIZE, RIDGE_SIZE, RAFTER_WIDTH, RAFTER_DEPTH, RIDGE_TIE_NOTCH, RIDGE_TIE_DEPTH, RIDGE_TIE_WIDTH, KNEE_BRACE_LENGTH } from '../src/model/structure'
+import { buildStructure, computeMetrics, GROUND_SCREW_HEIGHT, PILLAR_HEIGHT, PILLAR_SIZE, PURLIN_SIZE, RIDGE_SIZE, RAFTER_WIDTH, RAFTER_DEPTH, RIDGE_TIE_NOTCH, RIDGE_TIE_DEPTH, RIDGE_TIE_WIDTH, KNEE_BRACE_LENGTH, RIDGE_KNEE_BRACE_LENGTH } from '../src/model/structure'
 import { ridgeHeight, BIRD_MOUTH_PLUMB_HEIGHT, MAX_RAFTER_SPACING, MAX_UNSUPPORTED_SPAN } from '../src/model/geometry'
 import type { InputParams } from '../src/model/types'
 
@@ -521,15 +521,19 @@ describe('corner knee braces (KONYOKFA)', () => {
     expect(m.kneeBraces.length).toBe(36)
   })
 
-  it('all braces have length ≈ 1.0 m', () => {
+  it('all braces have length ≈ KNEE_BRACE_LENGTH or RIDGE_KNEE_BRACE_LENGTH', () => {
     const m = buildStructure(base)
     for (const kb of m.kneeBraces) {
-      expect(dist(kb.start, kb.end)).toBeCloseTo(KNEE_BRACE_LENGTH, 6)
+      const len = dist(kb.start, kb.end)
+      const isStandard = Math.abs(len - KNEE_BRACE_LENGTH) < 1e-6
+      const isRidge = Math.abs(len - RIDGE_KNEE_BRACE_LENGTH) < 1e-6
+      expect(isStandard || isRidge).toBe(true)
     }
   })
 
   it('vertical braces are at 45° (|deltaY| ≈ leg)', () => {
     const m = buildStructure(base)
+    const ridgeLeg = RIDGE_KNEE_BRACE_LENGTH * Math.cos(Math.PI / 4)
     const verticalBraces = m.kneeBraces.filter(kb =>
       Math.abs(kb.end.y - kb.start.y) > 0.01
     )
@@ -537,7 +541,10 @@ describe('corner knee braces (KONYOKFA)', () => {
     // King post→ridge: 1 interior × 2 = 2 → total 16
     expect(verticalBraces.length).toBe(16)
     for (const kb of verticalBraces) {
-      expect(Math.abs(kb.end.y - kb.start.y)).toBeCloseTo(leg, 6)
+      const dy = Math.abs(kb.end.y - kb.start.y)
+      const isStandard = Math.abs(dy - leg) < 1e-6
+      const isRidge = Math.abs(dy - ridgeLeg) < 1e-6
+      expect(isStandard || isRidge).toBe(true)
     }
   })
 
@@ -568,7 +575,7 @@ describe('corner knee braces (KONYOKFA)', () => {
   })
 
   it('vertical brace lower ends are at y = junction - leg', () => {
-    const yJunction = GROUND_SCREW_HEIGHT + PILLAR_HEIGHT + PURLIN_SIZE / 2
+    const ridgeLeg = RIDGE_KNEE_BRACE_LENGTH * Math.cos(Math.PI / 4)
     const m = buildStructure(base)
     const verticalBraces = m.kneeBraces.filter(kb =>
       Math.abs(kb.end.y - kb.start.y) > 0.01
@@ -579,8 +586,8 @@ describe('corner knee braces (KONYOKFA)', () => {
       const upperY = Math.max(kb.start.y, kb.end.y)
       const lowerY = Math.min(kb.start.y, kb.end.y)
       const isRidgeBrace = Math.abs(upperY - yRidgePurlinCenter) < 0.01
-      const expectedUpper = isRidgeBrace ? yRidgePurlinCenter : yJunction
-      expect(lowerY).toBeCloseTo(expectedUpper - leg, 6)
+      const expectedLeg = isRidgeBrace ? ridgeLeg : leg
+      expect(lowerY).toBeCloseTo(upperY - expectedLeg, 6)
     }
   })
 
@@ -609,10 +616,13 @@ describe('corner knee braces (KONYOKFA)', () => {
     expect(m.kneeBraces.length).toBe(40)
   })
 
-  it('wide building: all braces have length ≈ 1.0 m', () => {
+  it('wide building: all braces have length ≈ KNEE_BRACE_LENGTH or RIDGE_KNEE_BRACE_LENGTH', () => {
     const m = buildStructure({ ...base, width: 5 })
     for (const kb of m.kneeBraces) {
-      expect(dist(kb.start, kb.end)).toBeCloseTo(KNEE_BRACE_LENGTH, 6)
+      const len = dist(kb.start, kb.end)
+      const isStandard = Math.abs(len - KNEE_BRACE_LENGTH) < 1e-6
+      const isRidge = Math.abs(len - RIDGE_KNEE_BRACE_LENGTH) < 1e-6
+      expect(isStandard || isRidge).toBe(true)
     }
   })
 

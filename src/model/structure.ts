@@ -55,6 +55,7 @@ export const RIDGE_TIE_DEPTH = 0.15 // 15 cm (vertical extent)
 
 export const KNEE_BRACE_SIZE   = 0.1  // 10×10 cm cross-section
 export const KNEE_BRACE_LENGTH = 1.0   // 1 m along diagonal
+export const RIDGE_KNEE_BRACE_LENGTH = 0.8  // shorter braces at ridge to clear ridge ties
 
 export const GROUND_SCREW_HEIGHT = 0.05 // m — elevation above ground for ground screws
 export const PILLAR_HEIGHT = 2.2   // m (fixed)
@@ -251,7 +252,7 @@ export function buildStructure(params: InputParams): StructureModel {
   const kneeBraces = buildKneeBraces(pillarXPositions, width, needsCenterPurlin)
 
   // ── King post / center pillar → ridge purlin knee braces ────────────────────
-  const kpLeg = KNEE_BRACE_LENGTH * Math.cos(Math.PI / 4)
+  const kpLeg = RIDGE_KNEE_BRACE_LENGTH * Math.cos(Math.PI / 4)
   // Interior king posts: braces in both X directions
   for (const kp of kingPosts) {
     for (const dx of [-1, +1]) {
@@ -323,7 +324,10 @@ export function computeMetrics(model: StructureModel): StructureMetrics {
   const ridgeTieVol = model.ridgeTies.length > 0
     ? model.ridgeTies.length * 2 * model.ridgeTies[0].zHalfBottom * RIDGE_TIE_DEPTH * RIDGE_TIE_WIDTH
     : 0
-  const kneeBraceVol = model.kneeBraces.length * KNEE_BRACE_SIZE * KNEE_BRACE_SIZE * KNEE_BRACE_LENGTH
+  const kneeBraceVol = model.kneeBraces.reduce((sum, kb) => {
+    const dx = kb.end.x - kb.start.x, dy = kb.end.y - kb.start.y, dz = kb.end.z - kb.start.z
+    return sum + KNEE_BRACE_SIZE * KNEE_BRACE_SIZE * Math.sqrt(dx * dx + dy * dy + dz * dz)
+  }, 0)
   const kingPostVol = model.kingPosts.reduce((sum, kp) => sum + PILLAR_SIZE * PILLAR_SIZE * kp.height, 0)
   const timberVolume = pillarVol + basePurVol + ridgePurVol + tieBeamVol + rafterVol + ridgeTieVol + kneeBraceVol + kingPostVol
 
@@ -342,7 +346,10 @@ export function computeMetrics(model: StructureModel): StructureMetrics {
         2 * RIDGE_TIE_DEPTH / cosPitch
       )
     : 0
-  const kneeBraceSurf = model.kneeBraces.length * KNEE_BRACE_LENGTH * (4 * KNEE_BRACE_SIZE)
+  const kneeBraceSurf = model.kneeBraces.reduce((sum, kb) => {
+    const dx = kb.end.x - kb.start.x, dy = kb.end.y - kb.start.y, dz = kb.end.z - kb.start.z
+    return sum + Math.sqrt(dx * dx + dy * dy + dz * dz) * (4 * KNEE_BRACE_SIZE)
+  }, 0)
   const kingPostSurf = model.kingPosts.reduce((sum, kp) => sum + kp.height * (4 * PILLAR_SIZE), 0)
   const timberSurface = pillarSurf + basePurSurf + ridgePurSurf + tieBeamSurf + rafterSurf + ridgeTieSurf + kneeBraceSurf + kingPostSurf
 
