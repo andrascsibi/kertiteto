@@ -672,6 +672,55 @@
         color: #5e3a20;
       }
 
+      /* ── Footer ──────────────────────────────────────────────────────── */
+      .site-footer {
+        background: #2e1f0f;
+        color: #c0b0a0;
+        padding: 2.5rem 2rem;
+        text-align: center;
+        font-size: 0.85rem;
+        line-height: 1.8;
+      }
+      .site-footer .footer-brand {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #fff;
+        margin-bottom: 0.15rem;
+      }
+      .site-footer .footer-tagline {
+        font-size: 0.78rem;
+        color: #9a8878;
+        font-style: italic;
+        margin-bottom: 1rem;
+      }
+      .site-footer a {
+        color: #d4b896;
+        text-decoration: none;
+      }
+      .site-footer a:hover {
+        color: #fff;
+      }
+      .site-footer .footer-cta {
+        display: inline-block;
+        margin: 1.25rem 0;
+        padding: 0.6rem 1.5rem;
+        background: #7a5030;
+        color: #fff;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 0.85rem;
+        text-decoration: none;
+        transition: background 0.15s;
+      }
+      .site-footer .footer-cta:hover {
+        background: #9b6840;
+      }
+      .site-footer .footer-copy {
+        font-size: 0.72rem;
+        color: #7a6a5a;
+        margin-top: 1.25rem;
+      }
+
       /* ── Responsive: mobile (≤768px) ──────────────────────────────────── */
       @media (max-width: 768px) {
         #configurator {
@@ -972,13 +1021,20 @@
         </div>
       </div>
 
-      <p style="text-align:center;margin-top:2.5rem">
-        <a href="#configurator" style="font-size:0.85rem;color:#7a5030;text-decoration:none;font-weight:500"
-           onclick="event.preventDefault();document.getElementById('configurator').scrollIntoView({behavior:'smooth'})">
-          ▴ Vissza a kalkulátorhoz
-        </a>
-      </p>
     </section>
+
+    <footer class="site-footer">
+      <div class="footer-brand">kertiteto.hu</div>
+      <div class="footer-tagline">Kézműves kerti tető, sorozatgyártott áron</div>
+      <a class="footer-cta" href="#configurator"
+         onclick="event.preventDefault();document.getElementById('configurator').scrollIntoView({behavior:'smooth'})">
+        Tervezze meg a tetőjét
+      </a>
+      <div>
+        <a href="mailto:hello@egyacs.com">hello@egyacs.com</a>
+      </div>
+      <div class="footer-copy">&copy; 2026 kertiteto.hu</div>
+    </footer>
 
     <div class="modal-overlay" id="quote-modal">
       <div class="modal">
