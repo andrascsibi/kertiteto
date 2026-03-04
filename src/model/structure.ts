@@ -56,6 +56,7 @@ export const RIDGE_TIE_DEPTH = 0.15 // 15 cm (vertical extent)
 export const KNEE_BRACE_SIZE   = 0.1  // 10×10 cm cross-section
 export const KNEE_BRACE_LENGTH = 1.0   // 1 m along diagonal
 
+export const GROUND_SCREW_HEIGHT = 0.05 // m — elevation above ground for ground screws
 export const PILLAR_HEIGHT = 2.4   // m (fixed)
 
 export const DEFAULTS: InputParams = {
@@ -75,8 +76,8 @@ export function buildStructure(params: InputParams): StructureModel {
   const H_ridge  = ridgeHeight(width, pitch)
 
   // ── Vertical levels ──────────────────────────────────────────────────────────
-  const yPurlinCenter = PILLAR_HEIGHT + PURLIN_SIZE / 2
-  const yBasePurlinTop = PILLAR_HEIGHT + PURLIN_SIZE
+  const yPurlinCenter = GROUND_SCREW_HEIGHT + PILLAR_HEIGHT + PURLIN_SIZE / 2
+  const yBasePurlinTop = GROUND_SCREW_HEIGHT + PILLAR_HEIGHT + PURLIN_SIZE
 
   // Ridge purlin top: bird line (KARMI VONAL) from base seat corner to ridge seat corner
   // has exactly the pitch angle; horizontal run = (width - RIDGE_SIZE) / 2.
@@ -117,7 +118,8 @@ export function buildStructure(params: InputParams): StructureModel {
   const nPillars = pillarCount(length)
   const pillarXPositions = buildPillarXPositions(length, nPillars)
   const yRidgePurlinBottom = yRidgePurlinCenter - RIDGE_SIZE / 2
-  const pillars = buildPillars(width, pillarXPositions, yRidgePurlinBottom)
+  const ridgePillarHeight = yRidgePurlinBottom - GROUND_SCREW_HEIGHT
+  const pillars = buildPillars(width, pillarXPositions, ridgePillarHeight)
 
   // ── Tie beams (KOTOGERENDA) ──────────────────────────────────────────────────
   // One tie beam above every pillar row, connecting the two base purlin centers.
@@ -299,7 +301,7 @@ function makeTieBeam(x: number, y: number, zHalf: number): TieBeam {
 function buildKneeBraces(pillarXPositions: number[], width: number, needsCenterPurlin: boolean): KneeBrace[] {
   const leg = KNEE_BRACE_LENGTH * Math.cos(Math.PI / 4)  // 1/√2 ≈ 0.707
   const zHalf = width / 2 - PILLAR_SIZE / 2  // pillar center z offset
-  const yJ = PILLAR_HEIGHT + PURLIN_SIZE / 2  // purlin/tie beam center level
+  const yJ = GROUND_SCREW_HEIGHT + PILLAR_HEIGHT + PURLIN_SIZE / 2  // purlin/tie beam center level
   const braces: KneeBrace[] = []
 
   const cornerXSet = new Set([pillarXPositions[0], pillarXPositions[pillarXPositions.length - 1]])
@@ -379,11 +381,11 @@ function buildPillars(width: number, xPositions: number[], ridgePillarHeight: nu
   for (let i = 0; i < xPositions.length; i++) {
     const x = xPositions[i]
     for (const z of [-zHalf, +zHalf]) {
-      pillars.push({ base: { x, y: 0, z }, height: PILLAR_HEIGHT })
+      pillars.push({ base: { x, y: GROUND_SCREW_HEIGHT, z }, height: PILLAR_HEIGHT })
     }
     // Ridge pillar at z=0 for corner (end) rows only, extends to ridge purlin bottom
     if (needsCenterPillar && (i === 0 || i === xPositions.length - 1)) {
-      pillars.push({ base: { x, y: 0, z: 0 }, height: ridgePillarHeight })
+      pillars.push({ base: { x, y: GROUND_SCREW_HEIGHT, z: 0 }, height: ridgePillarHeight })
     }
   }
   return pillars

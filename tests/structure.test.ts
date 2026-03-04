@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { buildStructure, computeMetrics, PILLAR_HEIGHT, PILLAR_SIZE, PURLIN_SIZE, RIDGE_SIZE, RAFTER_WIDTH, RAFTER_DEPTH, RIDGE_TIE_NOTCH, RIDGE_TIE_DEPTH, RIDGE_TIE_WIDTH, KNEE_BRACE_LENGTH } from '../src/model/structure'
+import { buildStructure, computeMetrics, GROUND_SCREW_HEIGHT, PILLAR_HEIGHT, PILLAR_SIZE, PURLIN_SIZE, RIDGE_SIZE, RAFTER_WIDTH, RAFTER_DEPTH, RIDGE_TIE_NOTCH, RIDGE_TIE_DEPTH, RIDGE_TIE_WIDTH, KNEE_BRACE_LENGTH } from '../src/model/structure'
 import { ridgeHeight, BIRD_MOUTH_PLUMB_HEIGHT, MAX_RAFTER_SPACING, MAX_UNSUPPORTED_SPAN } from '../src/model/geometry'
 import type { InputParams } from '../src/model/types'
 
@@ -91,10 +91,10 @@ describe('pillars', () => {
     }
   })
 
-  it('all pillars base at y=0 with correct height', () => {
+  it('all pillars base at y=GROUND_SCREW_HEIGHT with correct height', () => {
     const m = buildStructure(base)
     for (const p of m.pillars) {
-      expect(p.base.y).toBe(0)
+      expect(p.base.y).toBe(GROUND_SCREW_HEIGHT)
       expect(p.height).toBe(PILLAR_HEIGHT)
     }
   })
@@ -118,7 +118,7 @@ describe('base purlins', () => {
 
   it('sit on top of pillars: y center = pillarHeight + PURLIN_SIZE/2', () => {
     const m = buildStructure(base)
-    const expectedY = PILLAR_HEIGHT + PURLIN_SIZE / 2
+    const expectedY = GROUND_SCREW_HEIGHT + PILLAR_HEIGHT + PURLIN_SIZE / 2
     expect(m.basePurlins[0].start.y).toBeCloseTo(expectedY, 6)
     expect(m.basePurlins[1].start.y).toBeCloseTo(expectedY, 6)
   })
@@ -139,7 +139,7 @@ describe('ridge purlin', () => {
   it('center at y = yBasePurlinTop + ridgeHeight(width - RIDGE_SIZE, pitch) - RIDGE_SIZE/2 (bird-line geometry)', () => {
     const W = 4, pitch = 25
     const m = buildStructure({ ...base, width: W, pitch })
-    const yBasePurlinTop = PILLAR_HEIGHT + PURLIN_SIZE
+    const yBasePurlinTop = GROUND_SCREW_HEIGHT + PILLAR_HEIGHT + PURLIN_SIZE
     const expectedY = yBasePurlinTop + ridgeHeight(W - RIDGE_SIZE, pitch) - RIDGE_SIZE / 2
     expect(m.ridgePurlin.start.y).toBeCloseTo(expectedY, 6)
   })
@@ -207,7 +207,7 @@ describe('tie beams (KOTOGERENDA)', () => {
 
   it('are at the same height as base purlin centers', () => {
     const m = buildStructure(base)
-    const expectedY = PILLAR_HEIGHT + PURLIN_SIZE / 2
+    const expectedY = GROUND_SCREW_HEIGHT + PILLAR_HEIGHT + PURLIN_SIZE / 2
     for (const tb of m.tieBeams) {
       expect(tb.start.y).toBeCloseTo(expectedY, 6)
     }
@@ -280,7 +280,7 @@ describe('rafters — vertical placement and slope', () => {
     // At z = ±width/2, y_centerline should equal yBasePurlinTop + RAFTER_DEPTH/(2*cos(pitch)) - BIRD_MOUTH_PLUMB_HEIGHT
     const pitch = 25, W = 3, E = 0.5
     const cosPitch = Math.cos(pitch * DEG)
-    const yBasePurlinTop = PILLAR_HEIGHT + PURLIN_SIZE
+    const yBasePurlinTop = GROUND_SCREW_HEIGHT + PILLAR_HEIGHT + PURLIN_SIZE
     const expectedY = yBasePurlinTop + RAFTER_DEPTH / (2 * cosPitch) - BIRD_MOUTH_PLUMB_HEIGHT
     const m = buildStructure({ ...base, width: W, pitch, eavesOverhang: E })
     // Rafter at base purlin (z = -W/2) for left slope:
@@ -298,7 +298,7 @@ describe('rafters — vertical placement and slope', () => {
     const cosPitch = Math.cos(pitch * DEG)
     const tanPitch = Math.tan(pitch * DEG)
     const rafterYOffset = RAFTER_DEPTH / (2 * cosPitch) - BIRD_MOUTH_PLUMB_HEIGHT
-    const yBasePurlinTop = PILLAR_HEIGHT + PURLIN_SIZE
+    const yBasePurlinTop = GROUND_SCREW_HEIGHT + PILLAR_HEIGHT + PURLIN_SIZE
     const m = buildStructure({ ...base, width: W, pitch, eavesOverhang: E })
     for (const r of m.rafters.slice(0, m.rafters.length / 2)) {
       const yAtBase = r.eaveEnd.y + E * tanPitch
@@ -530,7 +530,7 @@ describe('corner knee braces (KONYOKFA)', () => {
   })
 
   it('vertical brace lower ends are at y = yJunction - leg', () => {
-    const yJunction = PILLAR_HEIGHT + PURLIN_SIZE / 2
+    const yJunction = GROUND_SCREW_HEIGHT + PILLAR_HEIGHT + PURLIN_SIZE / 2
     const m = buildStructure(base)
     const verticalBraces = m.kneeBraces.filter(kb =>
       Math.abs(kb.end.y - kb.start.y) > 0.01
@@ -542,7 +542,7 @@ describe('corner knee braces (KONYOKFA)', () => {
   })
 
   it('upper ends of vertical braces are at y = yJunction (purlin center level)', () => {
-    const yJunction = PILLAR_HEIGHT + PURLIN_SIZE / 2
+    const yJunction = GROUND_SCREW_HEIGHT + PILLAR_HEIGHT + PURLIN_SIZE / 2
     const m = buildStructure(base)
     const verticalBraces = m.kneeBraces.filter(kb =>
       Math.abs(kb.end.y - kb.start.y) > 0.01

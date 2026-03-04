@@ -21,6 +21,7 @@ const MAT: Record<string, THREE.Material> = {
   counterBatten: new THREE.MeshLambertMaterial({ color: 0x40e0d0 }),
   metalSheet: new THREE.MeshStandardMaterial({ color: 0xCC6E52, metalness: 0.3, roughness: 0.5 }),
   flashing: new THREE.MeshStandardMaterial({ color: 0xCC6E52, metalness: 0.3, roughness: 0.5, side: THREE.DoubleSide }),
+  groundScrew: new THREE.MeshStandardMaterial({ color: 0xdddddd, metalness: 0.6, roughness: 0.1 }),
   // pillar:  new THREE.MeshLambertMaterial({ color: COLOR }),
   // purlin:  new THREE.MeshLambertMaterial({ color: COLOR }),
   // rafter:  new THREE.MeshLambertMaterial({ color: COLOR }),
@@ -36,7 +37,7 @@ export interface RoofRenderOptions {
 export function buildRoofMeshes(model: StructureModel, options?: RoofRenderOptions): THREE.Group {
   const group = new THREE.Group()
 
-  for (const p of model.pillars)      group.add(pillarMesh(p))
+  for (const p of model.pillars)      { group.add(pillarMesh(p)); group.add(groundScrewMesh(p)) }
   for (const p of model.basePurlins)  group.add(purlinMesh(p))
   for (const tb of model.tieBeams)    group.add(tieBeamMesh(tb))
   for (const r of model.rafters)      group.add(rafterMesh(r, model.params.pitch))
@@ -126,6 +127,48 @@ function pillarMesh(p: Pillar): THREE.Mesh {
   mesh.castShadow = true
   mesh.receiveShadow = true
   return mesh
+}
+
+// ── Ground screw (TALAJCSAVAR) ─────────────────────────────────────────────
+// Box holder: 68mm wide × 135mm deep × (PILLAR_SIZE + 10mm) tall
+// Cylinder: 70mm diameter, 500mm tall
+// Cone: 70mm→20mm diameter, 500mm tall (underground)
+const GS_BOX_WIDTH  = 0.09
+const GS_BOX_DEPTH  = PILLAR_SIZE + 0.02
+const GS_BOX_HEIGHT = 0.135
+const GS_BOX_BELOW  = 0.005               // box bottom 5mm below pillar base
+const GS_CYLINDER_D = 0.07
+const GS_CYLINDER_H = 0.5
+const GS_CONE_D_TOP = 0.07
+const GS_CONE_D_BOT = 0.02
+const GS_CONE_H     = 0.5
+
+function groundScrewMesh(p: Pillar): THREE.Group {
+  const group = new THREE.Group()
+  const mat = MAT.groundScrew
+
+  // Box holder — centered on pillar, bottom at pillar base - 5mm
+  const boxGeo = new THREE.BoxGeometry(GS_BOX_DEPTH, GS_BOX_HEIGHT, GS_BOX_WIDTH)
+  const box = new THREE.Mesh(boxGeo, mat)
+  const boxBottomY = p.base.y - GS_BOX_BELOW
+  box.position.set(p.base.x, boxBottomY + GS_BOX_HEIGHT / 2, p.base.z)
+  box.castShadow = true
+  group.add(box)
+
+  // Cylinder — sits below box
+  const cylGeo = new THREE.CylinderGeometry(GS_CYLINDER_D / 2, GS_CYLINDER_D / 2, GS_CYLINDER_H, 16)
+  const cyl = new THREE.Mesh(cylGeo, mat)
+  cyl.position.set(p.base.x, boxBottomY - GS_CYLINDER_H / 2, p.base.z)
+  cyl.castShadow = true
+  group.add(cyl)
+
+  // Cone — tapers from 70mm to 20mm, below cylinder (underground)
+  const coneGeo = new THREE.CylinderGeometry(GS_CONE_D_TOP / 2, GS_CONE_D_BOT / 2, GS_CONE_H, 16)
+  const cone = new THREE.Mesh(coneGeo, mat)
+  cone.position.set(p.base.x, boxBottomY - GS_CYLINDER_H - GS_CONE_H / 2, p.base.z)
+  group.add(cone)
+
+  return group
 }
 
 function purlinMesh(p: Purlin): THREE.Mesh {
