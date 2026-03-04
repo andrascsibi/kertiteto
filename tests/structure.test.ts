@@ -504,21 +504,21 @@ describe('corner knee braces (KONYOKFA)', () => {
     return Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2 + (a.z - b.z) ** 2)
   }
 
-  it('24 braces for default config (side braces + king post→ridge braces)', () => {
+  it('22 braces for default config (no king posts at default width)', () => {
     const m = buildStructure(base)
     // 3 pillar rows for length=4: 2 corner + 1 interior
     // Corner: 2 rows × 2 z-positions × 3 = 12
     // Interior side: 1 row × 2 z-positions × 5 = 10
-    // King post→ridge: 1 interior × 2 directions = 2
-    expect(m.kneeBraces.length).toBe(24)
+    // No king posts (width=3, needsCenterPurlin=false)
+    expect(m.kneeBraces.length).toBe(22)
   })
 
-  it('36 braces for longer buildings (more interior rows)', () => {
+  it('32 braces for longer buildings (no king posts at default width)', () => {
     const m = buildStructure({ ...base, length: 10 })
     // 4 pillar rows for length=10: 2 corner + 2 interior
     // Corner: 12, Interior: 2 × 2 × 5 = 20
-    // King post→ridge: 2 interior × 2 directions = 4
-    expect(m.kneeBraces.length).toBe(36)
+    // No king posts (width=3, needsCenterPurlin=false)
+    expect(m.kneeBraces.length).toBe(32)
   })
 
   it('all braces have length ≈ KNEE_BRACE_LENGTH or RIDGE_KNEE_BRACE_LENGTH', () => {
@@ -537,9 +537,9 @@ describe('corner knee braces (KONYOKFA)', () => {
     const verticalBraces = m.kneeBraces.filter(kb =>
       Math.abs(kb.end.y - kb.start.y) > 0.01
     )
-    // Corner: 4 corners × 2 = 8, Interior: 1 row × 2 sides × 3 = 6
-    // King post→ridge: 1 interior × 2 = 2 → total 16
-    expect(verticalBraces.length).toBe(16)
+    // Corner: 4 corners × 2 = 8, Interior: 1 row × 2 sides × 3 = 6 → total 14
+    // No king post braces (default width, needsCenterPurlin=false)
+    expect(verticalBraces.length).toBe(14)
     for (const kb of verticalBraces) {
       const dy = Math.abs(kb.end.y - kb.start.y)
       const isStandard = Math.abs(dy - leg) < 1e-6
@@ -608,7 +608,7 @@ describe('corner knee braces (KONYOKFA)', () => {
 
   it('wide building: ridge pillar braces (5 per ridge pillar)', () => {
     const m = buildStructure({ ...base, width: 5 })
-    // Width 5: innerSpan = 4.7 > 3.5 → center pillars at corner rows
+    // Width 5: innerSpan = 4.7 > 4.0 → center pillars + king posts at interior rows
     // 3 pillar rows (length=4): 2 corner + 1 interior
     // Corner side: 2×2×3=12, Interior side: 1×2×5=10
     // Ridge pillar: 2×5=10, Mid purlin crossing: 1×4=4

@@ -242,10 +242,13 @@ export function buildStructure(params: InputParams): StructureModel {
 
   // ── King posts (FÜGGESZTŐMŰ) ─────────────────────────────────────────────────
   // Vertical members at interior pillar rows, z=0, from tie beam top to ridge purlin bottom.
+  // Only needed when building is too narrow for center pillars — king posts replace them structurally.
   const kingPosts: Pillar[] = []
-  for (let i = 1; i < pillarXPositions.length - 1; i++) {
-    const kpHeight = yRidgePurlinBottom - yBasePurlinTop
-    kingPosts.push({ base: { x: pillarXPositions[i], y: yBasePurlinTop, z: 0 }, height: kpHeight })
+  if (needsCenterPurlin) {
+    for (let i = 1; i < pillarXPositions.length - 1; i++) {
+      const kpHeight = yRidgePurlinBottom - yBasePurlinTop
+      kingPosts.push({ base: { x: pillarXPositions[i], y: yBasePurlinTop, z: 0 }, height: kpHeight })
+    }
   }
 
   // ── Knee braces (KONYOKFA) ───────────────────────────────────────────────────
