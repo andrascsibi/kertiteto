@@ -1033,7 +1033,8 @@
       <div>
         <a href="mailto:hello@egyacs.com">hello@egyacs.com</a>
       </div>
-      <div class="footer-copy">&copy; 2026 kertiteto.hu</div>
+      <div class="footer-copy">&copy; 2026 kertiteto.hu &middot; <a href="/adatkezeles.html">Adatkezelési tájékoztató</a></div>
+      <div style="font-size:0.68rem;color:#5a4a3a;margin-top:0.6rem">Oldalunk nem használ sütiket. Az ácsok megették az összeset.</div>
     </footer>
 
     <div class="modal-overlay" id="quote-modal">
@@ -1058,8 +1059,8 @@
               <input type="email" name="E-mail" required autocomplete="email">
             </div>
             <div class="form-group">
-              <label>Telefonszám</label>
-              <input type="tel" name="Telefon" autocomplete="tel">
+              <label>Telefonszám <span class="required">*</span></label>
+              <input type="tel" name="Telefon" required autocomplete="tel">
             </div>
             <div class="form-group">
               <label>Település <span class="required">*</span></label>
@@ -1069,6 +1070,7 @@
               <label>Megjegyzés</label>
               <textarea name="Megjegyzés" rows="2"></textarea>
             </div>
+            <p style="font-size:0.72rem;color:#8a7060;margin-top:0.5rem">Az űrlap beküldésével elfogadja az <a href="/adatkezeles.html" target="_blank" style="color:#7a5030">adatkezelési tájékoztatót</a>.</p>
             <div class="modal-actions">
               <button type="button" class="btn-cancel" id="modal-cancel">Mégse</button>
               <button type="submit" class="btn-submit">Árajánlat kérése</button>
