@@ -560,6 +560,62 @@
         line-height: 1.5;
       }
 
+      /* ── Process steps ──────────────────────────────────────────────── */
+      .steps {
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+        position: relative;
+        max-width: 600px;
+        margin: 0 auto;
+      }
+      .step {
+        display: flex;
+        gap: 1.25rem;
+        align-items: flex-start;
+        position: relative;
+        padding-bottom: 2rem;
+      }
+      .step:last-child { padding-bottom: 0; }
+      /* Connecting line between steps */
+      .step:not(:last-child)::after {
+        content: '';
+        position: absolute;
+        left: 19px;
+        top: 40px;
+        bottom: 0;
+        width: 2px;
+        background: #e0d6cc;
+      }
+      .step-number {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: #7a5030;
+        color: #fff;
+        font-size: 1.1rem;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        position: relative;
+        z-index: 1;
+      }
+      .step-content {
+        padding-top: 0.4rem;
+      }
+      .step-content h3 {
+        font-size: 1.05rem;
+        color: #2e1f0f;
+        margin-bottom: 0.3rem;
+      }
+      .step-content p {
+        font-size: 0.88rem;
+        color: #8a7060;
+        line-height: 1.6;
+      }
+
       /* ── Responsive: mobile (≤768px) ──────────────────────────────────── */
       @media (max-width: 768px) {
         #configurator {
@@ -746,7 +802,7 @@
     </section>
 
     <div class="scroll-hint" id="scroll-hint">
-      <span>Hagyományos fakötések ▾</span>
+      <span>Miért minket? ▾</span>
     </div>
 
     <section class="landing-section" id="craftsmanship">
@@ -773,6 +829,56 @@
           <div class="caption">
             <h3>Szarufavég kialakítás</h3>
             <p>Pontos szögvágás és illeszkedés a szelemenhez.</p>
+          </div>
+        </div>
+      </div>
+
+      <p style="text-align:center;margin-top:2.5rem">
+        <a href="#configurator" style="font-size:0.85rem;color:#7a5030;text-decoration:none;font-weight:500"
+           onclick="event.preventDefault();document.getElementById('configurator').scrollIntoView({behavior:'smooth'})">
+          ▴ Vissza a kalkulátorhoz
+        </a>
+      </p>
+    </section>
+
+    <section class="landing-section" id="process">
+      <h2>Hogyan működik?</h2>
+      <p class="subtitle">5 egyszerű lépés az álomtetőig</p>
+
+      <div class="steps">
+        <div class="step">
+          <div class="step-number">1</div>
+          <div class="step-content">
+            <h3>Felmérés</h3>
+            <p>Mérje fel a kertjét — nézze meg, mekkora tető fér el a rendelkezésre álló helyen.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-number">2</div>
+          <div class="step-content">
+            <h3>Tervezés</h3>
+            <p>Állítsa össze álomtetőjét a 3D-s kalkulátorunkkal, majd kérjen árajánlatot egyetlen kattintással.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-number">3</div>
+          <div class="step-content">
+            <h3>Egyeztetés</h3>
+            <p>Telefonon vagy e-mailben pontosítjuk a részleteket, szükség esetén helyszíni vagy videós felméréssel ellenőrizzük, hogy a tető valóban passzol-e a környezetébe.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-number">4</div>
+          <div class="step-content">
+            <h3>Gyártás</h3>
+            <p>Műhelyünkben méretre vágjuk és lazúrozzuk az összes elemet. Hagyományos fakötésekkel, kézműves precizitással.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-number">5</div>
+          <div class="step-content">
+            <h3>Szerelés</h3>
+            <p>Megérkezünk, becsavarjuk a talajcsavarokat és 1–2 nap alatt összeállítjuk a tetőt. Nem költözünk be a kertjébe — nincs fűrészpor, nincs körfűrész-zaj.</p>
           </div>
         </div>
       </div>
