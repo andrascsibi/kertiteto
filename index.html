@@ -616,6 +616,62 @@
         line-height: 1.6;
       }
 
+      /* ── Team section ────────────────────────────────────────────────── */
+      .team-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 2rem;
+        max-width: 700px;
+        margin: 0 auto;
+      }
+      .team-card {
+        background: #fff;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        text-align: center;
+      }
+      .team-card img {
+        width: 100%;
+        aspect-ratio: 1;
+        object-fit: cover;
+        display: block;
+      }
+      .team-card .team-info {
+        padding: 1.25rem 1rem;
+      }
+      .team-card .team-info h3 {
+        font-size: 1.15rem;
+        color: #2e1f0f;
+        margin-bottom: 0.15rem;
+      }
+      .team-card .team-info .role {
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: #7a5030;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 0.6rem;
+      }
+      .team-card .team-info p {
+        font-size: 0.85rem;
+        color: #8a7060;
+        line-height: 1.6;
+      }
+      .team-card .team-social {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        margin-top: 0.75rem;
+        font-size: 0.8rem;
+        color: #7a5030;
+        text-decoration: none;
+        font-weight: 500;
+      }
+      .team-card .team-social:hover {
+        color: #5e3a20;
+      }
+
       /* ── Responsive: mobile (≤768px) ──────────────────────────────────── */
       @media (max-width: 768px) {
         #configurator {
@@ -878,7 +934,40 @@
           <div class="step-number">5</div>
           <div class="step-content">
             <h3>Szerelés</h3>
-            <p>Megérkezünk, becsavarjuk a talajcsavarokat és 1–2 nap alatt összeállítjuk a tetőt. Nem költözünk be a kertjébe — nincs fűrészpor, nincs körfűrész-zaj.</p>
+            <p>Megérkezünk, telepítjük a talajcsavarokat és 1–2 nap alatt összeállítjuk a tetőt. Nem költözünk be a kertjébe — nincs fűrészpor, nincs körfűrész-zaj.</p>
+          </div>
+        </div>
+      </div>
+
+      <p style="text-align:center;margin-top:2.5rem">
+        <a href="#configurator" style="font-size:0.85rem;color:#7a5030;text-decoration:none;font-weight:500"
+           onclick="event.preventDefault();document.getElementById('configurator').scrollIntoView({behavior:'smooth'})">
+          ▴ Vissza a kalkulátorhoz
+        </a>
+      </p>
+    </section>
+
+    <section class="landing-section" id="team">
+      <h2>A csapat</h2>
+      <p class="subtitle">Valódi emberek, valódi szakértelemmel</p>
+
+      <div class="team-grid">
+        <div class="team-card">
+          <img src="/csaba.png" alt="Molnár Csaba">
+          <div class="team-info">
+            <h3>Molnár Csaba</h3>
+            <div class="role">Gyártás vezető</div>
+            <p>Épületasztalos, aki beleszeretett a hagyományos fakötésekbe. Kiderült, hogy a precizitása látszó szerkezeteknél aranyat ér.</p>
+            <a class="team-social" href="https://www.youtube.com/@DebreceniFaműhely" target="_blank" rel="noopener">@DebreceniFaműhely a YouTube-on &#8599;</a>
+          </div>
+        </div>
+        <div class="team-card">
+          <img src="/andras.png" alt="Csibi András">
+          <div class="team-info">
+            <h3>Csibi András</h3>
+            <div class="role">Szerelés vezető</div>
+            <p>Villamosmérnökből lett ács — lecserélte a képernyőt kalapácsra, hogy kézzel fogható tereket építsen.</p>
+            <a class="team-social" href="https://www.tiktok.com/@egyacs" target="_blank" rel="noopener">@egyacs a TikTokon &#8599;</a>
           </div>
         </div>
       </div>
