@@ -469,19 +469,21 @@ describe('corner knee braces (KONYOKFA)', () => {
     return Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2 + (a.z - b.z) ** 2)
   }
 
-  it('22 braces for default config (4 corners × 3 + 1 interior row × 2 sides × 5)', () => {
+  it('24 braces for default config (side braces + king post→ridge braces)', () => {
     const m = buildStructure(base)
     // 3 pillar rows for length=4: 2 corner + 1 interior
     // Corner: 2 rows × 2 z-positions × 3 = 12
     // Interior side: 1 row × 2 z-positions × 5 = 10
-    expect(m.kneeBraces.length).toBe(22)
+    // King post→ridge: 1 interior × 2 directions = 2
+    expect(m.kneeBraces.length).toBe(24)
   })
 
-  it('32 braces for longer buildings (more interior rows)', () => {
+  it('36 braces for longer buildings (more interior rows)', () => {
     const m = buildStructure({ ...base, length: 10 })
     // 4 pillar rows for length=10: 2 corner + 2 interior
     // Corner: 12, Interior: 2 × 2 × 5 = 20
-    expect(m.kneeBraces.length).toBe(32)
+    // King post→ridge: 2 interior × 2 directions = 4
+    expect(m.kneeBraces.length).toBe(36)
   })
 
   it('all braces have length ≈ 1.0 m', () => {
@@ -496,8 +498,9 @@ describe('corner knee braces (KONYOKFA)', () => {
     const verticalBraces = m.kneeBraces.filter(kb =>
       Math.abs(kb.end.y - kb.start.y) > 0.01
     )
-    // Corner: 4 corners × 2 = 8, Interior: 1 row × 2 sides × 3 = 6 → total 14
-    expect(verticalBraces.length).toBe(14)
+    // Corner: 4 corners × 2 = 8, Interior: 1 row × 2 sides × 3 = 6
+    // King post→ridge: 1 interior × 2 = 2 → total 16
+    expect(verticalBraces.length).toBe(16)
     for (const kb of verticalBraces) {
       expect(Math.abs(kb.end.y - kb.start.y)).toBeCloseTo(leg, 6)
     }
@@ -529,27 +532,35 @@ describe('corner knee braces (KONYOKFA)', () => {
     }
   })
 
-  it('vertical brace lower ends are at y = yJunction - leg', () => {
+  it('vertical brace lower ends are at y = junction - leg', () => {
     const yJunction = GROUND_SCREW_HEIGHT + PILLAR_HEIGHT + PURLIN_SIZE / 2
     const m = buildStructure(base)
     const verticalBraces = m.kneeBraces.filter(kb =>
       Math.abs(kb.end.y - kb.start.y) > 0.01
     )
+    // Side braces meet at base purlin level, king post braces meet at ridge purlin level
+    const yRidgePurlinCenter = m.ridgePurlin.start.y
     for (const kb of verticalBraces) {
+      const upperY = Math.max(kb.start.y, kb.end.y)
       const lowerY = Math.min(kb.start.y, kb.end.y)
-      expect(lowerY).toBeCloseTo(yJunction - leg, 6)
+      const isRidgeBrace = Math.abs(upperY - yRidgePurlinCenter) < 0.01
+      const expectedUpper = isRidgeBrace ? yRidgePurlinCenter : yJunction
+      expect(lowerY).toBeCloseTo(expectedUpper - leg, 6)
     }
   })
 
-  it('upper ends of vertical braces are at y = yJunction (purlin center level)', () => {
+  it('upper ends of vertical braces are at y = junction level', () => {
     const yJunction = GROUND_SCREW_HEIGHT + PILLAR_HEIGHT + PURLIN_SIZE / 2
     const m = buildStructure(base)
     const verticalBraces = m.kneeBraces.filter(kb =>
       Math.abs(kb.end.y - kb.start.y) > 0.01
     )
+    const yRidgePurlinCenter = m.ridgePurlin.start.y
     for (const kb of verticalBraces) {
       const upperY = Math.max(kb.start.y, kb.end.y)
-      expect(upperY).toBeCloseTo(yJunction, 6)
+      const isAtBasePurlin = Math.abs(upperY - yJunction) < 0.01
+      const isAtRidgePurlin = Math.abs(upperY - yRidgePurlinCenter) < 0.01
+      expect(isAtBasePurlin || isAtRidgePurlin).toBe(true)
     }
   })
 
@@ -559,7 +570,8 @@ describe('corner knee braces (KONYOKFA)', () => {
     // 3 pillar rows (length=4): 2 corner + 1 interior
     // Corner side: 2×2×3=12, Interior side: 1×2×5=10
     // Ridge pillar: 2×5=10, Mid purlin crossing: 1×4=4
-    expect(m.kneeBraces.length).toBe(36)
+    // King post→ridge: 1 interior × 2 = 2, Center pillar→ridge: 2 corner × 1 = 2
+    expect(m.kneeBraces.length).toBe(40)
   })
 
   it('wide building: all braces have length ≈ 1.0 m', () => {

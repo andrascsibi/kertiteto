@@ -210,6 +210,31 @@ export function buildStructure(params: InputParams): StructureModel {
   // ── Knee braces (KONYOKFA) ───────────────────────────────────────────────────
   const kneeBraces = buildKneeBraces(pillarXPositions, width, needsCenterPurlin)
 
+  // ── King post / center pillar → ridge purlin knee braces ────────────────────
+  const kpLeg = KNEE_BRACE_LENGTH * Math.cos(Math.PI / 4)
+  // Interior king posts: braces in both X directions
+  for (const kp of kingPosts) {
+    for (const dx of [-1, +1]) {
+      kneeBraces.push({
+        start: { x: kp.base.x, y: yRidgePurlinCenter - kpLeg, z: 0 },
+        end:   { x: kp.base.x + dx * kpLeg, y: yRidgePurlinCenter, z: 0 },
+      })
+    }
+  }
+  // Center pillars at corner rows (when wide): brace inward toward center along X
+  if (needsCenterPurlin) {
+    for (let i = 0; i < pillarXPositions.length; i++) {
+      const isCorner = i === 0 || i === pillarXPositions.length - 1
+      if (!isCorner) continue
+      const xP = pillarXPositions[i]
+      const sx = Math.sign(-xP) || 1
+      kneeBraces.push({
+        start: { x: xP, y: yRidgePurlinCenter - kpLeg, z: 0 },
+        end:   { x: xP + sx * kpLeg, y: yRidgePurlinCenter, z: 0 },
+      })
+    }
+  }
+
   return {
     params,
     ridgeHeight: H_ridge,
