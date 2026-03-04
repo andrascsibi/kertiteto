@@ -46,7 +46,8 @@ import {
 // Timber cross-section dimensions (m)
 export const PILLAR_SIZE  = 0.15   // 15×15 cm
 export const PURLIN_SIZE  = 0.15   // 15×15 cm (TALP SZELEMEN)
-export const RIDGE_SIZE   = 0.10   // 10×10 cm (GERINC SZELEMEN)
+export const RIDGE_SIZE       = 0.10  // 10×10 cm (GERINC SZELEMEN, default)
+export const RIDGE_SIZE_WIDE  = 0.12  // 12×12 cm (wider structures with center purlin)
 export const RAFTER_WIDTH = 0.075       // 7.5 cm (default)
 export const RAFTER_WIDTH_LONG = 0.10   // 10 cm (for long rafter spans)
 export const RAFTER_DEPTH = 0.15        // 15 cm (the tall dimension, perpendicular to rafter axis)
@@ -79,14 +80,19 @@ export function buildStructure(params: InputParams): StructureModel {
   const tanPitch = Math.tan(pitch * DEG)
   const H_ridge  = ridgeHeight(width, pitch)
 
+  // ── Ridge purlin size (conditional on span) ─────────────────────────────────
+  const innerSpan = width - 2 * PILLAR_SIZE
+  const needsCenterPurlin = innerSpan > MAX_UNSUPPORTED_TIE_BEAM_SPAN
+  const ridgeSize = needsCenterPurlin ? RIDGE_SIZE_WIDE : RIDGE_SIZE
+
   // ── Vertical levels ──────────────────────────────────────────────────────────
   const yPurlinCenter = GROUND_SCREW_HEIGHT + PILLAR_HEIGHT + PURLIN_SIZE / 2
   const yBasePurlinTop = GROUND_SCREW_HEIGHT + PILLAR_HEIGHT + PURLIN_SIZE
 
   // Ridge purlin top: bird line (KARMI VONAL) from base seat corner to ridge seat corner
-  // has exactly the pitch angle; horizontal run = (width - RIDGE_SIZE) / 2.
-  const yRidgePurlinTop    = yBasePurlinTop + ridgeHeight(width - RIDGE_SIZE, pitch)
-  const yRidgePurlinCenter = yRidgePurlinTop - RIDGE_SIZE / 2
+  // has exactly the pitch angle; horizontal run = (width - ridgeSize) / 2.
+  const yRidgePurlinTop    = yBasePurlinTop + ridgeHeight(width - ridgeSize, pitch)
+  const yRidgePurlinCenter = yRidgePurlinTop - ridgeSize / 2
 
   // Rafter centerline vertical offset above bearing surface.
   // The centerline at z = ±width/2 is offset up from yBasePurlinTop by this amount.
@@ -107,8 +113,6 @@ export function buildStructure(params: InputParams): StructureModel {
   // ── Base purlins (TALP SZELEMEN) ─────────────────────────────────────────────
   // Purlin center is inset by PURLIN_SIZE/2 from the outer edge; outer face flush at ±width/2
   const zPurlin = width / 2 - PURLIN_SIZE / 2
-  const innerSpan = width - 2 * PILLAR_SIZE
-  const needsCenterPurlin = innerSpan > MAX_UNSUPPORTED_TIE_BEAM_SPAN
   const basePurlins: Purlin[] = [
     makePurlin(xMin, xMax, yPurlinCenter, -zPurlin, PURLIN_SIZE),
     makePurlin(xMin, xMax, yPurlinCenter, +zPurlin, PURLIN_SIZE),
@@ -116,12 +120,12 @@ export function buildStructure(params: InputParams): StructureModel {
   ]
 
   // ── Ridge purlin (GERINC SZELEMEN) ───────────────────────────────────────────
-  const ridgePurlin: Purlin = makePurlin(xMin, xMax, yRidgePurlinCenter, 0, RIDGE_SIZE)
+  const ridgePurlin: Purlin = makePurlin(xMin, xMax, yRidgePurlinCenter, 0, ridgeSize)
 
   // ── Pillars ──────────────────────────────────────────────────────────────────
   const nPillars = pillarCount(length)
   const pillarXPositions = buildPillarXPositions(length, nPillars)
-  const yRidgePurlinBottom = yRidgePurlinCenter - RIDGE_SIZE / 2
+  const yRidgePurlinBottom = yRidgePurlinCenter - ridgeSize / 2
   const ridgePillarHeight = yRidgePurlinBottom - GROUND_SCREW_HEIGHT
   const pillars = buildPillars(width, pillarXPositions, ridgePillarHeight)
 
@@ -225,7 +229,7 @@ export function buildStructure(params: InputParams): StructureModel {
   // Trapezoid pieces straddling the ridge purlin, in pairs on both sides of each rafter.
   // Top surface horizontal; sides flush with rafter top surface (parallel to slope).
   // Gable rafters get a single ridge tie on the inner side only.
-  const yRidgeTieTop    = yRidgePurlinTop - RIDGE_SIZE + RIDGE_TIE_NOTCH
+  const yRidgeTieTop    = yRidgePurlinTop - ridgeSize + RIDGE_TIE_NOTCH
   const yRidgeTieBottom = yRidgeTieTop - RIDGE_TIE_DEPTH
   const yRafterTop      = yRafterAtRidge + RAFTER_DEPTH / (2 * cosPitch)
   const zHalfTop        = (yRafterTop - yRidgeTieTop) / tanPitch
@@ -346,7 +350,8 @@ export function computeMetrics(model: StructureModel): StructureMetrics {
   // Volume (pillar heights vary: ridge pillars are taller)
   const pillarVol   = model.pillars.reduce((sum, p) => sum + PILLAR_SIZE * PILLAR_SIZE * p.height, 0)
   const basePurVol  = model.basePurlins.length * PURLIN_SIZE * PURLIN_SIZE * purlinLength
-  const ridgePurVol = RIDGE_SIZE * RIDGE_SIZE * purlinLength
+  const rs = model.ridgePurlin.width
+  const ridgePurVol = rs * rs * purlinLength
   const tieBeamVol  = model.tieBeams.length * PURLIN_SIZE * PURLIN_SIZE * tieBeamLength
   const rafterVol   = model.rafters.reduce((sum, r) =>
     sum + r.width * r.depth * Math.ceil(rafterLen + r.depth * tanPitch), 0)
@@ -364,7 +369,7 @@ export function computeMetrics(model: StructureModel): StructureMetrics {
   // Surface (perimeter × length, ignoring ends)
   const pillarSurf   = model.pillars.reduce((sum, p) => sum + p.height * (4 * PILLAR_SIZE), 0)
   const basePurSurf  = model.basePurlins.length * purlinLength * 2 * (PURLIN_SIZE + PURLIN_SIZE)
-  const ridgePurSurf = purlinLength * 2 * (RIDGE_SIZE + RIDGE_SIZE)
+  const ridgePurSurf = purlinLength * 2 * (rs + rs)
   const tieBeamSurf  = model.tieBeams.length * tieBeamLength * 2 * (PURLIN_SIZE + PURLIN_SIZE)
   const rafterSurf   = model.rafters.reduce((sum, r) =>
     sum + rafterLen * (2 * r.width + 2 * r.depth), 0)
