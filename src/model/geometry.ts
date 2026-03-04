@@ -16,8 +16,11 @@ export const EAVE_PLUMB_HEIGHT = 0.06
 /** Maximum rafter bay spacing (m) */
 export const MAX_RAFTER_SPACING = 0.9
 
-/** Maximum unsupported span between pillar inner faces before adding middle pillars (m) */
+/** Maximum unsupported longitudinal span between pillar inner faces (m) */
 export const MAX_UNSUPPORTED_SPAN = 3.5
+
+/** Maximum unsupported tie beam span (cross-sectional) before requiring center pillars (m) */
+export const MAX_UNSUPPORTED_TIE_BEAM_SPAN = 4.0
 
 /** Maximum rafter length (excluding eaves overhang) before structure becomes impractical (m) */
 export const MAX_RAFTER_LENGTH = 4.0

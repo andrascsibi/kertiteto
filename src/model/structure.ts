@@ -38,7 +38,7 @@ import {
   birdMouthAtBasePurlin,
   birdMouthAtRidgePurlin,
   MAX_RAFTER_SPACING,
-  MAX_UNSUPPORTED_SPAN,
+  MAX_UNSUPPORTED_TIE_BEAM_SPAN,
   BIRD_MOUTH_PLUMB_HEIGHT,
 } from './geometry'
 
@@ -105,7 +105,7 @@ export function buildStructure(params: InputParams): StructureModel {
   // Purlin center is inset by PURLIN_SIZE/2 from the outer edge; outer face flush at ±width/2
   const zPurlin = width / 2 - PURLIN_SIZE / 2
   const innerSpan = width - 2 * PILLAR_SIZE
-  const needsCenterPurlin = innerSpan > MAX_UNSUPPORTED_SPAN
+  const needsCenterPurlin = innerSpan > MAX_UNSUPPORTED_TIE_BEAM_SPAN
   const basePurlins: Purlin[] = [
     makePurlin(xMin, xMax, yPurlinCenter, -zPurlin, PURLIN_SIZE),
     makePurlin(xMin, xMax, yPurlinCenter, +zPurlin, PURLIN_SIZE),
@@ -459,7 +459,7 @@ function buildPillarXPositions(length: number, nPillars: number): number[] {
 function buildPillars(width: number, xPositions: number[], ridgePillarHeight: number): Pillar[] {
   const zHalf = width / 2 - PILLAR_SIZE / 2
   const innerSpan = width - 2 * PILLAR_SIZE
-  const needsCenterPillar = innerSpan > MAX_UNSUPPORTED_SPAN
+  const needsCenterPillar = innerSpan > MAX_UNSUPPORTED_TIE_BEAM_SPAN
   const pillars: Pillar[] = []
   for (let i = 0; i < xPositions.length; i++) {
     const x = xPositions[i]

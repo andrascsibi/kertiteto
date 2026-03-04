@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { buildStructure, computeMetrics, GROUND_SCREW_HEIGHT, PILLAR_HEIGHT, PILLAR_SIZE, PURLIN_SIZE, RIDGE_SIZE, RAFTER_WIDTH, RAFTER_DEPTH, RIDGE_TIE_NOTCH, RIDGE_TIE_DEPTH, RIDGE_TIE_WIDTH, KNEE_BRACE_LENGTH, RIDGE_KNEE_BRACE_LENGTH } from '../src/model/structure'
-import { ridgeHeight, BIRD_MOUTH_PLUMB_HEIGHT, MAX_RAFTER_SPACING, MAX_UNSUPPORTED_SPAN } from '../src/model/geometry'
+import { ridgeHeight, BIRD_MOUTH_PLUMB_HEIGHT, MAX_RAFTER_SPACING, MAX_UNSUPPORTED_TIE_BEAM_SPAN } from '../src/model/geometry'
 import type { InputParams } from '../src/model/types'
 
 // Coordinate system:
@@ -59,15 +59,15 @@ describe('pillars', () => {
     expect(mid.some(p => p.base.z > 0)).toBe(true)
   })
 
-  it('no center pillars when tie beam span <= MAX_UNSUPPORTED_SPAN', () => {
-    const W = MAX_UNSUPPORTED_SPAN + 2 * PILLAR_SIZE  // inner span exactly at limit
+  it('no center pillars when tie beam span <= MAX_UNSUPPORTED_TIE_BEAM_SPAN', () => {
+    const W = MAX_UNSUPPORTED_TIE_BEAM_SPAN + 2 * PILLAR_SIZE  // inner span exactly at limit
     const m = buildStructure({ ...base, width: W, length: 3 })
     const centerPillars = m.pillars.filter(p => Math.abs(p.base.z) < 1e-9)
     expect(centerPillars.length).toBe(0)
   })
 
-  it('center pillars at z=0 for corner rows when width > MAX_UNSUPPORTED_SPAN + 2*PILLAR_SIZE', () => {
-    const W = MAX_UNSUPPORTED_SPAN + 2 * PILLAR_SIZE + 0.01
+  it('center pillars at z=0 for corner rows when width > MAX_UNSUPPORTED_TIE_BEAM_SPAN + 2*PILLAR_SIZE', () => {
+    const W = MAX_UNSUPPORTED_TIE_BEAM_SPAN + 2 * PILLAR_SIZE + 0.01
     const m = buildStructure({ ...base, width: W, length: 3 })
     const centerPillars = m.pillars.filter(p => Math.abs(p.base.z) < 1e-9)
     // 2 rows (corners) × 1 center pillar each = 2
@@ -75,7 +75,7 @@ describe('pillars', () => {
   })
 
   it('center pillars only at corner rows, not intermediate rows', () => {
-    const W = MAX_UNSUPPORTED_SPAN + 2 * PILLAR_SIZE + 0.01
+    const W = MAX_UNSUPPORTED_TIE_BEAM_SPAN + 2 * PILLAR_SIZE + 0.01
     const m = buildStructure({ ...base, width: W, length: 5 })  // 3 rows
     const centerPillars = m.pillars.filter(p => Math.abs(p.base.z) < 1e-9)
     // Only 2 corner rows get center pillars, not the middle row
