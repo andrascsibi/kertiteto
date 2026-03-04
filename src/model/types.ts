@@ -49,6 +49,8 @@ export interface BirdMouth {
   distanceFromEave: number
 }
 
+export type RafterType = 'gable' | 'main' | 'regular'
+
 export interface Rafter {
   /** Lower end (eave end, after tail cut) */
   eaveEnd: Point3D
@@ -60,6 +62,8 @@ export interface Rafter {
   birdMouthRidge: BirdMouth
   /** Length along slope (m) */
   length: number
+  /** Rafter classification: gable (at purlin ends), main (above pillars), regular (fill) */
+  type: RafterType
 }
 
 export interface RidgeTie {

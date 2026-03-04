@@ -128,15 +128,48 @@ export function buildStructure(params: InputParams): StructureModel {
   )
 
   // ── Rafter layout ────────────────────────────────────────────────────────────
-  // Rafters span the full purlin length (including gable overhang).
-  // Gable rafters are flush with the purlin ends; their centers are
-  // inset by half a rafter width.
-  const purlinLength   = length + 2 * gableOverhang
-  const rafterSpanCC   = purlinLength - RAFTER_WIDTH  // center-to-center, first to last
-  const nBays          = Math.ceil(rafterSpanCC / MAX_RAFTER_SPACING)
-  const nRafters       = nBays + 1
-  const xSpacing       = rafterSpanCC / nBays
-  const xFirst         = xMin + RAFTER_WIDTH / 2  // center of first (gable) rafter
+  // Invariant: there is always a rafter directly above every pillar row (main rafters).
+  // Gable rafters are flush with the purlin ends.
+  // Regular (fill) rafters are evenly spaced within each segment, respecting MAX_RAFTER_SPACING.
+  const purlinLength = length + 2 * gableOverhang
+  const xGableLeft   = xMin + RAFTER_WIDTH / 2
+  const xGableRight  = xMax - RAFTER_WIDTH / 2
+
+  // Ordered anchor X positions: gable left, all pillars, gable right
+  const anchorXs: { x: number; type: 'gable' | 'main' }[] = [
+    { x: xGableLeft, type: 'gable' },
+    ...pillarXPositions.map(x => ({ x, type: 'main' as const })),
+    { x: xGableRight, type: 'gable' },
+  ]
+
+  // Build rafter X positions with types by filling each segment
+  const rafterPositions: { x: number; type: Rafter['type'] }[] = []
+  for (let seg = 0; seg < anchorXs.length; seg++) {
+    // Add the anchor itself (skip duplicates — shouldn't happen but guard)
+    if (seg === 0 || Math.abs(anchorXs[seg].x - anchorXs[seg - 1].x) > 1e-9) {
+      rafterPositions.push(anchorXs[seg])
+    }
+    // Fill between this anchor and the next
+    if (seg < anchorXs.length - 1) {
+      const xA = anchorXs[seg].x
+      const xB = anchorXs[seg + 1].x
+      const span = xB - xA
+      const nBays = Math.ceil(span / MAX_RAFTER_SPACING)
+      if (nBays > 1) {
+        const step = span / nBays
+        for (let j = 1; j < nBays; j++) {
+          rafterPositions.push({ x: xA + j * step, type: 'regular' })
+        }
+      }
+    }
+  }
+
+  // Max spacing across all adjacent pairs (for model metadata)
+  let maxSpacing = 0
+  const sortedXs = rafterPositions.map(r => r.x).sort((a, b) => a - b)
+  for (let i = 1; i < sortedXs.length; i++) {
+    maxSpacing = Math.max(maxSpacing, sortedXs[i] - sortedXs[i - 1])
+  }
 
   // ── Bird mouth parameters ────────────────────────────────────────────────────
   const bmBase  = birdMouthAtBasePurlin(pitch)
@@ -152,23 +185,23 @@ export function buildStructure(params: InputParams): StructureModel {
   const leftRafters:  Rafter[] = []
   const rightRafters: Rafter[] = []
 
-  for (let i = 0; i < nRafters; i++) {
-    const x = xFirst + i * xSpacing
-
+  for (const rp of rafterPositions) {
     leftRafters.push({
-      eaveEnd:  { x, y: yEave,          z: -(width / 2 + eavesOverhang) },
-      ridgeEnd: { x, y: yRafterAtRidge, z: 0 },
+      eaveEnd:  { x: rp.x, y: yEave,          z: -(width / 2 + eavesOverhang) },
+      ridgeEnd: { x: rp.x, y: yRafterAtRidge, z: 0 },
       birdMouthBase:  { ...bmBase,  distanceFromEave: dBase  },
       birdMouthRidge: { ...bmRidge, distanceFromEave: dRidge },
       length: rLength,
+      type: rp.type,
     })
 
     rightRafters.push({
-      eaveEnd:  { x, y: yEave,          z: +(width / 2 + eavesOverhang) },
-      ridgeEnd: { x, y: yRafterAtRidge, z: 0 },
+      eaveEnd:  { x: rp.x, y: yEave,          z: +(width / 2 + eavesOverhang) },
+      ridgeEnd: { x: rp.x, y: yRafterAtRidge, z: 0 },
       birdMouthBase:  { ...bmBase,  distanceFromEave: dBase  },
       birdMouthRidge: { ...bmRidge, distanceFromEave: dRidge },
       length: rLength,
+      type: rp.type,
     })
   }
 
@@ -183,9 +216,10 @@ export function buildStructure(params: InputParams): StructureModel {
   const zHalfBottom     = zHalfTop + RIDGE_TIE_DEPTH / tanPitch
   const xOffset         = RAFTER_WIDTH / 2 + RIDGE_TIE_WIDTH / 2
 
+  const nRafters = rafterPositions.length
   const ridgeTies: RidgeTie[] = []
   for (let i = 0; i < nRafters; i++) {
-    const xRafter = xFirst + i * xSpacing
+    const xRafter = rafterPositions[i].x
     if (i === 0) {
       // First gable rafter: single tie on inner side (+x)
       ridgeTies.push({ x: xRafter + xOffset, yTop: yRidgeTieTop, yBottom: yRidgeTieBottom, zHalfTop, zHalfBottom })
@@ -246,7 +280,7 @@ export function buildStructure(params: InputParams): StructureModel {
     ridgeTies,
     rafters: [...leftRafters, ...rightRafters],
     totalLength: purlinLength,
-    rafterSpacing: xSpacing,
+    rafterSpacing: maxSpacing,
     kneeBraces,
     kingPosts,
   }

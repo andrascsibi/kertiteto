@@ -18,12 +18,7 @@ const base: InputParams = {
 
 const DEG = Math.PI / 180
 
-// Helper: number of rafters based on purlin span (matching structure.ts logic)
-function expectedRafterCount(params: InputParams): number {
-  const purlinLength = params.length + 2 * params.gableOverhang
-  const rafterSpanCC = purlinLength - RAFTER_WIDTH
-  return Math.ceil(rafterSpanCC / MAX_RAFTER_SPACING) + 1
-}
+
 
 describe('pillars', () => {
   it('4 pillars for short narrow structures', () => {
@@ -215,33 +210,57 @@ describe('tie beams (KOTOGERENDA)', () => {
 })
 
 describe('rafters — longitudinal placement', () => {
-  it('total count = 2 × (bays based on full purlin span + 1)', () => {
+  it('main rafters exist at every pillar X position', () => {
     const m = buildStructure(base)
-    expect(m.rafters.length).toBe(2 * expectedRafterCount(base))
+    const n = m.rafters.length / 2
+    const leftRafters = m.rafters.slice(0, n)
+    const mainXs = leftRafters.filter(r => r.type === 'main').map(r => r.eaveEnd.x)
+    // Pillar X positions (side pillars, deduplicated by x)
+    const pillarXs = [...new Set(m.pillars.map(p => p.base.x))].sort((a, b) => a - b)
+    expect(mainXs.length).toBe(pillarXs.length)
+    for (let i = 0; i < pillarXs.length; i++) {
+      expect(mainXs[i]).toBeCloseTo(pillarXs[i], 6)
+    }
   })
 
   it('gable rafters are at x = ±(L/2 + G - RAFTER_WIDTH/2)', () => {
     const L = 4, G = 0.3
     const m = buildStructure({ ...base, length: L, gableOverhang: G })
     const n = m.rafters.length / 2
-    const xVals = m.rafters.slice(0, n).map(r => r.eaveEnd.x).sort((a, b) => a - b)
+    const leftRafters = m.rafters.slice(0, n)
+    const gableRafters = leftRafters.filter(r => r.type === 'gable')
+    expect(gableRafters.length).toBe(2)
+    const xVals = gableRafters.map(r => r.eaveEnd.x).sort((a, b) => a - b)
     expect(xVals[0]).toBeCloseTo(-(L / 2 + G - RAFTER_WIDTH / 2), 6)
-    expect(xVals[xVals.length - 1]).toBeCloseTo(+(L / 2 + G - RAFTER_WIDTH / 2), 6)
-  })
-
-  it('rafters are evenly spaced along x', () => {
-    const m = buildStructure(base)
-    const n = m.rafters.length / 2
-    const xVals = m.rafters.slice(0, n).map(r => r.eaveEnd.x).sort((a, b) => a - b)
-    const spacing = xVals[1] - xVals[0]
-    for (let i = 1; i < xVals.length; i++) {
-      expect(xVals[i] - xVals[i - 1]).toBeCloseTo(spacing, 6)
-    }
+    expect(xVals[1]).toBeCloseTo(+(L / 2 + G - RAFTER_WIDTH / 2), 6)
   })
 
   it('spacing never exceeds MAX_RAFTER_SPACING', () => {
     const m = buildStructure(base)
-    expect(m.rafterSpacing).toBeLessThanOrEqual(MAX_RAFTER_SPACING + 1e-9)
+    const n = m.rafters.length / 2
+    const xVals = m.rafters.slice(0, n).map(r => r.eaveEnd.x).sort((a, b) => a - b)
+    for (let i = 1; i < xVals.length; i++) {
+      expect(xVals[i] - xVals[i - 1]).toBeLessThanOrEqual(MAX_RAFTER_SPACING + 1e-9)
+    }
+  })
+
+  it('fill rafters are evenly spaced within each segment', () => {
+    const m = buildStructure({ ...base, length: 10 })
+    const n = m.rafters.length / 2
+    const leftRafters = m.rafters.slice(0, n)
+    // Find anchor positions (gable + main)
+    const anchors = leftRafters.filter(r => r.type !== 'regular').map(r => r.eaveEnd.x)
+    // For each segment between anchors, check fill rafters are evenly spaced
+    for (let s = 0; s < anchors.length - 1; s++) {
+      const xA = anchors[s], xB = anchors[s + 1]
+      const fills = leftRafters.filter(r => r.type === 'regular' && r.eaveEnd.x > xA + 1e-9 && r.eaveEnd.x < xB - 1e-9)
+      if (fills.length === 0) continue
+      const allXs = [xA, ...fills.map(r => r.eaveEnd.x), xB]
+      const step = allXs[1] - allXs[0]
+      for (let i = 1; i < allXs.length; i++) {
+        expect(allXs[i] - allXs[i - 1]).toBeCloseTo(step, 6)
+      }
+    }
   })
 
   it('left and right slope rafters share x positions', () => {
