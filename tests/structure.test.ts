@@ -210,12 +210,28 @@ describe('tie beams (KOTOGERENDA)', () => {
 })
 
 describe('rafters — longitudinal placement', () => {
-  it('main rafters exist at every pillar X position', () => {
-    const m = buildStructure(base)
+  it('2 pillar rows: no main rafters, equidistant gable-to-gable', () => {
+    const m = buildStructure({ ...base, length: 2 })
+    const n = m.rafters.length / 2
+    const leftRafters = m.rafters.slice(0, n)
+    expect(leftRafters.filter(r => r.type === 'main').length).toBe(0)
+    expect(leftRafters.filter(r => r.type === 'gable').length).toBe(2)
+  })
+
+  it('3 pillar rows: main rafter only at interior (middle) pillar', () => {
+    const m = buildStructure(base) // length=3.3 → 3 pillar rows
+    const n = m.rafters.length / 2
+    const leftRafters = m.rafters.slice(0, n)
+    const mainRafters = leftRafters.filter(r => r.type === 'main')
+    expect(mainRafters.length).toBe(1)
+    expect(mainRafters[0].eaveEnd.x).toBeCloseTo(0, 6) // middle pillar at x=0
+  })
+
+  it('4+ pillar rows: main rafters at all pillar positions', () => {
+    const m = buildStructure({ ...base, length: 10 })
     const n = m.rafters.length / 2
     const leftRafters = m.rafters.slice(0, n)
     const mainXs = leftRafters.filter(r => r.type === 'main').map(r => r.eaveEnd.x)
-    // Pillar X positions (side pillars, deduplicated by x)
     const pillarXs = [...new Set(m.pillars.map(p => p.base.x))].sort((a, b) => a - b)
     expect(mainXs.length).toBe(pillarXs.length)
     for (let i = 0; i < pillarXs.length; i++) {

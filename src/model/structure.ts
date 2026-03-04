@@ -128,17 +128,23 @@ export function buildStructure(params: InputParams): StructureModel {
   )
 
   // ── Rafter layout ────────────────────────────────────────────────────────────
-  // Invariant: there is always a rafter directly above every pillar row (main rafters).
+  // Main rafters sit directly above pillar rows. How many depends on structure size:
+  //   2 pillar rows: no main rafters — equidistant gable-to-gable
+  //   3 pillar rows: main rafter at interior (middle) pillar only
+  //   4+ pillar rows: main rafters at all pillar positions
   // Gable rafters are flush with the purlin ends.
   // Regular (fill) rafters are evenly spaced within each segment, respecting MAX_RAFTER_SPACING.
   const purlinLength = length + 2 * gableOverhang
   const xGableLeft   = xMin + RAFTER_WIDTH / 2
   const xGableRight  = xMax - RAFTER_WIDTH / 2
 
-  // Ordered anchor X positions: gable left, all pillars, gable right
+  // Which pillar positions become main rafter anchors
+  const mainPillarXs = pillarXPositions.length >= 4 ? pillarXPositions : pillarXPositions.slice(1, -1)
+
+  // Ordered anchor X positions: gable left, main pillars, gable right
   const anchorXs: { x: number; type: 'gable' | 'main' }[] = [
     { x: xGableLeft, type: 'gable' },
-    ...pillarXPositions.map(x => ({ x, type: 'main' as const })),
+    ...mainPillarXs.map(x => ({ x, type: 'main' as const })),
     { x: xGableRight, type: 'gable' },
   ]
 
