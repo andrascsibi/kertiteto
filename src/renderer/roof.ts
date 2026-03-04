@@ -21,7 +21,7 @@ const MAT: Record<string, THREE.Material> = {
   counterBatten: new THREE.MeshLambertMaterial({ color: 0x40e0d0 }),
   metalSheet: new THREE.MeshStandardMaterial({ color: 0xCC6E52, metalness: 0.3, roughness: 0.5 }),
   flashing: new THREE.MeshStandardMaterial({ color: 0xCC6E52, metalness: 0.3, roughness: 0.5, side: THREE.DoubleSide }),
-  groundScrew: new THREE.MeshStandardMaterial({ color: 0xdddddd, metalness: 0.6, roughness: 0.1 }),
+  groundScrew: new THREE.MeshStandardMaterial({ color: 0xeeeeff, metalness: 0.6, roughness: 0.1 }),
   // pillar:  new THREE.MeshLambertMaterial({ color: COLOR }),
   // purlin:  new THREE.MeshLambertMaterial({ color: COLOR }),
   // rafter:  new THREE.MeshLambertMaterial({ color: COLOR }),
