@@ -104,4 +104,6 @@ export interface StructureModel {
   rafterSpacing: number
   /** Corner knee braces (KONYOKFA) */
   kneeBraces: KneeBrace[]
+  /** King posts (FÜGGESZTŐMŰ): vertical members from tie beam to ridge purlin at interior rows */
+  kingPosts: Pillar[]
 }

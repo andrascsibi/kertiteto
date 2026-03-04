@@ -43,6 +43,7 @@ export function buildRoofMeshes(model: StructureModel, options?: RoofRenderOptio
   for (const r of model.rafters)      group.add(rafterMesh(r, model.params.pitch))
   for (const rt of model.ridgeTies)   group.add(ridgeTieMesh(rt))
   for (const kb of model.kneeBraces)  group.add(kneeBraceMesh(kb))
+  for (const kp of model.kingPosts)   group.add(pillarMesh(kp))
   group.add(purlinMesh(model.ridgePurlin))
 
   if (options?.lamberia) {

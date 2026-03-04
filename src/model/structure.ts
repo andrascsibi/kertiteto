@@ -57,7 +57,7 @@ export const KNEE_BRACE_SIZE   = 0.1  // 10×10 cm cross-section
 export const KNEE_BRACE_LENGTH = 1.0   // 1 m along diagonal
 
 export const GROUND_SCREW_HEIGHT = 0.05 // m — elevation above ground for ground screws
-export const PILLAR_HEIGHT = 2.4   // m (fixed)
+export const PILLAR_HEIGHT = 2.2   // m (fixed)
 
 export const DEFAULTS: InputParams = {
   width: 3.0,
@@ -199,6 +199,14 @@ export function buildStructure(params: InputParams): StructureModel {
     }
   }
 
+  // ── King posts (FÜGGESZTŐMŰ) ─────────────────────────────────────────────────
+  // Vertical members at interior pillar rows, z=0, from tie beam top to ridge purlin bottom.
+  const kingPosts: Pillar[] = []
+  for (let i = 1; i < pillarXPositions.length - 1; i++) {
+    const kpHeight = yRidgePurlinBottom - yBasePurlinTop
+    kingPosts.push({ base: { x: pillarXPositions[i], y: yBasePurlinTop, z: 0 }, height: kpHeight })
+  }
+
   // ── Knee braces (KONYOKFA) ───────────────────────────────────────────────────
   const kneeBraces = buildKneeBraces(pillarXPositions, width, needsCenterPurlin)
 
@@ -215,6 +223,7 @@ export function buildStructure(params: InputParams): StructureModel {
     totalLength: purlinLength,
     rafterSpacing: xSpacing,
     kneeBraces,
+    kingPosts,
   }
 }
 
@@ -250,7 +259,8 @@ export function computeMetrics(model: StructureModel): StructureMetrics {
     ? model.ridgeTies.length * 2 * model.ridgeTies[0].zHalfBottom * RIDGE_TIE_DEPTH * RIDGE_TIE_WIDTH
     : 0
   const kneeBraceVol = model.kneeBraces.length * KNEE_BRACE_SIZE * KNEE_BRACE_SIZE * KNEE_BRACE_LENGTH
-  const timberVolume = pillarVol + basePurVol + ridgePurVol + tieBeamVol + rafterVol + ridgeTieVol + kneeBraceVol
+  const kingPostVol = model.kingPosts.reduce((sum, kp) => sum + PILLAR_SIZE * PILLAR_SIZE * kp.height, 0)
+  const timberVolume = pillarVol + basePurVol + ridgePurVol + tieBeamVol + rafterVol + ridgeTieVol + kneeBraceVol + kingPostVol
 
   // Surface (perimeter × length, ignoring ends)
   const pillarSurf   = model.pillars.reduce((sum, p) => sum + p.height * (4 * PILLAR_SIZE), 0)
@@ -268,7 +278,8 @@ export function computeMetrics(model: StructureModel): StructureMetrics {
       )
     : 0
   const kneeBraceSurf = model.kneeBraces.length * KNEE_BRACE_LENGTH * (4 * KNEE_BRACE_SIZE)
-  const timberSurface = pillarSurf + basePurSurf + ridgePurSurf + tieBeamSurf + rafterSurf + ridgeTieSurf + kneeBraceSurf
+  const kingPostSurf = model.kingPosts.reduce((sum, kp) => sum + kp.height * (4 * PILLAR_SIZE), 0)
+  const timberSurface = pillarSurf + basePurSurf + ridgePurSurf + tieBeamSurf + rafterSurf + ridgeTieSurf + kneeBraceSurf + kingPostSurf
 
   // Roof surface: 2 slopes × rafter length × purlin run
   const roofSurface = 2 * rafterLen * purlinLength
