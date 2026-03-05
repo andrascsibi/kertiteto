@@ -33,7 +33,23 @@ const info     = document.getElementById('info')!
 const debug    = document.getElementById('debug')!
 const pricing  = document.getElementById('pricing')!
 const devMode  = hashParams['dev'] === 'true'
-if (devMode) debug.style.display = 'block'
+const copyBtn = document.getElementById('copy-prices') as HTMLButtonElement
+let lastDebugItems: { label: string; quantity: number; unit: string; unitPrice: number; subtotal: number; category: string }[] = []
+if (devMode) {
+  debug.style.display = 'block'
+  copyBtn.style.display = 'block'
+  copyBtn.addEventListener('click', () => {
+    if (!lastDebugItems.length) return
+    const header = 'label\tqty\tunit\tunit_price\tsubtotal\tcategory'
+    const rows = lastDebugItems.map(i =>
+      `${i.label}\t${i.quantity}\t${i.unit}\t${i.unitPrice}\t${i.subtotal}\t${i.category}`
+    )
+    navigator.clipboard.writeText([header, ...rows].join('\n')).then(() => {
+      copyBtn.textContent = 'Copied!'
+      setTimeout(() => { copyBtn.textContent = 'Copy prices' }, 1000)
+    })
+  })
+}
 
 const inpWidth  = document.getElementById('inp-width')  as HTMLInputElement
 const inpLength = document.getElementById('inp-length') as HTMLInputElement
@@ -275,6 +291,7 @@ function update(): void {
     // Debug: line item breakdown
     if (devMode) {
       const allItems = [...items, ...optionItems]
+      lastDebugItems = allItems
       const rows = allItems.map(i => {
         const emoji = CATEGORY_EMOJI[i.category] ?? '❓'
         return `<tr><td>${emoji}</td><td>${i.label}</td><td class="r">${i.quantity.toFixed(2)} ${i.unit}</td><td class="r">${formatHUF(i.unitPrice)}</td><td class="r">${formatHUF(i.subtotal)}</td></tr>`

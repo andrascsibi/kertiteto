@@ -168,6 +168,7 @@ export function buildRoofing(structure: StructureModel, options: RoofingOptions)
     }
   }
 
+  // TODO: drip edge is part of the membrane option
   let flashings: Flashings | null = null
   if (options.roofing) {
     const totalLength = structure.totalLength

@@ -22,6 +22,7 @@ const MAT: Record<string, THREE.Material> = {
   metalSheet: new THREE.MeshStandardMaterial({ color: 0xCC6E52, metalness: 0.3, roughness: 0.5 }),
   flashing: new THREE.MeshStandardMaterial({ color: 0xCC6E52, metalness: 0.3, roughness: 0.5, side: THREE.DoubleSide }),
   groundScrew: new THREE.MeshStandardMaterial({ color: 0xeeeeff, metalness: 0.6, roughness: 0.1 }),
+  sheetFelt: new THREE.MeshLambertMaterial({ color: 0xcccccc, side: THREE.BackSide }),
   // pillar:  new THREE.MeshLambertMaterial({ color: COLOR }),
   // purlin:  new THREE.MeshLambertMaterial({ color: COLOR }),
   // rafter:  new THREE.MeshLambertMaterial({ color: COLOR }),
@@ -802,6 +803,11 @@ function buildMetalSheetMeshes(
     const sheetCY = eaveTopY + slopeCenter * sinP + sheetNormalDist * cosP
     const sheetCZ = eaveZ + sign * slopeCenter * cosP - sign * sheetNormalDist * sinP
 
+    // Felt underside: normal offset half a sheet thickness below sheet center
+    const feltNormalDist = sheetNormalDist - SHEET_THICKNESS / 2 - 0.001
+    const feltCY = eaveTopY + slopeCenter * sinP + feltNormalDist * cosP
+    const feltCZ = eaveZ + sign * slopeCenter * cosP - sign * feltNormalDist * sinP
+
     for (const sheet of metalSheets.sheets) {
       const geo = new THREE.BoxGeometry(sheet.width, SHEET_THICKNESS, slopeLength)
       const mesh = new THREE.Mesh(geo, MAT.metalSheet)
@@ -810,6 +816,14 @@ function buildMetalSheetMeshes(
       mesh.castShadow = true
       mesh.receiveShadow = true
       meshes.push(mesh)
+
+      // Felt underlayer (filcbevonat)
+      const feltGeo = new THREE.PlaneGeometry(sheet.width, slopeLength)
+      feltGeo.rotateX(-Math.PI / 2) // align plane normal with box Y axis
+      const feltMesh = new THREE.Mesh(feltGeo, MAT.sheetFelt)
+      feltMesh.position.set(sheet.x, feltCY, feltCZ)
+      feltMesh.quaternion.copy(quat)
+      meshes.push(feltMesh)
     }
 
     // Álló korcs at sheet junctions
