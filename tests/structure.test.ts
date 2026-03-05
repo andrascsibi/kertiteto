@@ -509,7 +509,7 @@ describe('corner knee braces (KONYOKFA)', () => {
     // 3 pillar rows for length=4: 2 corner + 1 interior
     // Corner: 2 rows × 2 z-positions × 3 = 12
     // Interior side: 1 row × 2 z-positions × 5 = 10
-    // No king posts (width=3, needsCenterPurlin=false)
+    // No king posts (width=3, needsCenterPillars=false)
     expect(m.kneeBraces.length).toBe(22)
   })
 
@@ -517,7 +517,7 @@ describe('corner knee braces (KONYOKFA)', () => {
     const m = buildStructure({ ...base, length: 10 })
     // 4 pillar rows for length=10: 2 corner + 2 interior
     // Corner: 12, Interior: 2 × 2 × 5 = 20
-    // No king posts (width=3, needsCenterPurlin=false)
+    // No king posts (width=3, needsCenterPillars=false)
     expect(m.kneeBraces.length).toBe(32)
   })
 
@@ -538,7 +538,7 @@ describe('corner knee braces (KONYOKFA)', () => {
       Math.abs(kb.end.y - kb.start.y) > 0.01
     )
     // Corner: 4 corners × 2 = 8, Interior: 1 row × 2 sides × 3 = 6 → total 14
-    // No king post braces (default width, needsCenterPurlin=false)
+    // No king post braces (default width, needsCenterPillars=false)
     expect(verticalBraces.length).toBe(14)
     for (const kb of verticalBraces) {
       const dy = Math.abs(kb.end.y - kb.start.y)
@@ -606,45 +606,36 @@ describe('corner knee braces (KONYOKFA)', () => {
     }
   })
 
-  it('wide building: ridge pillar braces (5 per ridge pillar)', () => {
+  it('wide building: center pillar braces (no center purlin)', () => {
     const m = buildStructure({ ...base, width: 5 })
     // Width 5: innerSpan = 4.7 > 4.0 → center pillars + king posts at interior rows
     // 3 pillar rows (length=4): 2 corner + 1 interior
     // Corner side: 2×2×3=12, Interior side: 1×2×5=10
-    // Ridge pillar: 2×5=10, Mid purlin crossing: 1×4=4
+    // Center pillar→tie beam (YZ): 2 corner rows × 2 = 4
     // King post→ridge: 1 interior × 2 = 2, Center pillar→ridge: 2 corner × 1 = 2
-    // King braces (purlin→main rafter): 1 main rafter × 2 sides = 2
-    expect(m.kneeBraces.length).toBe(42)
+    expect(m.kneeBraces.length).toBe(30)
   })
 
-  it('wide building: all braces have length ≈ KNEE_BRACE_LENGTH, RIDGE_KNEE_BRACE_LENGTH, or are king braces at 45°', () => {
+  it('wide building: all braces have length ≈ KNEE_BRACE_LENGTH or RIDGE_KNEE_BRACE_LENGTH', () => {
     const m = buildStructure({ ...base, width: 5 })
     for (const kb of m.kneeBraces) {
       const dx = kb.end.x - kb.start.x, dy = kb.end.y - kb.start.y, dz = kb.end.z - kb.start.z
       const len = Math.sqrt(dx * dx + dy * dy + dz * dz)
       const isStandard = Math.abs(len - KNEE_BRACE_LENGTH) < 1e-6
       const isRidge = Math.abs(len - RIDGE_KNEE_BRACE_LENGTH) < 1e-6
-      // King braces: x=const plane, 45° (dy ≈ |dz|), variable length
-      const isKingBrace = Math.abs(dx) < 1e-9 && Math.abs(Math.abs(dy) - Math.abs(dz)) < 1e-6 && len > 0.1
-      expect(isStandard || isRidge || isKingBrace).toBe(true)
+      expect(isStandard || isRidge).toBe(true)
     }
   })
 
-  it('wide building: mid purlin ↔ tie beam crossings at interior rows are all horizontal', () => {
+  it('wide building: no center purlin braces, only pillar↔tie beam at z=0', () => {
     const m = buildStructure({ ...base, width: 5 })
-    // Find horizontal braces at z ≈ 0 (one endpoint) on interior rows
-    const horizAtZ0 = m.kneeBraces.filter(kb =>
-      Math.abs(kb.start.y - kb.end.y) < 0.001 &&
-      (Math.abs(kb.start.z) < 0.01 || Math.abs(kb.end.z) < 0.01)
+    // Center pillar braces at z=0: only vertical pillar↔tie beam (YZ) at corner rows
+    const bracesAtZ0 = m.kneeBraces.filter(kb =>
+      Math.abs(kb.start.z) < 0.01 || Math.abs(kb.end.z) < 0.01
     )
-    // Corner rows: 2 horizontal purlin↔tiebeam per ridge pillar × 2 rows = 4
-    // Plus 2 horizontal side corner braces × 2 rows... no, those aren't at z≈0
-    // Interior row: 4 horizontal at z=0 crossing
-    // Total horizontal touching z≈0: ridge pillar 4 + interior 4 = 8
-    expect(horizAtZ0.length).toBeGreaterThanOrEqual(4)
-    for (const kb of horizAtZ0) {
-      expect(kb.start.y).toBeCloseTo(kb.end.y, 6)
-    }
+    // Corner rows: 2 rows × 2 pillar↔tie beam (YZ) = 4
+    // + king post→ridge: 1 interior × 2 = 2, center pillar→ridge: 2 corner × 1 = 2
+    expect(bracesAtZ0.length).toBe(8)
   })
 })
 

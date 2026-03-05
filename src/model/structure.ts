@@ -47,7 +47,7 @@ import {
 export const PILLAR_SIZE  = 0.15   // 15×15 cm
 export const PURLIN_SIZE  = 0.15   // 15×15 cm (TALP SZELEMEN)
 export const RIDGE_SIZE       = 0.10  // 10×10 cm (GERINC SZELEMEN, default)
-export const RIDGE_SIZE_WIDE  = 0.12  // 12×12 cm (wider structures with center purlin)
+export const RIDGE_SIZE_WIDE  = 0.12  // 12×12 cm (wider structures with center pillars)
 export const RAFTER_WIDTH = 0.075       // 7.5 cm (default)
 export const RAFTER_WIDTH_LONG = 0.10   // 10 cm (for long rafter spans)
 export const RAFTER_DEPTH = 0.15        // 15 cm (the tall dimension, perpendicular to rafter axis)
@@ -82,8 +82,8 @@ export function buildStructure(params: InputParams): StructureModel {
 
   // ── Ridge purlin size (conditional on span) ─────────────────────────────────
   const innerSpan = width - 2 * PILLAR_SIZE
-  const needsCenterPurlin = innerSpan > MAX_UNSUPPORTED_TIE_BEAM_SPAN
-  const ridgeSize = needsCenterPurlin ? RIDGE_SIZE_WIDE : RIDGE_SIZE
+  const needsCenterPillars = innerSpan > MAX_UNSUPPORTED_TIE_BEAM_SPAN
+  const ridgeSize = needsCenterPillars ? RIDGE_SIZE_WIDE : RIDGE_SIZE
 
   // ── Vertical levels ──────────────────────────────────────────────────────────
   const yPurlinCenter = GROUND_SCREW_HEIGHT + PILLAR_HEIGHT + PURLIN_SIZE / 2
@@ -116,7 +116,6 @@ export function buildStructure(params: InputParams): StructureModel {
   const basePurlins: Purlin[] = [
     makePurlin(xMin, xMax, yPurlinCenter, -zPurlin, PURLIN_SIZE),
     makePurlin(xMin, xMax, yPurlinCenter, +zPurlin, PURLIN_SIZE),
-    ...(needsCenterPurlin ? [makePurlin(-length / 2 + PURLIN_SIZE / 2, length / 2 - PURLIN_SIZE / 2, yPurlinCenter, 0, PURLIN_SIZE)] : []),
   ]
 
   // ── Ridge purlin (GERINC SZELEMEN) ───────────────────────────────────────────
@@ -257,7 +256,7 @@ export function buildStructure(params: InputParams): StructureModel {
   // Vertical members at interior pillar rows, z=0, from tie beam top to ridge purlin bottom.
   // Only needed when building is too narrow for center pillars — king posts replace them structurally.
   const kingPosts: Pillar[] = []
-  if (needsCenterPurlin) {
+  if (needsCenterPillars) {
     for (let i = 1; i < pillarXPositions.length - 1; i++) {
       const kpHeight = yRidgePurlinBottom - yBasePurlinTop
       kingPosts.push({ base: { x: pillarXPositions[i], y: yBasePurlinTop, z: 0 }, height: kpHeight })
@@ -265,7 +264,7 @@ export function buildStructure(params: InputParams): StructureModel {
   }
 
   // ── Knee braces (KONYOKFA) ───────────────────────────────────────────────────
-  const kneeBraces = buildKneeBraces(pillarXPositions, width, needsCenterPurlin)
+  const kneeBraces = buildKneeBraces(pillarXPositions, width, needsCenterPillars)
 
   // ── King post / center pillar → ridge purlin knee braces ────────────────────
   const kpLeg = RIDGE_KNEE_BRACE_LENGTH * Math.cos(Math.PI / 4)
@@ -279,7 +278,7 @@ export function buildStructure(params: InputParams): StructureModel {
     }
   }
   // Center pillars at corner rows (when wide): brace inward toward center along X
-  if (needsCenterPurlin) {
+  if (needsCenterPillars) {
     for (let i = 0; i < pillarXPositions.length; i++) {
       const isCorner = i === 0 || i === pillarXPositions.length - 1
       if (!isCorner) continue
@@ -293,7 +292,7 @@ export function buildStructure(params: InputParams): StructureModel {
   }
 
   // ── King braces (center purlin → main rafter, in x=const plane at 45°) ───
-  if (needsCenterPurlin && mainPillarXs.length > 0) {
+  if (needsCenterPillars && mainPillarXs.length > 0) {
     const kingBraceD = (yRafterAtRidge - yPurlinCenter) / (1 + tanPitch)
     for (const mx of mainPillarXs) {
       // Left slope
@@ -417,7 +416,7 @@ function makeTieBeam(x: number, y: number, zHalf: number): TieBeam {
   }
 }
 
-function buildKneeBraces(pillarXPositions: number[], width: number, needsCenterPurlin: boolean): KneeBrace[] {
+function buildKneeBraces(pillarXPositions: number[], width: number, needsCenterPillars: boolean): KneeBrace[] {
   const leg = KNEE_BRACE_LENGTH * Math.cos(Math.PI / 4)  // 1/√2 ≈ 0.707
   const zHalf = width / 2 - PILLAR_SIZE / 2  // pillar center z offset
   const yJ = GROUND_SCREW_HEIGHT + PILLAR_HEIGHT + PURLIN_SIZE / 2  // purlin/tie beam center level
@@ -454,27 +453,12 @@ function buildKneeBraces(pillarXPositions: number[], width: number, needsCenterP
       }
     }
 
-    // ── Ridge pillar braces (z=0, corner rows only when wide) ───────────────
-    if (needsCenterPurlin && isCornerRow) {
-      braces.push(
-        { start: { x: xP, y: yJ - leg, z: 0 }, end: { x: xP + sx * leg, y: yJ, z: 0 } },                // Pillar ↔ Mid purlin (XY)
-      )
+    // ── Center pillar braces (z=0, corner rows only when wide) ──────────────
+    if (needsCenterPillars && isCornerRow) {
       for (const dz of [-1, +1]) {
         braces.push(
           { start: { x: xP, y: yJ - leg, z: 0 }, end: { x: xP, y: yJ, z: dz * leg } },                   // Pillar ↔ Tie beam (YZ)
-          { start: { x: xP + sx * leg, y: yJ, z: 0 }, end: { x: xP, y: yJ, z: dz * leg } },              // Mid purlin ↔ Tie beam (XZ)
         )
-      }
-    }
-
-    // ── Mid purlin ↔ Tie beam crossing (interior rows, no pillar) ───────────
-    if (needsCenterPurlin && !isCornerRow) {
-      for (const dx of [-1, +1]) {
-        for (const dz of [-1, +1]) {
-          braces.push(
-            { start: { x: xP + dx * leg, y: yJ, z: 0 }, end: { x: xP, y: yJ, z: dz * leg } },            // Mid purlin ↔ Tie beam (XZ)
-          )
-        }
       }
     }
   }
