@@ -613,29 +613,32 @@ describe('corner knee braces (KONYOKFA)', () => {
     // Corner side: 2×2×3=12, Interior side: 1×2×5=10
     // Center pillar→tie beam (YZ): 2 corner rows × 2 = 4
     // King post→ridge: 1 interior × 2 = 2, Center pillar→ridge: 2 corner × 1 = 2
-    expect(m.kneeBraces.length).toBe(30)
+    // King braces (king post→main rafter at 45°): 1 main pillar × 2 sides = 2
+    expect(m.kneeBraces.length).toBe(32)
   })
 
-  it('wide building: all braces have length ≈ KNEE_BRACE_LENGTH or RIDGE_KNEE_BRACE_LENGTH', () => {
+  it('wide building: all braces have length ≈ KNEE_BRACE_LENGTH, RIDGE_KNEE_BRACE_LENGTH, or are king braces at 45°', () => {
     const m = buildStructure({ ...base, width: 5 })
     for (const kb of m.kneeBraces) {
       const dx = kb.end.x - kb.start.x, dy = kb.end.y - kb.start.y, dz = kb.end.z - kb.start.z
       const len = Math.sqrt(dx * dx + dy * dy + dz * dz)
       const isStandard = Math.abs(len - KNEE_BRACE_LENGTH) < 1e-6
       const isRidge = Math.abs(len - RIDGE_KNEE_BRACE_LENGTH) < 1e-6
-      expect(isStandard || isRidge).toBe(true)
+      // King braces: x=const plane, 45° (dy ≈ |dz|), variable length
+      const isKingBrace = Math.abs(dx) < 1e-9 && Math.abs(Math.abs(dy) - Math.abs(dz)) < 1e-6 && len > 0.1
+      expect(isStandard || isRidge || isKingBrace).toBe(true)
     }
   })
 
-  it('wide building: no center purlin braces, only pillar↔tie beam at z=0', () => {
+  it('wide building: no center purlin braces, only pillar↔tie beam and king braces at z=0', () => {
     const m = buildStructure({ ...base, width: 5 })
-    // Center pillar braces at z=0: only vertical pillar↔tie beam (YZ) at corner rows
     const bracesAtZ0 = m.kneeBraces.filter(kb =>
       Math.abs(kb.start.z) < 0.01 || Math.abs(kb.end.z) < 0.01
     )
     // Corner rows: 2 rows × 2 pillar↔tie beam (YZ) = 4
-    // + king post→ridge: 1 interior × 2 = 2, center pillar→ridge: 2 corner × 1 = 2
-    expect(bracesAtZ0.length).toBe(8)
+    // King post→ridge: 1 interior × 2 = 2, center pillar→ridge: 2 corner × 1 = 2
+    // King braces start at z=0: 1 main pillar × 2 sides = 2
+    expect(bracesAtZ0.length).toBe(10)
   })
 })
 
