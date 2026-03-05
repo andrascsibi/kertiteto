@@ -1,7 +1,10 @@
 import * as THREE from 'three'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
+import { FBXLoader } from 'three/addons/loaders/FBXLoader.js'
 import type { StructureModel } from '../model/types'
 import { buildRoofMeshes, type RoofRenderOptions } from './roof'
+
+const HUMAN_HEIGHT = 1.80 // metres
 
 export interface SceneHandle {
   updateModel(model: StructureModel, roofingOptions?: RoofRenderOptions): void
@@ -66,6 +69,26 @@ export function createScene(container: HTMLElement): SceneHandle {
   grid.position.y = 0.002
   scene.add(grid)
 
+  // ── Human figure for scale reference ────────────────────────────────────────
+  const humanMat = new THREE.MeshLambertMaterial({ color: 0x8888aa })
+  let humanTemplate: THREE.Group | null = null
+  const fbxLoader = new FBXLoader()
+  fbxLoader.load('human.fbx', (fbx) => {
+    // Normalise to HUMAN_HEIGHT
+    const box = new THREE.Box3().setFromObject(fbx)
+    const rawHeight = box.max.y - box.min.y
+    const s = HUMAN_HEIGHT / rawHeight
+    fbx.scale.set(s, s, s)
+    // Apply uniform material
+    fbx.traverse(child => {
+      if (child instanceof THREE.Mesh) {
+        child.material = humanMat
+        child.castShadow = true
+      }
+    })
+    humanTemplate = fbx
+  })
+
   // ── Model group ─────────────────────────────────────────────────────────────
   let modelGroup = new THREE.Group()
   scene.add(modelGroup)
@@ -97,6 +120,18 @@ export function createScene(container: HTMLElement): SceneHandle {
       disposeGroup(modelGroup)
       scene.remove(modelGroup)
       modelGroup = buildRoofMeshes(model, roofingOptions)
+
+      // Add human figure for scale reference, centered along X
+      if (humanTemplate) {
+        const human = humanTemplate.clone()
+        // Center the group along X by measuring its bounding box
+        const box = new THREE.Box3().setFromObject(human)
+        const centerX = (box.min.x + box.max.x) / 2
+        const maxZ = Math.max(...model.pillars.map(p => p.base.z))
+        human.position.set(-centerX, 0, -maxZ + 0.5)
+        modelGroup.add(human)
+      }
+
       scene.add(modelGroup)
       // Keep camera target at mid-pillar height
       controls.target.set(0, model.pillarHeight / 2, 0)
