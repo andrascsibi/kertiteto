@@ -98,6 +98,10 @@ function formatHUF(amount: number): string {
   return Math.round(amount).toLocaleString('hu-HU') + ' Ft'
 }
 
+function formatHUF1k(amount: number): string {
+  return (Math.ceil(amount / 1000) * 1000).toLocaleString('hu-HU') + ' Ft'
+}
+
 interface PriceLineItem {
   label: string
   unitPrice: number
@@ -271,7 +275,7 @@ function update(): void {
     const unitPrice = total / m.totalFootprint
     pricing.innerHTML =
       `<p class="section-title">Becsült ár (bruttó)</p>` +
-      `<p class="price-total">${formatHUF(total)}</p>` +
+      `<p class="price-total">${formatHUF1k(total)}</p>` +
       `<p class="price-unit">${formatHUF(unitPrice)} / m²</p>`
 
     // Store for modal
@@ -481,9 +485,9 @@ selectTimber(DEFAULT_TIMBER)
 function openModal(): void {
   modalSummary.innerHTML =
     `<strong>${lastConfigSummary}</strong><br>` +
-    `Becsült ár: <strong>~${formatHUF(lastTotal)}</strong>`
+    `Becsült ár: <strong>~${formatHUF1k(lastTotal)}</strong>`
   hiddenConfig.value = lastConfigSummary
-  hiddenPrice.value = formatHUF(lastTotal)
+  hiddenPrice.value = formatHUF1k(lastTotal)
   hiddenUrl.value = window.location.href
   const submitBtn = quoteForm.querySelector('.btn-submit') as HTMLButtonElement
   submitBtn.disabled = false

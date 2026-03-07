@@ -270,8 +270,8 @@ export function buildStructure(params: InputParams): StructureModel {
 
     for (const rp of rafterPositions) {
       if (rp.type !== 'main') continue
-      // collarTies.push({ x: rp.x - ctXOffset, yTop: ctYTop, yBottom: ctYBottom, zHalfTop: ctZHalfTop, zHalfBottom: ctZHalf })
-      // collarTies.push({ x: rp.x + ctXOffset, yTop: ctYTop, yBottom: ctYBottom, zHalfTop: ctZHalfTop, zHalfBottom: ctZHalf })
+      collarTies.push({ x: rp.x - ctXOffset, yTop: ctYTop, yBottom: ctYBottom, zHalfTop: ctZHalfTop, zHalfBottom: ctZHalf })
+      collarTies.push({ x: rp.x + ctXOffset, yTop: ctYTop, yBottom: ctYBottom, zHalfTop: ctZHalfTop, zHalfBottom: ctZHalf })
     }
   }
 
