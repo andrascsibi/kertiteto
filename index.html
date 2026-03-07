@@ -447,8 +447,8 @@
       /* ── Logo watermark ──────────────────────────────────────────────────── */
       #logo {
         position: absolute;
-        bottom: 1rem;
-        left: 1rem;
+        top: 1rem;
+        right: 1rem;
         height: 96px;
         opacity: 0.7;
         pointer-events: none;
@@ -896,12 +896,13 @@
 
       <div id="pricing"></div>
       <button id="cta-button" disabled>Árajánlat kérése</button>
+      <button id="copy-prices" style="display:none; margin-top:0.3rem; font-size:0.75rem; opacity:0.6; cursor:pointer;">Copy prices</button>
     </aside>
 
     <main id="viewport">
       <div id="debug"></div>
       <div id="info"></div>
-      <img id="logo" src="/kertiteto_white.png" alt="Kertitető">
+      <img id="logo" src="/logo.svg" alt="Kertitető">
     </main>
 
     </section>

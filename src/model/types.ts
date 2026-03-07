@@ -114,4 +114,6 @@ export interface StructureModel {
   kneeBraces: KneeBrace[]
   /** King posts (FÜGGESZTŐMŰ): vertical members from tie beam to ridge purlin at interior rows */
   kingPosts: Pillar[]
+  /** Collar ties (FOGÓPÁR): long horizontal ties across both slopes on main rafters */
+  collarTies: RidgeTie[]
 }

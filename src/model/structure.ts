@@ -56,6 +56,11 @@ export const RIDGE_TIE_NOTCH = 0.05 // overlap with ridge purlin (m)
 export const RIDGE_TIE_WIDTH = 0.05 // 5 cm (along ridge direction)
 export const RIDGE_TIE_DEPTH = 0.15 // 15 cm (vertical extent)
 
+export const COLLAR_TIE_WIDTH  = 0.08  // 8 cm (along ridge direction)
+export const COLLAR_TIE_DEPTH  = 0.16  // 16 cm (vertical extent)
+export const COLLAR_TIE_LENGTH = 6.75  // m (span across both slopes)
+export const COLLAR_TIE_MIN_WIDTH = 7.0 // m (only for width >= 7m)
+
 export const KNEE_BRACE_WIDTH  = 0.075 // 7.5 cm (along ridge / along purlin)
 export const KNEE_BRACE_DEPTH  = 0.15  // 15 cm (the tall dimension)
 export const KNEE_BRACE_LENGTH = 1.0   // 1 m along diagonal
@@ -128,6 +133,9 @@ export function buildStructure(params: InputParams): StructureModel {
   const ridgePillarHeight = yRidgePurlinBottom - GROUND_SCREW_HEIGHT
   const pillars = buildPillars(width, pillarXPositions, ridgePillarHeight)
 
+  // Which pillar positions become main rafter anchors (needed early for tie beam filtering)
+  const mainPillarXs = pillarXPositions.length >= 4 ? pillarXPositions : pillarXPositions.slice(1, -1)
+
   // ── Tie beams (KOTOGERENDA) ──────────────────────────────────────────────────
   // One tie beam above every pillar row, connecting the two base purlin centers.
   const tieBeams: TieBeam[] = pillarXPositions.map(x =>
@@ -146,9 +154,6 @@ export function buildStructure(params: InputParams): StructureModel {
   const rw = rafterSpan > LONG_RAFTER_LENGTH ? RAFTER_WIDTH_LONG : RAFTER_WIDTH
   const xGableLeft   = xMin + rw / 2
   const xGableRight  = xMax - rw / 2
-
-  // Which pillar positions become main rafter anchors
-  const mainPillarXs = pillarXPositions.length >= 4 ? pillarXPositions : pillarXPositions.slice(1, -1)
 
   // Ordered anchor X positions: gable left, main pillars, gable right
   const anchorXs: { x: number; type: 'gable' | 'main' }[] = [
@@ -252,6 +257,24 @@ export function buildStructure(params: InputParams): StructureModel {
     }
   }
 
+  // ── Collar ties (FOGÓPÁR) ────────────────────────────────────────────────────
+  // Long horizontal ties spanning both slopes, placed at interior main rafter positions.
+  // First and last main rafters keep tie beams instead; interior ones get collar ties.
+  const collarTies: RidgeTie[] = []
+  if (width >= COLLAR_TIE_MIN_WIDTH) {
+    const ctZHalf = COLLAR_TIE_LENGTH / 2
+    const ctYTop = yRafterTop - ctZHalf * tanPitch + COLLAR_TIE_DEPTH
+    const ctYBottom = ctYTop - COLLAR_TIE_DEPTH
+    const ctZHalfTop = ctZHalf - COLLAR_TIE_DEPTH / tanPitch
+    const ctXOffset = rw / 2 + COLLAR_TIE_WIDTH / 2
+
+    for (const rp of rafterPositions) {
+      if (rp.type !== 'main') continue
+      // collarTies.push({ x: rp.x - ctXOffset, yTop: ctYTop, yBottom: ctYBottom, zHalfTop: ctZHalfTop, zHalfBottom: ctZHalf })
+      // collarTies.push({ x: rp.x + ctXOffset, yTop: ctYTop, yBottom: ctYBottom, zHalfTop: ctZHalfTop, zHalfBottom: ctZHalf })
+    }
+  }
+
   // ── King posts (FÜGGESZTŐMŰ) ─────────────────────────────────────────────────
   // Vertical members at interior pillar rows, z=0, from tie beam top to ridge purlin bottom.
   // Only needed when building is too narrow for center pillars — king posts replace them structurally.
@@ -322,6 +345,7 @@ export function buildStructure(params: InputParams): StructureModel {
     rafterSpacing: maxSpacing,
     kneeBraces,
     kingPosts,
+    collarTies,
   }
 }
 
