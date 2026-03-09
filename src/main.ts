@@ -436,7 +436,7 @@ const TIMBER_COLORS = [
   { id: '614',  name: 'Sötétzöld',        hex: 0x4A5C38 },
 ]
 
-const DEFAULT_TIMBER = '608'
+const DEFAULT_TIMBER = '610'
 let selectedTimber = DEFAULT_TIMBER
 
 const timberSwatch = document.getElementById('timber-swatch') as HTMLButtonElement
