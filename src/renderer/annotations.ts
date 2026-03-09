@@ -1,5 +1,5 @@
 /**
- * Ground-plane dimension annotations (width & length lines with labels).
+ * Dimension annotations: ground-plane (width & length) and vertical (heights).
  */
 
 import * as THREE from 'three'
@@ -10,6 +10,7 @@ const OFFSET_INNER = 0.5     // inner dims: distance from overhang edge
 const OFFSET_OUTER = 1.0     // outer dims: further out past inner
 const TICK_LENGTH = 0.15     // perpendicular end-tick half-length
 const LINE_COLOR = 0xffffff
+const V_OFFSET = 0.3         // horizontal offset from gable end for vertical dims
 
 function makeLabel(text: string): THREE.Sprite | null {
   if (typeof document === 'undefined') return null
@@ -32,24 +33,25 @@ function makeLabel(text: string): THREE.Sprite | null {
   return sprite
 }
 
-/** Build a single dimension annotation: two ticks + connecting line + label. */
+/** Build a single dimension annotation: two ticks + connecting line + label.
+ *  Works for both horizontal (ground) and vertical dimension lines. */
 function buildDimension(
   from: THREE.Vector3,
   to: THREE.Vector3,
   tickDir: THREE.Vector3,  // unit vector perpendicular to the dimension line
   label: string,
+  labelOffset?: THREE.Vector3, // offset from midpoint for label placement
 ): THREE.Group {
   const group = new THREE.Group()
 
-  // Line vertices: [tick1-start, tick1-end, tick2-start, tick2-end, line-start, line-end]
   const tickOffset = tickDir.clone().multiplyScalar(TICK_LENGTH)
   const positions = new Float32Array([
     // Tick at 'from'
-    from.x - tickOffset.x, from.y, from.z - tickOffset.z,
-    from.x + tickOffset.x, from.y, from.z + tickOffset.z,
+    from.x - tickOffset.x, from.y - tickOffset.y, from.z - tickOffset.z,
+    from.x + tickOffset.x, from.y + tickOffset.y, from.z + tickOffset.z,
     // Tick at 'to'
-    to.x - tickOffset.x, to.y, to.z - tickOffset.z,
-    to.x + tickOffset.x, to.y, to.z + tickOffset.z,
+    to.x - tickOffset.x, to.y - tickOffset.y, to.z - tickOffset.z,
+    to.x + tickOffset.x, to.y + tickOffset.y, to.z + tickOffset.z,
     // Connecting line
     from.x, from.y, from.z,
     to.x, to.y, to.z,
@@ -61,21 +63,29 @@ function buildDimension(
   const lines = new THREE.LineSegments(geo, mat)
   group.add(lines)
 
-  // Label at midpoint, slightly above ground
+  const mid = new THREE.Vector3(
+    (from.x + to.x) / 2,
+    (from.y + to.y) / 2,
+    (from.z + to.z) / 2,
+  )
+  if (labelOffset) mid.add(labelOffset)
   const sprite = makeLabel(label)
   if (sprite) {
-    sprite.position.set(
-      (from.x + to.x) / 2,
-      0.05,
-      (from.z + to.z) / 2,
-    )
+    sprite.position.copy(mid)
     group.add(sprite)
   }
 
   return group
 }
 
-export function buildAnnotations(model: StructureModel): THREE.Group {
+export interface HeightAnnotations {
+  /** Y of pillar top (ground screw + pillar height) */
+  pillarTopY: number
+  /** Y of the highest point of the building (ridge peak incl. roofing stack) */
+  peakY: number
+}
+
+export function buildAnnotations(model: StructureModel, heights?: HeightAnnotations): THREE.Group {
   const group = new THREE.Group()
   const { width, length, eavesOverhang, gableOverhang } = model.params
 
@@ -117,6 +127,31 @@ export function buildAnnotations(model: StructureModel): THREE.Group {
     new THREE.Vector3(0, 0, 1),
     `${totalLength.toFixed(1)} m`,
   ))
+
+  // ── Vertical height dimensions (at gable end, in the Z=0 plane) ────────────
+  if (heights) {
+    const vx = length / 2 +0.01//+ gableOverhang //+ V_OFFSET
+    const vz = - (width / 2 + eavesOverhang + V_OFFSET);
+    const labelOff = new THREE.Vector3(0.3, 0, 0)  // push label away from building
+
+    // Pillar height: ground → pillar top
+    group.add(buildDimension(
+      new THREE.Vector3(vx, 0, vz),
+      new THREE.Vector3(vx, heights.pillarTopY, vz),
+      new THREE.Vector3(0, 0, 1),  // tick perpendicular: along Z
+      `${heights.pillarTopY.toFixed(2)} m`,
+      labelOff,
+    ))
+
+    // Total height: ground → peak
+    group.add(buildDimension(
+      new THREE.Vector3(vx, 0, vz - V_OFFSET),
+      new THREE.Vector3(vx, heights.peakY, vz - V_OFFSET),
+      new THREE.Vector3(0, 0, 1),
+      `${heights.peakY.toFixed(2)} m`,
+      labelOff,
+    ))
+  }
 
   return group
 }
