@@ -5,7 +5,7 @@
 import * as THREE from 'three'
 import type { StructureModel } from '../model/types'
 
-const ANNOTATION_Y = 0.004   // just above grid (0.002)
+const ANNOTATION_Y = 0.06   // just above grid (0.002)
 const OFFSET_INNER = 0.5     // inner dims: distance from overhang edge
 const OFFSET_OUTER = 1.0     // outer dims: further out past inner
 const TICK_LENGTH = 0.15     // perpendicular end-tick half-length
