@@ -24,6 +24,7 @@ const MAT: Record<string, THREE.Material> = {
   flashing: new THREE.MeshStandardMaterial({ color: 0xCC6E52, metalness: 0.3, roughness: 0.5, side: THREE.DoubleSide }),
   groundScrew: new THREE.MeshStandardMaterial({ color: 0xeeeeff, metalness: 0.6, roughness: 0.1 }),
   sheetFelt: new THREE.MeshLambertMaterial({ color: 0xcccccc, side: THREE.BackSide }),
+  bugGuard: new THREE.MeshBasicMaterial({ color: 0xCC6E52, wireframe: true }),
   // pillar:  new THREE.MeshLambertMaterial({ color: COLOR }),
   // purlin:  new THREE.MeshLambertMaterial({ color: COLOR }),
   // rafter:  new THREE.MeshLambertMaterial({ color: COLOR }),
@@ -108,10 +109,12 @@ export function disposeMaterials(): void {
 export function setMetalAppearance(color: number, roughness: number): void {
   const sheet = MAT.metalSheet as THREE.MeshStandardMaterial
   const flash = MAT.flashing as THREE.MeshStandardMaterial
+  const guard = MAT.bugGuard as THREE.MeshBasicMaterial
   sheet.color.setHex(color)
   sheet.roughness = roughness
   flash.color.setHex(color)
   flash.roughness = roughness
+  guard.color.setHex(color)
 }
 
 const TIMBER_KEYS = ['pillar', 'purlin', 'rafter', 'lamberia'] as const
@@ -1436,15 +1439,11 @@ function buildBugGuardMeshes(
 
   const meshes: THREE.Mesh[] = []
 
-  // Wireframe material — same color as flashing (RAL 8004), basic for wireframe compatibility
-  const bugGuardMat = new THREE.MeshBasicMaterial({
-    color: 0xCC6E52,
-    wireframe: true,
-  })
+  const bugGuardMat = MAT.bugGuard
 
   // Subdivisions for mesh look: ~1.5cm grid
-  const widthSegs = Math.max(2, Math.round(bugGuard.length / 0.015))
-  const heightSegs = Math.max(2, Math.round(bugGuard.height / 0.015))
+  const widthSegs = Math.max(2, Math.round(bugGuard.length / 0.005))
+  const heightSegs = Math.max(2, Math.round(bugGuard.height / 0.005))
 
   for (let side = 0; side < 2; side++) {
     const isLeft = side === 0
@@ -1466,7 +1465,7 @@ function buildBugGuardMeshes(
     const baseOffset = hasLamberia ? LAMBERIA_HEIGHT : 0
     const normalCenter = baseOffset + bugGuard.height / 2
     const cY = eaveTopY + normalCenter * cosP
-    const cZ = eaveZ - sign * normalCenter * sinP
+    const cZ = eaveZ - sign * normalCenter * sinP - sign * 0.001
 
     // PlaneGeometry: width = totalLength (along X), height = guard height (along slope normal)
     const geo = new THREE.PlaneGeometry(bugGuard.length, bugGuard.height, widthSegs, heightSegs)
