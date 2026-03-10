@@ -4,6 +4,16 @@ export const ROOF_BATTEN_DISTANCE = 0.2 // meters between roof battens
 export const LAMBERIA_HEIGHT = 0.016    // 16mm thick
 export const LAMBERIA_WIDTH  = 0.112    // 112mm wide across slope
 
+// Membrane (FÓLIA)
+export const MEMBRANE_THICKNESS = 0.001  // 1mm
+
+// Counter batten (ELLENLÉC)
+export const COUNTER_BATTEN_SIZE = 0.05  // 5×5cm cross-section
+
+// Roof batten (TETŐLÉC)
+export const ROOF_BATTEN_HEIGHT = 0.025  // 2.5cm perpendicular to slope
+export const ROOF_BATTEN_WIDTH  = 0.1    // 10cm along slope direction
+
 // Developed width — flat-laid width of each flashing profile (m)
 export const FLASHING_DEVELOPED_WIDTH = {
   dripEdge:      0.125,  // 125 mm
@@ -291,7 +301,7 @@ export function buildRoofing(structure: StructureModel, options: RoofingOptions)
   let bugGuard: BugGuardModel | null = null
   if (options.membrane && options.roofing) {
     // Height from lamberia top (or rafter top) to roof batten top
-    const height = 0.001 + 0.05 + 0.03  // membrane + counter batten + roof batten
+    const height = MEMBRANE_THICKNESS + COUNTER_BATTEN_SIZE + ROOF_BATTEN_HEIGHT
     bugGuard = {
       length: structure.totalLength,
       height,

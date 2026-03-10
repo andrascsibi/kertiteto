@@ -6,7 +6,7 @@ import * as THREE from 'three'
 import type { StructureModel, Pillar, Purlin, TieBeam, Rafter, RidgeTie, KneeBrace } from '../model/types'
 import { PILLAR_SIZE, PURLIN_SIZE, RIDGE_TIE_WIDTH, COLLAR_TIE_WIDTH, KNEE_BRACE_WIDTH, KNEE_BRACE_DEPTH } from '../model/structure'
 import { EAVE_PLUMB_HEIGHT } from '../model/geometry'
-import { LAMBERIA_HEIGHT, LAMBERIA_WIDTH, ROOF_BATTEN_DISTANCE, SHEET_THICKNESS, KORC_HEIGHT, KORC_WIDTH, DRIP_EDGE_FLAT_WIDTH, DRIP_EDGE_VISOR_WIDTH, DRIP_EDGE_VISOR_ANGLE, DRIP_EDGE_THICKNESS, EAVES_FLASHING_VISOR_WIDTH, EAVES_FLASHING_ANGLE, EAVES_FLASHING_THICKNESS, GABLE_FLASHING_SKIRT_HEIGHT, GABLE_FLASHING_SKIRT_THICKNESS, GABLE_FLASHING_CAP_HEIGHT, GABLE_FLASHING_CAP_WIDTH, GABLE_FLASHING_VISOR_WIDTH, GABLE_FLASHING_VISOR_ANGLE, RIDGE_FLASHING_WIDTH, RIDGE_FLASHING_GAP, RIDGE_FLASHING_THICKNESS, RIDGE_CAP_HEIGHT, RIDGE_CAP_GAP, RIDGE_CAP_WIDTH, RIDGE_CAP_X_EXTRA } from '../model/roofing'
+import { LAMBERIA_HEIGHT, LAMBERIA_WIDTH, ROOF_BATTEN_DISTANCE, MEMBRANE_THICKNESS, COUNTER_BATTEN_SIZE, ROOF_BATTEN_HEIGHT, ROOF_BATTEN_WIDTH, SHEET_THICKNESS, KORC_HEIGHT, KORC_WIDTH, DRIP_EDGE_FLAT_WIDTH, DRIP_EDGE_VISOR_WIDTH, DRIP_EDGE_VISOR_ANGLE, DRIP_EDGE_THICKNESS, EAVES_FLASHING_VISOR_WIDTH, EAVES_FLASHING_ANGLE, EAVES_FLASHING_THICKNESS, GABLE_FLASHING_SKIRT_HEIGHT, GABLE_FLASHING_SKIRT_THICKNESS, GABLE_FLASHING_CAP_HEIGHT, GABLE_FLASHING_CAP_WIDTH, GABLE_FLASHING_VISOR_WIDTH, GABLE_FLASHING_VISOR_ANGLE, RIDGE_FLASHING_WIDTH, RIDGE_FLASHING_GAP, RIDGE_FLASHING_THICKNESS, RIDGE_CAP_HEIGHT, RIDGE_CAP_GAP, RIDGE_CAP_WIDTH, RIDGE_CAP_X_EXTRA } from '../model/roofing'
 import type { RoofingModel } from '../model/roofing'
 import { buildAnnotations, type HeightAnnotations } from './annotations'
 import { GROUND_SCREW_HEIGHT, PILLAR_HEIGHT } from '../model/structure'
@@ -508,8 +508,6 @@ function buildLamberiaMeshes(model: StructureModel): THREE.Mesh[] {
 
 // ── Membrane ──────────────────────────────────────────────────────────────────
 
-const MEMBRANE_THICKNESS = 0.001 // 1mm
-
 /**
  * Builds membrane meshes for both slopes.
  *
@@ -618,8 +616,6 @@ function buildMembraneMeshes(model: StructureModel, hasLamberia: boolean): THREE
 
 // ── Counter Battens ──────────────────────────────────────────────────────────
 
-const COUNTER_BATTEN_SIZE = 0.05 // 5×5cm cross-section
-
 /**
  * Builds counter batten meshes — one per rafter, centered above rafter centerline.
  *
@@ -683,9 +679,6 @@ function buildCounterBattenMeshes(model: StructureModel, hasLamberia: boolean): 
 }
 
 // ── Roof Battens ─────────────────────────────────────────────────────────────
-
-const ROOF_BATTEN_HEIGHT = 0.025 // 3cm perpendicular to slope
-const ROOF_BATTEN_WIDTH = 0.1  // 5cm along slope direction
 
 /**
  * Builds roof batten meshes — horizontal rows running along X (totalLength),
