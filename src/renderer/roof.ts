@@ -14,14 +14,14 @@ import { GROUND_SCREW_HEIGHT, PILLAR_HEIGHT } from '../model/structure'
 // const COLOR = '#0c83fa' 
 
 const MAT: Record<string, THREE.Material> = {
-  pillar:   new THREE.MeshLambertMaterial({ color: 0x5a3a1a }),
-  purlin:   new THREE.MeshLambertMaterial({ color: 0x7a5030 }),
-  rafter:   new THREE.MeshLambertMaterial({ color: 0x9b6840 }),
-  lamberia:  new THREE.MeshLambertMaterial({ color: 0x7a5030 }),
-  membrane:  new THREE.MeshLambertMaterial({ color: 0xcccccc }),
-  counterBatten: new THREE.MeshLambertMaterial({ color: 0x40e0d0 }),
-  metalSheet: new THREE.MeshStandardMaterial({ color: 0xCC6E52, metalness: 0.3, roughness: 0.5 }),
-  flashing: new THREE.MeshStandardMaterial({ color: 0xCC6E52, metalness: 0.3, roughness: 0.5, side: THREE.DoubleSide }),
+  pillar:   new THREE.MeshLambertMaterial({ color: 0x5a3a1a, flatShading: true  }),
+  purlin:   new THREE.MeshLambertMaterial({ color: 0x7a5030, flatShading: true  }),
+  rafter:   new THREE.MeshLambertMaterial({ color: 0x9b6840, flatShading: true }),
+  lamberia:  new THREE.MeshLambertMaterial({ color: 0x7a5030, flatShading: true  }),
+  membrane:  new THREE.MeshLambertMaterial({ color: 0xcccccc, flatShading: true }),
+  counterBatten: new THREE.MeshLambertMaterial({ color: 0x40e0d0, flatShading: true  }),
+  metalSheet: new THREE.MeshStandardMaterial({ color: 0xCC6E52, metalness: 0.3, roughness: 0.5, flatShading: true  }),
+  flashing: new THREE.MeshStandardMaterial({ color: 0xCC6E52, metalness: 0.3, roughness: 0.5, side: THREE.DoubleSide, flatShading: true  }),
   groundScrew: new THREE.MeshStandardMaterial({ color: 0xeeeeff, metalness: 0.6, roughness: 0.1 }),
   sheetFelt: new THREE.MeshLambertMaterial({ color: 0xcccccc, side: THREE.BackSide }),
   bugGuard: new THREE.MeshBasicMaterial({ color: 0xCC6E52, wireframe: true }),
