@@ -6,6 +6,10 @@ import { createScene } from './renderer/scene'
 import { setMetalAppearance, setTimberColor } from './renderer/roof'
 
 // ── Hash params ──────────────────────────────────────────────────────────────
+// If hash is a plain anchor (no '='), scroll to that section on load
+const initialHash = window.location.hash.replace('#', '')
+const anchorTarget = initialHash && !initialHash.includes('=') ? initialHash : null
+
 function parseHash(): Record<string, string> {
   const pairs: Record<string, string> = {}
   for (const part of window.location.hash.replace('#', '').split('&')) {
@@ -557,3 +561,9 @@ if ('p' in hashParams || 'e' in hashParams || 'g' in hashParams) {
 }
 
 update()
+
+// Scroll to anchor section if URL was e.g. /#craftsmanship
+if (anchorTarget) {
+  const el = document.getElementById(anchorTarget)
+  if (el) requestAnimationFrame(() => el.scrollIntoView({ behavior: 'smooth' }))
+}
