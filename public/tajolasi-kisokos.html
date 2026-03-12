@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tájolási kisokos — kertiteto.hu</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="/favicon.ico" sizes="48x48">
+  <meta name="description" content="Hogyan tájold a kerti tetődet? Régi ácsok bölcsessége: napjárás, szélirány, mikroklíma. Gyakorlati útmutató a tökéletes elhelyezéshez.">
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://kertiteto.hu/tajolasi-kisokos.html">
+  <meta property="og:title" content="Tájolási kisokos — kertiteto.hu">
+  <meta property="og:description" content="Hogyan tájold a kerti tetődet? Régi ácsok bölcsessége: napjárás, szélirány, mikroklíma.">
+  <meta property="og:image" content="https://kertiteto.hu/og.jpg">
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: #ecf5ea;
+      color: #1a2e12;
+      line-height: 1.7;
+      padding: 2rem 1.5rem;
+    }
+    .container {
+      max-width: 700px;
+      margin: 0 auto;
+    }
+    h1 {
+      font-size: 1.6rem;
+      margin-bottom: 0.3rem;
+    }
+    .lead {
+      font-size: 0.95rem;
+      color: #435931;
+      margin-bottom: 2rem;
+      font-style: italic;
+    }
+    h2 {
+      font-size: 1.2rem;
+      margin-top: 2.5rem;
+      margin-bottom: 0.5rem;
+      color: #435931;
+    }
+    h3 {
+      font-size: 1rem;
+      margin-top: 1.5rem;
+      margin-bottom: 0.3rem;
+      color: #2a3d22;
+    }
+    p, ul, ol {
+      font-size: 0.9rem;
+      margin-bottom: 0.8rem;
+    }
+    ul, ol {
+      padding-left: 1.5rem;
+    }
+    li {
+      margin-bottom: 0.3rem;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1rem 0;
+      font-size: 0.85rem;
+    }
+    th, td {
+      border: 1px solid #c2d4bc;
+      padding: 0.5rem 0.75rem;
+      text-align: left;
+    }
+    th {
+      background: #d8e6d2;
+      font-weight: 600;
+    }
+    a {
+      color: #435931;
+    }
+
+    .tip {
+      background: #fff;
+      border-left: 4px solid #435931;
+      border-radius: 0 6px 6px 0;
+      padding: 0.75rem 1rem;
+      margin: 1rem 0;
+      font-size: 0.88rem;
+    }
+    .tip strong {
+      color: #435931;
+    }
+
+    .compass {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+      margin: 1rem 0;
+    }
+    .compass-card {
+      background: #fff;
+      border-radius: 8px;
+      padding: 0.75rem 1rem;
+      box-shadow: 0 1px 6px rgba(0,0,0,0.06);
+    }
+    .compass-card .dir {
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: #1a2e12;
+      margin-bottom: 0.2rem;
+    }
+    .compass-card p {
+      font-size: 0.82rem;
+      margin: 0;
+      line-height: 1.5;
+    }
+
+    .diagram {
+      background: #fff;
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      margin: 1.5rem 0;
+      font-family: ui-monospace, 'SF Mono', monospace;
+      font-size: 0.78rem;
+      line-height: 1.6;
+      white-space: pre;
+      overflow-x: auto;
+      box-shadow: 0 1px 6px rgba(0,0,0,0.06);
+    }
+
+    .cta-box {
+      background: #fff;
+      border-radius: 10px;
+      padding: 1.5rem;
+      margin-top: 2.5rem;
+      text-align: center;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    }
+    .cta-box h3 {
+      margin-top: 0;
+      font-size: 1.1rem;
+    }
+    .cta-box p {
+      font-size: 0.88rem;
+      color: #637a58;
+      margin-bottom: 1rem;
+    }
+    .cta-box .btn {
+      display: inline-block;
+      padding: 0.65rem 1.5rem;
+      background: #435931;
+      color: #fff;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      text-decoration: none;
+      transition: background 0.15s;
+    }
+    .cta-box .btn:hover { background: #354a2a; color: #fff; }
+
+    .back {
+      display: inline-block;
+      margin-top: 2rem;
+      font-size: 0.85rem;
+      color: #435931;
+      text-decoration: none;
+      font-weight: 500;
+    }
+    .back:hover { color: #354a2a; }
+
+    @media (max-width: 600px) {
+      body { padding: 1.25rem 1rem; }
+      h1 { font-size: 1.3rem; }
+      .compass { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Tájolási kisokos</h1>
+    <p class="lead">Hogyan állt össze évszázadok alatt, hogy melyik kerti tető hová néz? Nem varázslat — fizika, tapasztalat, józan ész.</p>
+
+    <!-- ── Napjárás ───────────────────────────────────────── -->
+    <h2>Napjárás Magyarországon</h2>
+    <p>Hazánk az északi szélesség 46–48° között fekszik, a nap útja az égbolton ehhez igazodik:</p>
+    <ul>
+      <li><strong>Nyáron</strong> a nap ÉK-en kel, délen 66°-os magasságban tetőzik, ÉNy-on nyugszik — hosszú, magas ív.</li>
+      <li><strong>Télen</strong> DK-en kel, délen mindössze 19°-os szögben mászik, DNy-on nyugszik — rövid, alacsony ív.</li>
+      <li>A <strong>déli oldal</strong> kapja a legtöbb UV-sugárzást. Itt kopik leggyorsabban a lazúr, de ide kívánkozik a nap melege tavasszal és ősszel.</li>
+    </ul>
+
+    <div class="tip">
+      <strong>Aranyszabály:</strong> A tető hosszanti tengelye kelet–nyugat irányba fusson. A déli eresz árnyékolja a nyári tűző napot, de a reggeli és esti fény az oromzatokon szabadon beáramlik.
+    </div>
+
+    <!-- ── Szélirány ──────────────────────────────────────── -->
+    <h2>Uralkodó szélirányok</h2>
+    <p>A Kárpát-medence jellemző szélviszonyai:</p>
+    <ul>
+      <li><strong>ÉNy</strong> — egész évben a leggyakoribb, mérsékelt erősségű szél</li>
+      <li><strong>DK</strong> — a második leggyakoribb, különösen az Alföldön</li>
+      <li><strong>É</strong> — hideg téli szél</li>
+      <li><strong>Viharos eső</strong> — szinte mindig <strong>nyugatról/északnyugatról</strong> jön (atlanti ciklonok)</li>
+    </ul>
+
+    <div class="tip">
+      <strong>Régi ács mondás:</strong> „Háttal a szélnek" — a zárt oldal (panel, háztető, lambéria fal) mindig az északnyugati oldalra kerüljön.
+    </div>
+
+    <!-- ── Nyitott oldalak ────────────────────────────────── -->
+    <h2>Melyik oldal legyen nyitott?</h2>
+    <p>Nem mindegy, melyik oldalra kerül a szél, a nap, és melyikre a kerti asztal:</p>
+
+    <div class="compass">
+      <div class="compass-card">
+        <div class="dir">Dél</div>
+        <p>Teljesen nyitva. Napfény, meleg, kilátás a kertre. Ez a főoldal.</p>
+      </div>
+      <div class="compass-card">
+        <div class="dir">Kelet</div>
+        <p>Nyitva vagy könnyű rács. Reggeli nap, vihar szinte soha nem jön innen.</p>
+      </div>
+      <div class="compass-card">
+        <div class="dir">Nyugat</div>
+        <p>Rács vagy félpanel. Délutáni nap kellemes, de alkalmi viharos eső érkezhet.</p>
+      </div>
+      <div class="compass-card">
+        <div class="dir">ÉNy / Észak</div>
+        <p>Panel, lambéria fal, vagy a ház fala. Hideg szél, viharos eső — ez a védett oldal.</p>
+      </div>
+    </div>
+
+    <!-- ── Eresznyúlás ────────────────────────────────────── -->
+    <h2>Aszimmetrikus eresznyúlás</h2>
+    <p>Régen az ácsok nem szimmetrikus tetőt építettek — a szélnek kitett oldalon mélyebb ereszt hagytak:</p>
+    <ul>
+      <li><strong>ÉNy (szeles) oldal:</strong> 70–80 cm eresznyúlás — ez védi a falat, a bútort, és az embert</li>
+      <li><strong>DK (csendes) oldal:</strong> 40–50 cm elég — több fény jut be</li>
+    </ul>
+    <p>A mi kalkulátorunkban egyenlő eresznyúlást állíthatsz — de az árajánlat egyeztetésekor szólj, ha aszimmetrikusra váltanád. Megoldjuk.</p>
+
+    <!-- ── Mikroklíma ─────────────────────────────────────── -->
+    <h2>Mikroklíma trükkök</h2>
+    <p>A tető alatt nem csak a fedés számít — a környezet is formálja a komfortot:</p>
+
+    <h3>Talajfelület</h3>
+    <ul>
+      <li><strong>Kő, tégla, beton:</strong> Nappal hőt tárol, este visszasugározza. Tavasszal és ősszel órákat ad hozzá a kerti szezonhoz.</li>
+      <li><strong>Fű:</strong> Nyáron kellemes, de ősszel hideg és nyirkos. Reggelente harmat.</li>
+      <li><strong>Kavicságy:</strong> Gyorsan elnyeli a vizet, nincs sár. Praktikus kompromisszum.</li>
+    </ul>
+
+    <h3>Szellőzés és hőháztartás</h3>
+    <ul>
+      <li><strong>Kéményhatás:</strong> A nyeregtetőn a meleg levegő a gerinc felé emelkedik. Ha van hézag a gerincnél, természetes szellőzés indul — felül kiszökik a hőség, alul bejön a friss levegő.</li>
+      <li><strong>Keresztszellőzés:</strong> Két szemben lévő nyitott oldal (pl. déli és északi, vagy a két oromzat) szellőt teremt csendes napokon is.</li>
+      <li><strong>Oszlopmagasság 2,2 m:</strong> Elég magas, hogy ne rekedjen meg alatta a meleg, de elég alacsony, hogy érezd a tető „ölelését".</li>
+    </ul>
+
+    <!-- ── Javasolt elhelyezés összefoglaló ────────────────── -->
+    <h2>Összefoglalás: javasolt elhelyezés</h2>
+
+    <div class="diagram">Javasolt elhelyezés:
+├─ Hosszanti tengely: K ←→ Ny
+├─ Nyitott oldal: Dél (napfény, kilátás)
+├─ Védett oldal: ÉNy (szél, viharos eső)
+│   └─ Ajánlott: rácsos oldalpanel vagy lambéria fal
+├─ Ereszcsurgó: ÉNy oldalon szélesebb túlnyúlás
+└─ Vízelvezetés: lejtés az ÉNy oldal felé (ott a legtöbb csapadék)</div>
+
+    <p>Természetesen minden kert más. A fák, a szomszéd épületek, a kerítés és a ház mind módosítják az optimális pozíciót. Az árajánlat-kérés után videós vagy igény szerint élő helyszíni felmérés alapján személyre szabott tájolási javaslatot adunk.</p>
+
+    <!-- ── CTA ────────────────────────────────────────────── -->
+    <div class="cta-box">
+      <h3>Tervezd meg a tetőd 3D-ben</h3>
+      <p>A kalkulátorunkban másodpercek alatt összeállíthatod az álomtetőt — a tájolással mi segítünk.</p>
+      <a class="btn" href="/">Kalkulátor megnyitása</a>
+    </div>
+
+    <a class="back" href="/">&larr; Vissza a kertiteto.hu-ra</a>
+  </div>
+</body>
+</html>
