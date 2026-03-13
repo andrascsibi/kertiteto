@@ -626,6 +626,13 @@
         max-width: 700px;
         margin: 0 auto;
       }
+      .team-grid-assistants {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 1.5rem;
+        max-width: 900px;
+        margin: 1.5rem auto 0;
+      }
       .team-card {
         background: #fff;
         border-radius: 10px;
@@ -1148,7 +1155,7 @@
 
       <div class="team-grid">
         <div class="team-card">
-          <img src="/csaba.jpg" alt="Molnár Csaba">
+          <img src="/csabi.jpg" alt="Molnár Csaba">
           <div class="team-info">
             <h3>Molnár Csaba</h3>
             <div class="role">🪚 Gyártásvezető</div>
@@ -1157,12 +1164,39 @@
           </div>
         </div>
         <div class="team-card">
-          <img src="/andras.png" alt="Csibi András">
+          <img src="/andras.jpg" alt="Csibi András">
           <div class="team-info">
             <h3>Csibi András</h3>
             <div class="role">🔨 Építésvezető</div>
-            <p>Villamosmérnökből lett ács — lecserélte a képernyőt kalapácsra, hogy kézzel fogható tereket építsen.</p>
+            <p>Villamosmérnökből lett ács. Lecserélte a képernyőt kalapácsra, hogy kézzel fogható tereket építsen.</p>
             <a class="team-social" href="https://www.tiktok.com/@egyacs" target="_blank" rel="noopener">@egyacs a TikTokon &#8599;</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="team-grid-assistants">
+        <div class="team-card">
+          <img src="/zsola.jpg" alt="Zsola">
+          <div class="team-info">
+            <h3>Zsola</h3>
+            <div class="role">🪚 Műhelymester</div>
+            <p>A műhely meghosszabbított keze. Amit le kell gyártani, az nála már félkész mire megfordulsz.</p>
+          </div>
+        </div>
+        <div class="team-card">
+          <img src="/gellert.jpg" alt="Gellért">
+          <div class="team-info">
+            <h3>Gellért</h3>
+            <div class="role">🔨 Mesterlegény</div>
+            <p>Szótlan, de a keze beszél. Amit egyszer megcsinál, az meg van csinálva.</p>
+          </div>
+        </div>
+        <div class="team-card">
+          <img src="/mark.jpg" alt="Márk">
+          <div class="team-info">
+            <h3>Márk</h3>
+            <div class="role">🔨 Mesterlegény</div>
+            <p>Ha kell tartani, fogni, emelni, vagy csak okosan odaállni: ő már ott van.</p>
           </div>
         </div>
       </div>
