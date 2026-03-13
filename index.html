@@ -674,6 +674,51 @@
         color: #354a2a;
       }
 
+      /* ── FAQ ──────────────────────────────────────────────────────────── */
+      .faq-list {
+        max-width: 600px;
+        margin: 0 auto;
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+      }
+      .faq-item {
+        border-bottom: 1px solid #d8e6d2;
+      }
+      .faq-item:first-child {
+        border-top: 1px solid #d8e6d2;
+      }
+      .faq-item summary {
+        cursor: pointer;
+        padding: 1rem 0;
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: #1a2e12;
+        list-style: none;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+      }
+      .faq-item summary::-webkit-details-marker { display: none; }
+      .faq-item summary::after {
+        content: '+';
+        font-size: 1.2rem;
+        font-weight: 400;
+        color: #778b6d;
+        flex-shrink: 0;
+        transition: transform 0.15s;
+      }
+      .faq-item[open] summary::after {
+        content: '\2212';
+      }
+      .faq-item .faq-answer {
+        padding: 0 0 1rem 0;
+        font-size: 0.88rem;
+        color: #435931;
+        line-height: 1.7;
+      }
+
       /* ── Footer ──────────────────────────────────────────────────────── */
       .site-footer {
         background: #1a2e12;
@@ -989,6 +1034,69 @@
             <p>Megérkezünk, telepítjük a talajcsavarokat és 1–2 nap alatt összeállítjuk a tetőt. Nem költözünk be a kertjébe — nincs fűrészpor, nincs körfűrész-muzsika.</p>
           </div>
         </div>
+      </div>
+
+      <p style="text-align:center;margin-top:2.5rem">
+        <a href="#configurator" style="font-size:0.85rem;color:#435931;text-decoration:none;font-weight:500"
+           onclick="event.preventDefault();document.getElementById('configurator').scrollIntoView({behavior:'smooth'})">
+          ▴ Vissza a kalkulátorhoz
+        </a>
+      </p>
+    </section>
+
+    <section class="landing-section" id="faq">
+      <h2>Gyakori kérdések</h2>
+      <p class="subtitle">Amit az ügyfeleink leggyakrabban kérdeznek</p>
+
+      <div class="faq-list">
+        <details class="faq-item">
+          <summary>Hogyan rögzítitek az oszlopot, ha már van térkő vagy beton?</summary>
+          <div class="faq-answer">
+            A talajcsavarozás benne van az árban. Ha jó minőségű betonalap van a helyszínen, arra is tudunk rögzíteni oszloptartó kelyheket, ugyanezen az áron. Ha a térkövet ki kell fúrni átmenő talajcsavar számára, az felár lehet a térkő vastagságától függően — ezt az egyeztetésnél pontosítjuk.
+          </div>
+        </details>
+
+        <details class="faq-item">
+          <summary>Mi a szerepe a lambériának?</summary>
+          <div class="faq-answer">
+            A lambéria a tető „mennyezete" — alulról nézve ez adja a látványt. Nélküle a fólia alját látnád, ami nem túl szép. Emellett merevíti a tetősíkot, és szilárd felületet ad a fóliának, így az nem lebeg a szarufák között. A fémlemez élettartamát nem befolyásolja — azért az alátét héjazat és az ellenlécek felelnek.
+          </div>
+        </details>
+
+        <details class="faq-item">
+          <summary>Miért kell az alátét héjazat?</summary>
+          <div class="faq-answer">
+            Az alátét héjazat (fólia) és az ellenlécek együtt szellőző csatornákat képeznek a fólia és a fémlemez között. Nyáron a naptól felhevült levegő ezekben a csatornákban felemelkedik az eresztől a gerinc felé — ez a kéményhatás. A folyamatos légáramlás hűti a lemezt alulról, csökkenti a hőtágulást, növeli az élettartamot, és mérsékli a lefelé sugárzó hőt. Részletesebben a <a href="/tajolasi-kisokos.html" style="color:#435931">Tájolási kisokosban</a> írtunk róla.
+          </div>
+        </details>
+
+        <details class="faq-item">
+          <summary>Milyen lemezből készül a héjazat?</summary>
+          <div class="faq-answer">
+            Előkorcolt, úgynevezett „klikkes" lemezfedést használunk (álló korcos rendszer). Ez a megoldás nem igényel helyszíni csavarozást a lemez felületén — a lemezt rejtett rögzítőkkel pattintjuk a tetőlécekre. Az eredmény: tiszta felület, nincs csavarfej, nincs potenciális beázási pont.
+          </div>
+        </details>
+
+        <details class="faq-item">
+          <summary>Miért tartósabb a hagyományos fakötés a csavarozásnál?</summary>
+          <div class="faq-answer">
+            A csapolt, vésett kötések a fa természetes tulajdonságait használják ki: a terhelést a fa rostjai veszik fel, nem egy acél csavar. A fa dolgozik az idő során — szárad, tágul, zsugorodik — és a hagyományos kötés ehhez alkalmazkodik, míg a csavar lazul. Egy jól készített csapkötés évszázadokat bír, a csavaros kötés 15–20 év után már szorulhat utánhúzásra.
+          </div>
+        </details>
+
+        <details class="faq-item">
+          <summary>Vállaltok garanciát a termékre?</summary>
+          <div class="faq-answer">
+            A munkánkra élethosszig tartó kivitelezési garanciát vállalunk: ha szakmai hibánkból kifolyólag romlik az építmény állapota, azt díjmentesen javítjuk. Ez nem terjed ki a karbantartás elmulasztásából fakadó hibákra (pl. lazúr felújítás elmaradása).
+          </div>
+        </details>
+
+        <details class="faq-item">
+          <summary>A szállítási díj benne van az árban?</summary>
+          <div class="faq-answer">
+            Igen, az ország teljes területére.
+          </div>
+        </details>
       </div>
 
       <p style="text-align:center;margin-top:2.5rem">
