@@ -4,6 +4,7 @@ import { fetchPrices, type PriceTable } from './model/prices'
 import { buildRoofing, counterBattenTotalLength, roofBattenTotalLength, flashingTotalSurface } from './model/roofing'
 import { createScene } from './renderer/scene'
 import { setMetalAppearance, setTimberColor } from './renderer/roof'
+import { submitQuote } from './api/quote'
 
 // ── Hash params ──────────────────────────────────────────────────────────────
 // If hash is a plain anchor (no '='), scroll to that section on load
@@ -518,8 +519,16 @@ quoteForm.addEventListener('submit', async (e) => {
   submitBtn.disabled = true
   submitBtn.textContent = 'Küldés…'
   try {
-    const formData = new FormData(quoteForm)
-    await fetch(quoteForm.action, { method: 'POST', body: formData })
+    await submitQuote({
+      name: (document.getElementById('field-name') as HTMLInputElement).value,
+      email: (document.getElementById('field-email') as HTMLInputElement).value,
+      phone: (document.getElementById('field-phone') as HTMLInputElement).value,
+      city: (document.getElementById('field-city') as HTMLInputElement).value,
+      comment: (document.getElementById('field-comment') as HTMLTextAreaElement).value,
+      config: hiddenConfig.value,
+      price: hiddenPrice.value,
+      url: hiddenUrl.value,
+    })
     modalFormView.style.display = 'none'
     modalSuccess.style.display = ''
     quoteForm.reset()

@@ -54,7 +54,7 @@ computed inside the renderer; these should be refactored to follow this pattern.
 
 ## Stack
 TypeScript + Vite + Three.js + Vitest + GitHub Pages + GitHub Actions
-Google Sheets (pricing) + Web3Forms (lead capture)
+Google Sheets (pricing) + Web3Forms primary / FormSubmit.co fallback (lead capture, src/api/quote.ts)
 
 ## Hungarian Roofing Specifics
 - Bird mouth: 3cm fixed plumb height (keeps 4/5 of 15cm rafter depth)

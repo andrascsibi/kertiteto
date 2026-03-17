@@ -1223,32 +1223,29 @@
           <h2>Árajánlat kérése</h2>
           <p class="modal-reassure">Egyedi árajánlatot küldünk 24 órán belül!</p>
           <div class="modal-summary" id="modal-summary"></div>
-          <form id="quote-form" action="https://formsubmit.co/hello@egyacs.com" method="POST">
-            <input type="hidden" name="_subject" value="Kerti tető árajánlat">
-            <input type="hidden" name="_captcha" value="false">
-            <input type="hidden" name="_template" value="table">
-            <input type="hidden" name="Konfiguráció" id="hidden-config">
-            <input type="hidden" name="Becsült ár" id="hidden-price">
-            <input type="hidden" name="URL" id="hidden-url">
+          <form id="quote-form">
+            <input type="hidden" id="hidden-config">
+            <input type="hidden" id="hidden-price">
+            <input type="hidden" id="hidden-url">
             <div class="form-group">
               <label>Név <span class="required">*</span></label>
-              <input type="text" name="Név" required autocomplete="name">
+              <input type="text" name="Név" id="field-name" required autocomplete="name">
             </div>
             <div class="form-group">
               <label>E-mail cím <span class="required">*</span></label>
-              <input type="email" name="E-mail" required autocomplete="email">
+              <input type="email" name="E-mail" id="field-email" required autocomplete="email">
             </div>
             <div class="form-group">
               <label>Telefonszám <span class="required">*</span></label>
-              <input type="tel" name="Telefon" required autocomplete="tel">
+              <input type="tel" name="Telefon" id="field-phone" required autocomplete="tel">
             </div>
             <div class="form-group">
               <label>Település <span class="required">*</span></label>
-              <input type="text" name="Település" required>
+              <input type="text" name="Település" id="field-city" required>
             </div>
             <div class="form-group">
               <label>Megjegyzés</label>
-              <textarea name="Megjegyzés" rows="2"></textarea>
+              <textarea name="Megjegyzés" id="field-comment" rows="2"></textarea>
             </div>
             <p style="font-size:0.72rem;color:#637a58;margin-top:0.5rem">Az űrlap beküldésével elfogadja az <a href="/adatkezeles.html" target="_blank" style="color:#435931">adatkezelési tájékoztatót</a>.</p>
             <div class="modal-actions">
