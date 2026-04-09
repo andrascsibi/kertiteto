@@ -184,6 +184,14 @@
       }
       .color-swatch:hover { transform: scale(1.15); }
 
+      .swatch-label {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        font-size: 0.75rem;
+        color: #778b6d;
+      }
+
       #color-picker, .color-picker-panel {
         display: none;
         padding: 0 0 0.6rem 0;
@@ -928,7 +936,7 @@
       <div class="option">
         <div class="option-header">
           <label><input type="checkbox" id="chk-lamberia" checked> Lambéria</label>
-          <button type="button" class="color-swatch" id="timber-swatch" title="Lazúr szín választása" style="background:#c89030"></button>
+          <span class="swatch-label"><span>Szín</span><button type="button" class="color-swatch" id="timber-swatch" title="Lazúr szín választása" style="background:#c89030"></button></span>
         </div>
         <span class="option-cost" id="cost-lamberia"></span>
       </div>
@@ -942,7 +950,7 @@
       <div class="option">
         <div class="option-header">
           <label><input type="checkbox" id="chk-roofing" checked> Lemez fedés</label>
-          <button type="button" class="color-swatch" id="color-swatch" title="Szín választása"></button>
+          <span class="swatch-label"><span>Szín</span><button type="button" class="color-swatch" id="color-swatch" title="Szín választása"></button></span>
         </div>
         <span class="option-cost" id="cost-roofing"></span>
       </div>
