@@ -512,6 +512,25 @@
         50% { transform: translateY(3px); }
       }
 
+      /* ── Hero banner (prototype photo) ────────────────────────────────── */
+      .hero-banner {
+        width: 100%;
+        display: block;
+        background: #1a2e12;
+      }
+      .hero-banner img {
+        width: 100%;
+        height: auto;
+        display: block;
+      }
+      @media (min-width: 769px) {
+        .hero-banner img {
+          height: 70vh;
+          object-fit: cover;
+          object-position: top;
+        }
+      }
+
       /* ── Content sections below fold ───────────────────────────────────── */
       .landing-section {
         max-width: 900px;
@@ -890,7 +909,7 @@
           <span>Szélesség</span>
           <span class="val" id="val-width"></span>
         </label>
-        <input type="range" id="inp-width" min="2.0" max="6.0" step="0.1">
+        <input type="range" id="inp-width" min="2.0" max="7.6" step="0.1">
         <p class="clamp-warning" id="clamp-warning-width"></p>
       </div>
 
@@ -919,7 +938,7 @@
             <span>Eresznyúlás</span>
             <span class="val" id="val-eaves"></span>
           </label>
-          <input type="range" id="inp-eaves" min="0.25" max="1.00" step="0.05">
+          <input type="range" id="inp-eaves" min="0.2" max="1.00" step="0.05">
         </div>
 
         <div class="param">
@@ -972,6 +991,10 @@
     <div class="scroll-hint" id="scroll-hint">
       <span>Miért minket? ▾</span>
     </div>
+
+    <section class="hero-banner">
+      <img src="/kertiteto1.png" alt="Az első prototípusunk — kézzel készült kerti tető">
+    </section>
 
     <section class="landing-section" id="craftsmanship">
       <h2>Hagyományos fakötések</h2>
