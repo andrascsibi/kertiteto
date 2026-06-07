@@ -38,9 +38,9 @@ export function createScene(container: HTMLElement): SceneHandle {
   controls.update()
 
   // ── Lights ──────────────────────────────────────────────────────────────────
-  scene.add(new THREE.AmbientLight(0xffffff, 0.55))
+  scene.add(new THREE.AmbientLight(0xffffff, 0.8))
 
-  const sun = new THREE.DirectionalLight(0xfff5d0, 1.1)
+  const sun = new THREE.DirectionalLight(0xfff5d0, 1.4)
   sun.position.set(7, 14, 5)
   sun.castShadow = true
   sun.shadow.mapSize.set(2048, 2048)
@@ -53,7 +53,7 @@ export function createScene(container: HTMLElement): SceneHandle {
   scene.add(sun)
 
   // Soft fill from the opposite side
-  const fill = new THREE.DirectionalLight(0xc0d8ff, 0.35)
+  const fill = new THREE.DirectionalLight(0xc0d8ff, 0.5)
   fill.position.set(-5, 5, -5)
   scene.add(fill)
 
