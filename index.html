@@ -3,24 +3,24 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Kerti tető kalkulátor — kertiteto.hu</title>
+    <title>Kerti tető kalkulátor — szaletli, pergola, kerti pavilon | kertiteto.hu</title>
     <link rel="icon" href="/favicon.svg" type="image/svg+xml">
     <link rel="icon" href="/favicon.ico" sizes="48x48">
-    <meta name="description" content="Kézműves minőségű kerti tető, sorozatgyártott áron. Tervezd meg 3D-ben és kérj árajánlatot percek alatt!">
+    <meta name="description" content="Kézműves kerti tető, szaletli, pergola — sorozatgyártott áron. Tervezd meg 3D-ben, azonnali árral, és kérj árajánlatot percek alatt!">
 
     <!-- Open Graph -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://kertiteto.hu">
-    <meta property="og:title" content="Kerti tető kalkulátor — kertiteto.hu">
-    <meta property="og:description" content="Kézműves minőségű kerti tető, sorozatgyártott áron. Tervezd meg 3D-ben és kérj árajánlatot percek alatt!">
+    <meta property="og:title" content="Kerti tető kalkulátor — szaletli, pergola, kerti pavilon | kertiteto.hu">
+    <meta property="og:description" content="Kézműves kerti tető, szaletli, pergola — sorozatgyártott áron. Tervezd meg 3D-ben, azonnali árral, és kérj árajánlatot percek alatt!">
     <meta property="og:image" content="https://kertiteto.hu/og.jpg">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
 
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Kerti tető kalkulátor — kertiteto.hu">
-    <meta name="twitter:description" content="Kézműves minőségű kerti tető, sorozatgyártott áron. Tervezd meg 3D-ben és kérj árajánlatot percek alatt!">
+    <meta name="twitter:title" content="Kerti tető kalkulátor — szaletli, pergola, kerti pavilon | kertiteto.hu">
+    <meta name="twitter:description" content="Kézműves kerti tető, szaletli, pergola — sorozatgyártott áron. Tervezd meg 3D-ben, azonnali árral, és kérj árajánlatot percek alatt!">
     <meta name="twitter:image" content="https://kertiteto.hu/og.jpg">
     <style>
       *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -305,6 +305,19 @@
       }
       @keyframes spin {
         to { transform: rotate(360deg); }
+      }
+
+      /* ── Trust points under CTA ──────────────────────────────────────── */
+      #trust-points {
+        list-style: none;
+        margin-top: 0.75rem;
+        font-size: 0.72rem;
+        color: #435931;
+        line-height: 1.6;
+      }
+      #trust-points li::before {
+        content: '✓ ';
+        font-weight: 700;
       }
 
       /* ── CTA button ──────────────────────────────────────────────────── */
@@ -977,6 +990,11 @@
 
       <div id="pricing"></div>
       <button id="cta-button" disabled>Árajánlat kérése</button>
+      <ul id="trust-points">
+        <li>Élethosszig tartó kivitelezési garancia</li>
+        <li>Helyszíni építés 1–2 nap alatt</li>
+        <li>Országos szállítás, az árban</li>
+      </ul>
       <button id="copy-prices" style="display:none; margin-top:0.3rem; font-size:0.75rem; opacity:0.6; cursor:pointer;">Copy prices</button>
     </aside>
 
@@ -1087,6 +1105,13 @@
       <p class="subtitle">Amit az ügyfeleink leggyakrabban kérdeznek</p>
 
       <div class="faq-list">
+        <details class="faq-item">
+          <summary>Szaletli, filagória, pergola vagy kerti tető?</summary>
+          <div class="faq-answer">
+            A nyitott kerti tetőszerkezetnek sok neve van: szaletli (az osztrák Salettl szóból), filagória, kerti pavilon, kiülő — a pergola szigorúan véve nyitott rácsozatú árnyékoló, de ma már a fedett változatot is gyakran így hívják. Mi az egyszerűség kedvéért kerti tetőnek hívjuk: oszlopokon álló, hagyományos ácsszerkezetű nyeregtető, valódi héjazattal, amely alá kerti asztal, kiülő, kerti konyha vagy akár autóbeálló is kerülhet. Ha szaletlit, filagóriát vagy fedett pergolát keresel, jó helyen jársz.
+          </div>
+        </details>
+
         <details class="faq-item">
           <summary>Kell-e építési engedély kerti tetőhöz?</summary>
           <div class="faq-answer">
