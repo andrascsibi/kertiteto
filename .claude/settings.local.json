@@ -3,7 +3,10 @@
     "allow": [
       "Bash(npm test:*)",
       "Bash(npm run:*)",
-      "Bash(npx vitest *)"
+      "Bash(npx vitest *)",
+      "Bash(mkdir -p /tmp/ffprofile)",
+      "Bash(\"/Applications/Firefox.app/Contents/MacOS/firefox\" --headless --profile /tmp/ffprofile --screenshot /tmp/kt_showroom.png --window-size=1000,2000 \"http://localhost:5173/#showroom\")",
+      "Read(//tmp/**)"
     ]
   }
 }

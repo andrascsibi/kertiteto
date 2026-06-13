@@ -646,6 +646,77 @@
         line-height: 1.5;
       }
 
+      /* ── Showroom (Zugló) ─────────────────────────────────────────────── */
+      #showroom .showroom-lead {
+        max-width: 600px;
+        margin: 0 auto 2.5rem;
+        text-align: center;
+        font-size: 1rem;
+        color: #435931;
+        line-height: 1.7;
+      }
+      .showroom-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2.5rem;
+      }
+      .showroom-photo {
+        margin: 0;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        position: relative;
+      }
+      .showroom-photo img {
+        width: 100%;
+        aspect-ratio: 4/3;
+        object-fit: cover;
+        display: block;
+      }
+      .showroom-photo figcaption {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        padding: 1.5rem 0.9rem 0.7rem;
+        font-size: 0.78rem;
+        color: #fff;
+        background: linear-gradient(to top, rgba(26,46,18,0.78), transparent);
+      }
+      .showroom-text {
+        max-width: 600px;
+        margin: 0 auto;
+      }
+      .showroom-text p {
+        font-size: 0.95rem;
+        color: #435931;
+        line-height: 1.7;
+        margin-bottom: 1rem;
+      }
+      .showroom-text p:last-child { margin-bottom: 0; }
+      .showroom-actions {
+        text-align: center;
+        margin-top: 2rem;
+      }
+      .showroom-cta {
+        display: inline-block;
+        padding: 0.7rem 1.6rem;
+        background: #435931;
+        color: #fff;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 0.9rem;
+        text-decoration: none;
+        transition: background 0.15s;
+      }
+      .showroom-cta:hover { background: #354a2a; }
+      .showroom-note {
+        margin-top: 0.85rem;
+        font-size: 0.78rem;
+        color: #778b6d;
+      }
+
       /* ── Process steps ──────────────────────────────────────────────── */
       .steps {
         display: flex;
@@ -1056,7 +1127,46 @@
     </div>
 
     <section class="hero-banner">
-      <img src="/kertiteto1.png" alt="Az első prototípusunk — kézzel készült kerti tető">
+      <img src="/kertiteto1.jpeg" alt="Az első prototípusunk — kézzel készült kerti tető">
+    </section>
+
+    <section class="landing-section" id="showroom">
+      <h2>Nézze meg élőben, Zuglóban</h2>
+      <p class="subtitle">A kalkulátor alapbeállítása nem csak egy 3D modell — ez a tető valóban áll</p>
+
+      <p class="showroom-lead">
+        Amikor a csúszkákat az alap 3&times;3,3 méteres tetőn hagyja, pontosan azt a
+        szerkezetet látja, amelyik egy budapesti kertben, Zuglóban áll — nyáron, télen,
+        valódi használatban.
+      </p>
+
+      <div class="showroom-grid">
+        <figure class="showroom-photo">
+          <img src="/kertiteto3.jpeg" alt="A zuglói kerti tető nyáron — zöld korcos lemezfedés, alatta kerti konyha">
+          <figcaption>Kívülről: zöld korcos lemezfedés, alatta kerti konyha és kiülő</figcaption>
+        </figure>
+        <figure class="showroom-photo">
+          <img src="/kertiteto2.jpeg" alt="A zuglói kerti tető belülről — látszó fakötések, függesztőmű és lambéria">
+          <figcaption>Belülről: látszó fakötések, függesztőmű és lambéria mennyezet</figcaption>
+        </figure>
+      </div>
+
+      <div class="showroom-text">
+        <p>
+          Megfoghatja a kézzel készült csapozást, alulról megnézheti a függesztőművet és a
+          lambériát, és kipróbálhatja, milyen érzés alatta ülni. Amit a képernyőn lát, az
+          karnyújtásnyira lesz Öntől.
+        </p>
+        <p>
+          Egy ekkora döntést nem érdemes egyetlen fénykép alapján meghozni. Ezért előzetes
+          egyeztetés után szívesen megmutatjuk a tetőt élőben, kötöttség nélkül.
+        </p>
+      </div>
+
+      <div class="showroom-actions">
+        <a class="showroom-cta" href="tel:+36305035280">📞 Időpontot egyeztetek: +36 30 503 5280</a>
+        <p class="showroom-note">Megtekintés kizárólag előre egyeztetett időpontban.</p>
+      </div>
     </section>
 
     <section class="landing-section" id="craftsmanship">
@@ -1374,14 +1484,14 @@
     <script>
       const scrollHint = document.getElementById('scroll-hint')
       scrollHint.addEventListener('click', () => {
-        document.getElementById('craftsmanship').scrollIntoView({ behavior: 'smooth' })
+        document.getElementById('showroom').scrollIntoView({ behavior: 'smooth' })
       })
       // Hide scroll hint when content section is visible, show when back at top
       if ('IntersectionObserver' in window) {
         const obs = new IntersectionObserver(([entry]) => {
           scrollHint.style.display = entry.isIntersecting ? 'none' : ''
         }, { threshold: 0.1 })
-        obs.observe(document.getElementById('craftsmanship'))
+        obs.observe(document.getElementById('showroom'))
       }
     </script>
     <script type="module" src="/src/main.ts"></script>
