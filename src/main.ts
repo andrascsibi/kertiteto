@@ -69,11 +69,12 @@ const valEaves  = document.getElementById('val-eaves')!
 const valGable  = document.getElementById('val-gable')!
 
 const chkLamberia = document.getElementById('chk-lamberia') as HTMLInputElement
-const chkMembrane = document.getElementById('chk-membrane') as HTMLInputElement
 const chkRoofing  = document.getElementById('chk-roofing')  as HTMLInputElement
 const costLamberia  = document.getElementById('cost-lamberia')!
-const costMembrane  = document.getElementById('cost-membrane')!
 const costRoofing   = document.getElementById('cost-roofing')!
+
+// Alátét héjazat (membrane) is no longer a separate UI option — it is implicitly
+// bundled with lambéria: enabled, rendered, and priced together with it.
 const clampWarningWidth = document.getElementById('clamp-warning-width')!
 const clampWarningPitch = document.getElementById('clamp-warning-pitch')!
 
@@ -201,7 +202,6 @@ function update(): void {
   if (params.eavesOverhang !== DEFAULTS.eavesOverhang) hashParts.push(`e=${params.eavesOverhang.toFixed(2)}`)
   if (params.gableOverhang !== DEFAULTS.gableOverhang) hashParts.push(`g=${params.gableOverhang.toFixed(2)}`)
   if (!chkLamberia.checked) hashParts.push('lb=0')
-  if (!chkMembrane.checked) hashParts.push('mb=0')
   if (!chkRoofing.checked)  hashParts.push('rf=0')
   if (selectedRal !== DEFAULT_RAL || selectedFinish !== DEFAULT_FINISH) {
     hashParts.push(`c=${selectedRal}${selectedFinish === 'matt' ? 'm' : 'f'}`)
@@ -217,9 +217,10 @@ function update(): void {
   const m = computeMetrics(model)
   // Always build with all options enabled so cost previews include everything
   const roofing = buildRoofing(model, { lamberia: true, membrane: true, roofing: true })
-  // Build roofing model with current checkbox state for rendering
-  const renderRoofing = buildRoofing(model, { lamberia: chkLamberia.checked, membrane: chkMembrane.checked, roofing: chkRoofing.checked })
-  scene.updateModel(model, { lamberia: chkLamberia.checked, membrane: chkMembrane.checked, roofing: chkRoofing.checked, roofingModel: renderRoofing })
+  // Build roofing model with current checkbox state for rendering.
+  // Membrane follows lambéria (bundled together).
+  const renderRoofing = buildRoofing(model, { lamberia: chkLamberia.checked, membrane: chkLamberia.checked, roofing: chkRoofing.checked })
+  scene.updateModel(model, { lamberia: chkLamberia.checked, membrane: chkLamberia.checked, roofing: chkRoofing.checked, roofingModel: renderRoofing })
   const cbTotalLen = counterBattenTotalLength(roofing)
   const rbTotalLen = roofBattenTotalLength(roofing)
   const flashingSurface = flashingTotalSurface(roofing)
@@ -237,8 +238,7 @@ function update(): void {
       { key: 'lamberiazas', qty: m.roofSurface },
       { key: 'lazur', qty: m.roofSurface * 1.5, label: 'lamberia lazur', category: 'anyag' as const },
       { key: 'feluletkezeles', qty: m.roofSurface * 1.5, label: 'lamberia lazurozas', category: 'muhely' as const },
-    ]},
-    { chk: chkMembrane, costEl: costMembrane, items: [
+      // Alátét héjazat (membrane) bundled into lambéria
       { key: 'folia', qty: m.roofSurface },
       { key: 'foliazas', qty: m.roofSurface },
       { key: 'ellenlec', qty: cbTotalLen },
@@ -288,8 +288,7 @@ function update(): void {
     const timberName = TIMBER_COLORS.find(c => c.id === selectedTimber)!.name
     const opts = [
       `lazúr: ${timberName}`,
-      chkLamberia.checked && 'lambéria',
-      chkMembrane.checked && 'alátét héjazat',
+      chkLamberia.checked && 'lambéria (alátét héjazattal)',
       chkRoofing.checked  && `lemez fedés (RAL ${selectedRal}, ${selectedFinish === 'matt' ? 'matt' : 'fényes'})`,
     ].filter(Boolean).join(', ')
     lastConfigSummary =
@@ -335,7 +334,7 @@ inpPitch.addEventListener('input', () => { lastChangedSlider = 'pitch'; update()
 for (const inp of [inpLength, inpEaves, inpGable]) {
   inp.addEventListener('input', update)
 }
-for (const chk of [chkLamberia, chkMembrane, chkRoofing]) {
+for (const chk of [chkLamberia, chkRoofing]) {
   chk.addEventListener('change', update)
 }
 
@@ -548,7 +547,6 @@ inpPitch.value  = String(hashFloat('p', DEFAULTS.pitch))
 inpEaves.value  = String(hashFloat('e', DEFAULTS.eavesOverhang))
 inpGable.value  = String(hashFloat('g', DEFAULTS.gableOverhang))
 chkLamberia.checked = hashBool('lb', true)
-chkMembrane.checked = hashBool('mb', true)
 chkRoofing.checked  = hashBool('rf', true)
 
 // Restore colors from URL
