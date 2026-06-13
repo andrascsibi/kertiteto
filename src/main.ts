@@ -203,7 +203,7 @@ function update(): void {
   if (!chkLamberia.checked) hashParts.push('lb=0')
   if (!chkMembrane.checked) hashParts.push('mb=0')
   if (!chkRoofing.checked)  hashParts.push('rf=0')
-  if (selectedRal !== '8004' || selectedFinish !== 'matt') {
+  if (selectedRal !== DEFAULT_RAL || selectedFinish !== DEFAULT_FINISH) {
     hashParts.push(`c=${selectedRal}${selectedFinish === 'matt' ? 'm' : 'f'}`)
   }
   if (selectedTimber !== DEFAULT_TIMBER) {
@@ -352,8 +352,10 @@ const RAL_COLORS = [
 const ROUGHNESS_MATT = 0.5
 const ROUGHNESS_SHINY = 0.35
 
-let selectedRal = '8004'
-let selectedFinish: 'matt' | 'shiny' = 'matt'
+const DEFAULT_RAL = '6020'  // Mohazöld
+const DEFAULT_FINISH: 'matt' | 'shiny' = 'matt'
+let selectedRal = DEFAULT_RAL
+let selectedFinish: 'matt' | 'shiny' = DEFAULT_FINISH
 
 const colorSwatch = document.getElementById('color-swatch') as HTMLButtonElement
 const colorPickerEl = document.getElementById('color-picker')!
@@ -420,8 +422,7 @@ document.addEventListener('click', (e) => {
   }
 })
 
-// Mark initial selection
-cpGrid.querySelector('.color-dot[data-ral="8004"][data-finish="matt"]')?.classList.add('selected')
+// Initial metal selection is applied below (selectColor), once all colour state is declared
 
 // ── Timber color picker ─────────────────────────────────────────────────────
 const TIMBER_COLORS = [
@@ -441,7 +442,7 @@ const TIMBER_COLORS = [
   { id: '614',  name: 'Sötétzöld',        hex: 0x4A5C38 },
 ]
 
-const DEFAULT_TIMBER = '610'
+const DEFAULT_TIMBER = '612'  // Teak
 let selectedTimber = DEFAULT_TIMBER
 
 const timberSwatch = document.getElementById('timber-swatch') as HTMLButtonElement
@@ -483,7 +484,8 @@ timberSwatch.addEventListener('click', (e) => {
   colorPickerEl.classList.remove('open')
 })
 
-// Set initial timber color + selection
+// Set initial colours + selection (after all colour state is declared)
+selectColor(DEFAULT_RAL, DEFAULT_FINISH)
 selectTimber(DEFAULT_TIMBER)
 
 // ── Quote modal ─────────────────────────────────────────────────────────────
